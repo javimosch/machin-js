@@ -1,0 +1,5 @@
+[x] 1 buy milk
+[ ] 2 write <b>docs</b>
+-- after remove --
+[x] 1 buy milk
+<!doctype html><title>todos</title><ul><li class="done">buy milk</li></ul>

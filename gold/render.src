@@ -1,0 +1,25 @@
+func escapeHtml(s) (r) {
+    r = replace(replace(replace(s, "&", "&amp;"), "<", "&lt;"), ">", "&gt;")
+}
+
+func renderLine(t) (r) {
+    mark := "[ ]"
+    if t.done == 1 { mark = "[x]" }
+    r = mark + " " + str(t.id) + " " + t.title
+}
+
+func renderItem(t) (r) {
+    cls := "open"
+    if t.done == 1 { cls = "done" }
+    r = "<li class=\"" + cls + "\">" + escapeHtml(t.title) + "</li>"
+}
+
+func renderPage(todos) (r) {
+    items := ""
+    i := 0
+    while i < len(todos) {
+        items = items + renderItem(todos[i])
+        i = i + 1
+    }
+    r = "<!doctype html><title>todos</title><ul>" + items + "</ul>"
+}

@@ -1,0 +1,20 @@
+func printAll(todos) {
+    i := 0
+    while i < len(todos) {
+        println(renderLine(todos[i]))
+        i = i + 1
+    }
+}
+
+func main() {
+    db := openStore(":memory:")
+    addTodo(db, "buy milk")
+    addTodo(db, "write <b>docs</b>")
+    toggleTodo(db, 1)
+    printAll(listTodos(db))
+    removeTodo(db, 2)
+    println("-- after remove --")
+    printAll(listTodos(db))
+    println(renderPage(listTodos(db)))
+    sqlite_close(db)
+}
