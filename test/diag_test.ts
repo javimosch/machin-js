@@ -11,13 +11,13 @@ Deno.test("compliant function is clean", () => {
 });
 Deno.test("oversize function is reported", () => {
   const body = Array.from({ length: 22 }, () => "  g();").join("\n");
-  assertEquals(codes(`/** x */\nfunction f() {\n  //why: t\n${body}\n}`), ["JS-SIZE001"]);
+  assertEquals(codes(`import { g } from "machin";\n/** x */\nfunction f() {\n  //why: t\n${body}\n}`), ["JS-SIZE001"]);
 });
 Deno.test("unsupported syntax is reported, not silently emitted", () => {
   assertEquals(codes("/** x */\nfunction f(a) {\n  //why: t\n  return a ?? 1;\n}"), ["JS-UNSUP001"]);
 });
 Deno.test("passing a bare function name is reported with a hint", () => {
-  const src = "/** x */\nfunction g(a) {\n  //why: t\n  return a;\n}\n/** x */\nfunction f() {\n  //why: t\n  serve(1, g);\n}";
+  const src = "import { serve } from \"machin/web\";\n/** x */\nfunction g(a) {\n  //why: t\n  return a;\n}\n/** x */\nfunction f() {\n  //why: t\n  serve(1, g);\n}";
   assertEquals(codes(src), ["JS-FNVAL001"]);
 });
 Deno.test("an undeclared, unimported name is reported", () => {
