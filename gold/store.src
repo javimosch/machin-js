@@ -1,20 +1,21 @@
-func openStore(path) (db) {
-    db = sqlite_open(path)
+func openStore(path) (r) {
+    db := sqlite_open(path)
     sqlite_exec(db, "CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY, title TEXT, done INTEGER DEFAULT 0)")
+    return db
 }
 
 func addTodo(db, title) (r) {
-    r = sqlite_exec(db, "INSERT INTO todos (title) VALUES (?)", []string{title})
+    return sqlite_exec(db, "INSERT INTO todos (title) VALUES (?)", []string{title})
 }
 
 func toggleTodo(db, id) (r) {
-    r = sqlite_exec(db, "UPDATE todos SET done = 1 - done WHERE id = ?", []string{str(id)})
+    return sqlite_exec(db, "UPDATE todos SET done = 1 - done WHERE id = ?", []string{str(id)})
 }
 
 func removeTodo(db, id) (r) {
-    r = sqlite_exec(db, "DELETE FROM todos WHERE id = ?", []string{str(id)})
+    return sqlite_exec(db, "DELETE FROM todos WHERE id = ?", []string{str(id)})
 }
 
 func listTodos(db) (r) {
-    r = parse(sqlite_query(db, "SELECT id, title, done FROM todos ORDER BY id"), []Todo{})
+    return parse(sqlite_query(db, "SELECT id, title, done FROM todos ORDER BY id"), []Todo{})
 }
