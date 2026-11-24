@@ -1,0 +1,48 @@
+func formField(body, name) (r) {
+    parts := split(body, "&")
+    i := 0
+    while i < len(parts) {
+        eq := index(parts[i], "=")
+        if eq > 0 && substr(parts[i], 0, eq) == name {
+            return url_decode(substr(parts[i], eq + 1, len(parts[i])))
+        }
+    i = i + 1
+    }
+    return ""
+}
+
+func idFromPath(path, prefix) (r) {
+    return parse_int(substr(path, len(prefix), len(path)))
+}
+
+func applyPost(req, db) {
+    title := formField(req.body, "title")
+    if req.path == "/add" && title != "" {
+        addTodo(db, title)
+    }
+    if has_prefix(req.path, "/toggle/") {
+        toggleTodo(db, idFromPath(req.path, "/toggle/"))
+    }
+    if has_prefix(req.path, "/delete/") {
+        removeTodo(db, idFromPath(req.path, "/delete/"))
+    }
+}
+
+func handle(req) (r) {
+    db := openStore("todos.db")
+    res := not_found()
+    if req.method == "POST" {
+        applyPost(req, db)
+        res = redirect("/")
+    } else {
+        if req.path == "/" {
+            res = ok_html(renderPage(listTodos(db)))
+        } else {
+            if req.path == "/api/todos" {
+                res = ok_json(json(listTodos(db)))
+            }
+        }
+    }
+    sqlite_close(db)
+    return res
+}

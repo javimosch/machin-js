@@ -20,26 +20,39 @@ function renderLine(t) {
 }
 
 /**
- * One todo as an HTML list item.
+ * A one-button form that POSTs to `action`.
+ * @param {string} action URL path to post to.
+ * @param {string} label Button text; must already be HTML-escaped.
+ * @returns {string}
+ */
+function renderButton(action, label) {
+  //why: plain forms, not JavaScript — the page works with no client code at all.
+  return "<form method=\"post\" action=\"" + action + "\"><button>" + label + "</button></form>";
+}
+
+/**
+ * One todo as an HTML list item: a toggle button (its label) and a delete button.
  * @param {Todo} t
  * @returns {string}
  */
 function renderItem(t) {
   //why: title is user input, so it is escaped here, at the only place it enters HTML.
   const cls = t.done == 1 ? "done" : "open";
-  return "<li class=\"" + cls + "\">" + escapeHtml(t.title) + "</li>";
+  const toggle = renderButton("/toggle/" + String(t.id), escapeHtml(t.title));
+  return "<li class=\"" + cls + "\">" + toggle + renderButton("/delete/" + String(t.id), "x") + "</li>";
 }
 
 /**
- * The whole todo list as an HTML page.
+ * The whole todo list as an HTML page, with an add form on top.
  * @param {Todo[]} todos
  * @returns {string}
  */
 function renderPage(todos) {
   //why: server-side rendering keeps the pilot free of wasm and a client build.
+  const form = "<form method=\"post\" action=\"/add\"><input name=\"title\" placeholder=\"what needs doing?\"><button>add</button></form>";
   let items = "";
   for (let i = 0; i < todos.length; i++) {
     items = items + renderItem(todos[i]);
   }
-  return "<!doctype html><title>todos</title><ul>" + items + "</ul>";
+  return "<!doctype html><title>todos</title><h1>todos</h1>" + form + "<ul>" + items + "</ul>";
 }

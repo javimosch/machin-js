@@ -8,18 +8,24 @@ func renderLine(t) (r) {
     return mark + " " + str(t.id) + " " + t.title
 }
 
+func renderButton(action, label) (r) {
+    return "<form method=\"post\" action=\"" + action + "\"><button>" + label + "</button></form>"
+}
+
 func renderItem(t) (r) {
     cls := "open"
     if t.done == 1 { cls = "done" }
-    return "<li class=\"" + cls + "\">" + escapeHtml(t.title) + "</li>"
+    toggle := renderButton("/toggle/" + str(t.id), escapeHtml(t.title))
+    return "<li class=\"" + cls + "\">" + toggle + renderButton("/delete/" + str(t.id), "x") + "</li>"
 }
 
 func renderPage(todos) (r) {
+    form := "<form method=\"post\" action=\"/add\"><input name=\"title\" placeholder=\"what needs doing?\"><button>add</button></form>"
     items := ""
     i := 0
     while i < len(todos) {
         items = items + renderItem(todos[i])
-        i = i + 1
+    i = i + 1
     }
-    return "<!doctype html><title>todos</title><ul>" + items + "</ul>"
+    return "<!doctype html><title>todos</title><h1>todos</h1>" + form + "<ul>" + items + "</ul>"
 }

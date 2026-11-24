@@ -5,7 +5,7 @@ import * as acorn from "npm:acorn@8.14.0";
 
 export type Diag = { code: string; msg: string; file: string; line: number };
 type Cmt = { block: boolean; text: string; start: number; end: number };
-type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; retElem: string };
+type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; retElem: string; fns: Set<string> };
 
 const MAX_LINES = 20;
 const PREC: Record<string, number> = { "||": 1, "&&": 2, "==": 3, "===": 3, "!=": 3, "!==": 3,
@@ -64,7 +64,13 @@ function lint(c: Ctx, fn: any, doc: string | null) {
 function expr(c: Ctx, e: any, p = 0): string {
   switch (e.type) {
     case "Literal": return typeof e.value === "string" ? str(e.value) : String(e.value);
-    case "Identifier": return e.name;
+    case "Identifier":
+      //why: machin functions are not values; the typecheck error for this is cryptic, so catch it here.
+      if (c.fns.has(e.name)) return diag(c, "JS-FNVAL001", `${e.name} is a function; pass an arrow: (x) => ${e.name}(x)`, e);
+      return e.name;
+    case "ArrowFunctionExpression":
+      if (e.body.type === "BlockStatement") return diag(c, "JS-UNSUP001", "arrow with block body unsupported; use an expression body", e);
+      return `func(${e.params.map((x: any) => x.name).join(", ")}) { return ${expr(c, e.body)} }`;
     case "MemberExpression":
       if (!e.computed && e.property.name === "length") return `len(${expr(c, e.object)})`;
       return e.computed ? `${expr(c, e.object)}[${expr(c, e.property)}]` : `${expr(c, e.object)}.${e.property.name}`;
@@ -176,7 +182,8 @@ export function transpile(file: string, src: string): { out: string; diags: Diag
   const cmts: Cmt[] = [];
   const ast: any = acorn.parse(src, { ecmaVersion: "latest", sourceType: "script", locations: true,
     onComment: (block: boolean, text: string, start: number, end: number) => cmts.push({ block, text, start, end }) });
-  const c: Ctx = { file, src, cmts, diags: [], retElem: "" };
+  const fns = new Set<string>(ast.body.filter((n: any) => n.type === "FunctionDeclaration").map((n: any) => n.id.name));
+  const c: Ctx = { file, src, cmts, diags: [], retElem: "", fns };
   const lines = [...typedefs(c)];
   for (const n of ast.body) {
     if (n.type === "FunctionDeclaration") lines.push(...func(c, n));

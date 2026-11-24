@@ -2,4 +2,4 @@
 [ ] 2 write <b>docs</b>
 -- after remove --
 [x] 1 buy milk
-<!doctype html><title>todos</title><ul><li class="done">buy milk</li></ul>
+<!doctype html><title>todos</title><h1>todos</h1><form method="post" action="/add"><input name="title" placeholder="what needs doing?"><button>add</button></form><ul><li class="done"><form method="post" action="/toggle/1"><button>buy milk</button></form><form method="post" action="/delete/1"><button>x</button></form></li></ul>
