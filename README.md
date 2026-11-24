@@ -16,6 +16,17 @@ written as readable JS, compiled to a native binary.
 Needs `deno`, `machin`, and a C compiler (`cc`). `machweb.src` is read from the machin repo
 (`MACHIN_FRAMEWORK`, default `~/ai/machin/framework`).
 
+## Desktop (spike)
+
+    ./build-desktop.sh && ./todo-desktop     # a raylib window; shares todos.db with the web app
+
+Click a todo to toggle it, `x` to delete, type + Enter to add. Needs a display and a static raylib
+(`RAYLIB_DIR`, default `~/ai/tinybrain/vendor/raylib-5.0_linux_amd64`). JS can't express FFI, so the
+raylib `extern` block lives once in `bindings/desktop.src` behind a scalar-only API
+(`import { ui_button } from "machin/desktop"`, typed in `types/desktop.d.ts`). `src/desktop.js` is the
+shell; it reuses `src/store.js` unchanged. Verified by `test/desktop_input.sh`: real X clicks and typing
+on a private Xvfb display, then the database is checked.
+
 ## Read it
 
 Plain ES modules: every dependency is an `import`, every public function an `export`.
@@ -25,7 +36,7 @@ Every function is tiny, has a JSDoc block (the types) and a `//why:` line (the i
 
 ## Verify it
 
-    test/gate.sh                       # JS->machin == gold; demo native==Deno; HTTP smoke on Deno AND native
+    test/gate.sh                       # JS->machin == gold; demo native==Deno; HTTP smoke on Deno AND native; desktop input
     deno test -A test/diag_test.ts     # JS-DOC001 / JS-WHY001 / JS-SIZE001 / JS-UNSUP001 / JS-FNVAL001
 
 The gate serves on its own port (`PORT`, default 18080), never on 8080, and refuses to run if that

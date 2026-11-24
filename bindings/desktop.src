@@ -1,0 +1,96 @@
+// bindings/desktop.src — machin-js's desktop UI binding: raylib (C FFI) behind a scalar-only API.
+//why: JS can't express `extern`/`cstruct`, so the FFI lives here, once, in MFL. JS code only ever
+//     sees ints and strings (types/desktop.d.ts), never a Color or a raylib handle.
+extern "raylib" {
+    header "raylib.h"
+    link "raylib" link "GL" link "m" link "pthread" link "dl" link "rt" link "X11"
+    cstruct Color { r u8 g u8 b u8 a u8 }
+    fn InitWindow(i32, i32, string)
+    fn SetTargetFPS(i32)
+    fn WindowShouldClose() bool
+    fn BeginDrawing()
+    fn EndDrawing()
+    fn ClearBackground(Color)
+    fn CloseWindow()
+    fn DrawRectangle(i32, i32, i32, i32, Color)
+    fn DrawText(string, i32, i32, i32, Color)
+    fn GetMouseX() i32
+    fn GetMouseY() i32
+    fn IsMouseButtonPressed(i32) bool
+    fn IsKeyPressed(i32) bool
+    fn IsKeyPressedRepeat(i32) bool
+    fn GetCharPressed() i32
+    fn TakeScreenshot(string)
+}
+
+var ui_quit_flag = 0
+var ui_printable = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+
+// tone -> colour. 0 text, 1 dim text, 2 button, 3 button hovered, 4 page background.
+func ui_tone(t) (c) {
+    c = Color{30, 30, 30, 255}
+    if t == 1 { c = Color{150, 150, 150, 255} }
+    if t == 2 { c = Color{228, 228, 228, 255} }
+    if t == 3 { c = Color{205, 218, 240, 255} }
+    if t == 4 { c = Color{250, 250, 250, 255} }
+}
+
+func ui_open(w, h, title) {
+    InitWindow(w, h, title)
+    SetTargetFPS(60)
+}
+
+func ui_should_close() (r) {
+    r = 0
+    if WindowShouldClose() { r = 1 }
+    if ui_quit_flag == 1 { r = 1 }
+}
+
+func ui_quit() { ui_quit_flag = 1 }
+func ui_begin() { BeginDrawing()  ClearBackground(ui_tone(4)) }
+func ui_end() { EndDrawing() }
+func ui_close() { CloseWindow() }
+func ui_text(text, x, y, size, tone) { DrawText(text, x, y, size, ui_tone(tone)) }
+func ui_rect(x, y, w, h, tone) { DrawRectangle(x, y, w, h, ui_tone(tone)) }
+
+// ui_hover: 1 when the mouse is inside the rectangle.
+func ui_hover(x, y, w, h) (r) {
+    mx := GetMouseX()
+    my := GetMouseY()
+    r = 0
+    if mx >= x && mx < x + w && my >= y && my < y + h { r = 1 }
+}
+
+// ui_button draws a button and returns 1 on the frame it is clicked (immediate mode).
+func ui_button(label, x, y, w, h, tone) (r) {
+    hov := ui_hover(x, y, w, h)
+    bg := tone
+    if hov == 1 { bg = 3 }
+    ui_rect(x, y, w, h, bg)
+    ui_text(label, x + 8, y + 6, 18, 0)
+    r = 0
+    if hov == 1 && IsMouseButtonPressed(0) { r = 1 }
+}
+
+// ui_typed: the printable ASCII typed since the last call ("" if none).
+func ui_typed() (s) {
+    s = ""
+    cp := GetCharPressed()
+    while cp > 0 {
+        if cp >= 32 && cp <= 126 { s = s + substr(ui_printable, cp - 32, cp - 31) }
+        cp = GetCharPressed()
+    }
+}
+
+func ui_key_enter() (r) {
+    r = 0
+    if IsKeyPressed(257) { r = 1 }
+}
+
+func ui_key_backspace() (r) {
+    r = 0
+    if IsKeyPressed(259) || IsKeyPressedRepeat(259) { r = 1 }
+}
+
+// ui_screenshot: raylib saves this next to the binary's working directory (filename only).
+func ui_screenshot(name) { TakeScreenshot(name) }

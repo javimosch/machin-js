@@ -15,7 +15,7 @@ deno run -A transpile/transpile.ts "$T/demo" src/main.js
 deno run -A transpile/transpile.ts "$T/srv" src/server.js
 machin encode $(glist "$T/demo") > "$T/g.mfl"; machin encode $(list "$T/demo") > "$T/o.mfl"
 diff "$T/g.mfl" "$T/o.mfl" >/dev/null || { echo "demo gold mismatch"; exit 1; }
-machin encode "$FW/machweb.src" $(glist "$T/srv") > "$T/g.mfl"; machin encode "$FW/machweb.src" $(list "$T/srv") > "$T/o.mfl"
+machin encode $(cat "$T/srv/native.txt") $(glist "$T/srv") > "$T/g.mfl"; machin encode $(cat "$T/srv/native.txt") $(list "$T/srv") > "$T/o.mfl"
 diff "$T/g.mfl" "$T/o.mfl" >/dev/null || { echo "server gold mismatch"; exit 1; }
 echo "canonical MFL identical to gold"
 machin encode $(list "$T/demo") > "$T/demo.mfl"
@@ -26,4 +26,9 @@ check() { mkdir -p "$T/$1" && (cd "$T/$1"; shift; "$@" >/dev/null 2>&1 & echo $!
   if MACHINJS_SMOKE=1 sh "$ROOT/test/smoke.sh"; then r=0; else r=1; fi; kill "$(cat pid)" 2>/dev/null; return $r); }
 check native "$T/srvbin"
 check deno deno run -A "$ROOT/test/serve.ts"
+# Desktop shell: only if its prerequisites exist (raylib static lib + Xvfb), else say so.
+RL=${RAYLIB_DIR:-$HOME/ai/tinybrain/vendor/raylib-5.0_linux_amd64}
+if [ -f "$RL/lib/libraylib.a" ] && command -v Xvfb >/dev/null; then
+  ./build-desktop.sh >/dev/null && test/desktop_input.sh
+else echo "desktop: SKIPPED (needs raylib at \$RAYLIB_DIR and Xvfb)"; fi
 echo "ALL GREEN"

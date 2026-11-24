@@ -225,16 +225,28 @@ export function transpile(file: string, src: string): Mod {
   return { out: lines.join("\n").trimEnd() + "\n", diags: c.diags, imports, exports, fns, deps };
 }
 
-/** Names exported by the hand-kept `machin/web` typings. */
-async function webNames(): Promise<Set<string>> {
-  const t = await Deno.readTextFile(new URL("../types/machweb.d.ts", import.meta.url));
+/** Names exported by a hand-kept typings file in types/. */
+async function dtsNames(file: string): Promise<Set<string>> {
+  const t = await Deno.readTextFile(new URL(`../types/${file}`, import.meta.url));
   return new Set([...t.matchAll(/export (?:function|type) (\w+)/g)].map((m) => m[1]));
 }
 
+/** Bridge modules: JS import name -> its typings and the machin .src it needs in the build. */
+function bridges(): Record<string, { dts: string; src: string }> {
+  const fw = Deno.env.get("MACHIN_FRAMEWORK") ?? `${Deno.env.get("HOME")}/ai/machin/framework`;
+  return {
+    "machin/web": { dts: "machweb.d.ts", src: `${fw}/machweb.src` },
+    "machin/desktop": { dts: "desktop.d.ts", src: new URL("../bindings/desktop.src", import.meta.url).pathname },
+  };
+}
+
 /** Follow imports from `entry`; return modules in dependency order, plus every diagnostic. */
-export async function buildGraph(entry: string): Promise<{ order: { path: string; out: string }[]; diags: Diag[] }> {
+export async function buildGraph(entry: string): Promise<{ order: { path: string; out: string }[]; native: string[]; diags: Diag[] }> {
   const builtins = new Set<string>(JSON.parse(await Deno.readTextFile(new URL("../types/machin-builtins.json", import.meta.url))));
-  const web = await webNames();
+  const br = bridges();
+  const bnames = new Map<string, Set<string>>();
+  for (const [k, v] of Object.entries(br)) bnames.set(k, await dtsNames(v.dts));
+  const native = new Set<string>();
   const mods = new Map<string, Mod>(), order: { path: string; out: string }[] = [], diags: Diag[] = [];
   const stack: string[] = [];
   const add = (file: string, line: number, code: string, msg: string) => diags.push({ code, msg, file, line });
@@ -254,8 +266,9 @@ export async function buildGraph(entry: string): Promise<{ order: { path: string
   }
   /** Validate one import: the module exists and exports every name asked for. */
   function check(path: string, i: Imp, _m: Mod) {
-    const known = i.source === "machin" ? builtins : i.source === "machin/web" ? web
-      : i.source.startsWith(".") ? mods.get(resolve(dirname(path), i.source))?.exports : null;
+    if (br[i.source]) native.add(br[i.source].src);
+    const known = i.source === "machin" ? builtins : bnames.get(i.source)
+      ?? (i.source.startsWith(".") ? mods.get(resolve(dirname(path), i.source))?.exports : null);
     if (!known) return add(path, i.line, "JS-IMPORT002", `unknown module "${i.source}"`);
     for (const n of i.names) if (!known.has(n)) add(path, i.line, "JS-IMPORT001", `"${i.source}" has no export ${n}`);
   }
@@ -266,7 +279,7 @@ export async function buildGraph(entry: string): Promise<{ order: { path: string
     if (seen.has(f)) add(p, 1, "JS-DUP001", `function ${f} is also defined in ${basename(seen.get(f)!)} (machin has one namespace)`);
     seen.set(f, p);
   }
-  return { order, diags };
+  return { order, native: [...native], diags };
 }
 
 if (import.meta.main) {
@@ -274,10 +287,12 @@ if (import.meta.main) {
   //     plus order.txt; any diagnostic fails the run (exit 1).
   const [outDir, entry] = Deno.args;
   await Deno.mkdir(outDir, { recursive: true });
-  const { order, diags } = await buildGraph(entry);
+  const { order, native, diags } = await buildGraph(entry);
   diags.forEach((d) => console.error(`${d.file}:${d.line}: ${d.code} ${d.msg}`));
   const names = order.map((o) => basename(o.path).replace(/\.js$/, ""));
   for (const [i, o] of order.entries()) await Deno.writeTextFile(`${outDir}/${names[i]}.src`, o.out);
   await Deno.writeTextFile(`${outDir}/order.txt`, names.join("\n") + "\n");
+  //why: native.txt = binding/framework .src files this program needs, to be encoded before the modules.
+  await Deno.writeTextFile(`${outDir}/native.txt`, native.join("\n") + (native.length ? "\n" : ""));
   Deno.exit(diags.length ? 1 : 0);
 }
