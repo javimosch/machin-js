@@ -1,3 +1,8 @@
+import { split, index, substr, url_decode, parse_int, has_prefix, json, sqlite_close } from "machin";
+import { not_found, redirect, ok_html, ok_json } from "machin/web";
+import { openStore, addTodo, toggleTodo, removeTodo, listTodos } from "./store.js";
+import { renderPage } from "./render.js";
+
 /**
  * Read one field from an application/x-www-form-urlencoded body.
  * @param {string} body e.g. "title=buy+milk&x=1".
@@ -52,7 +57,7 @@ function applyPost(req, db) {
  * @param {Request} req
  * @returns {Response}
  */
-function handle(req) {
+export function handle(req) {
   //why: the db is opened per request — stateless, so no handle is shared across goroutines.
   const db = openStore("todos.db");
   let res = not_found();

@@ -1,9 +1,15 @@
+import { env, parse_int } from "machin";
+import { serve } from "machin/web";
+import { handle } from "./routes.js";
+
 /**
- * Start the todo server.
+ * Start the todo server on $PORT (default 8080).
  * @returns {void}
  */
-function main() {
-  //why: the arrow is required — machin functions aren't values, so handle is wrapped.
-  //     8080 is fixed on purpose — one obvious default beats a config system for a pilot.
-  serve(8080, (req) => handle(req));
+export function main() {
+  //why: PORT lets tests run on their own port; the arrow is required because machin
+  //     functions aren't values, so handle is wrapped.
+  const fromEnv = parse_int(env("PORT"));
+  const port = fromEnv == 0 ? 8080 : fromEnv;
+  serve(port, (req) => handle(req));
 }

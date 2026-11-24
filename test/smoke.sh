@@ -1,7 +1,9 @@
 #!/bin/sh
 # HTTP smoke test against whatever is serving on :8080 (run from a scratch dir so todos.db is fresh).
 set -e
-B=http://127.0.0.1:8080
+# Writes to the server on :${PORT:-8080} (adds/toggles/deletes todos) — only run against a throwaway instance.
+[ "$MACHINJS_SMOKE" = 1 ] || { echo "refusing: set MACHINJS_SMOKE=1 to confirm port ${PORT:-8080} is a throwaway server"; exit 2; }
+B=http://127.0.0.1:${PORT:-8080}
 code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 [ "$(code -X POST -d 'title=buy+milk' $B/add)" = 302 ] || { echo "add: want 302"; exit 1; }
 [ "$(code -X POST --data-urlencode 'title=write <b>docs</b>' $B/add)" = 302 ] || { echo "add2: want 302"; exit 1; }

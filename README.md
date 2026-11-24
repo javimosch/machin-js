@@ -11,14 +11,16 @@ written as readable JS, compiled to a native binary.
 
 ## Run it
 
-    ./build.sh && ./todo        # then open http://localhost:8080
+    ./build.sh && ./todo        # then open http://localhost:8080  (PORT=9000 ./todo to change)
 
 Needs `deno`, `machin`, and a C compiler (`cc`). `machweb.src` is read from the machin repo
 (`MACHIN_FRAMEWORK`, default `~/ai/machin/framework`).
 
 ## Read it
 
-Start at `src/routes.js` (`handle`), then `src/store.js` (SQLite) and `src/render.js` (HTML).
+Plain ES modules: every dependency is an `import`, every public function an `export`.
+Builtins come from `"machin"` (typed in `types/machin.d.ts`, generated from `machin guide`),
+the web layer from `"machin/web"`. Start at `src/routes.js` (`handle`), then `src/store.js` (SQLite) and `src/render.js` (HTML).
 Every function is tiny, has a JSDoc block (the types) and a `//why:` line (the intent).
 
 ## Verify it
@@ -26,10 +28,13 @@ Every function is tiny, has a JSDoc block (the types) and a `//why:` line (the i
     test/gate.sh                       # JS->machin == gold; demo native==Deno; HTTP smoke on Deno AND native
     deno test -A test/diag_test.ts     # JS-DOC001 / JS-WHY001 / JS-SIZE001 / JS-UNSUP001 / JS-FNVAL001
 
+The gate serves on its own port (`PORT`, default 18080), never on 8080, and refuses to run if that
+port is busy: the HTTP smoke test adds/toggles/deletes todos, so it must only hit a throwaway server.
+
 Diagnostics fail the run (exit 1) with `file:line: CODE message`.
 
 ## Subset notes (what you can't write yet)
 
 No classes, async, template literals, `??`, `switch`, method calls (`a.push`), object literals,
 `continue` in `for`, or block-bodied arrows. Named functions aren't values in machin: pass
-`(req) => handle(req)`, not `handle` (JS-FNVAL001).
+`(req) => handle(req)`, not `handle` (JS-FNVAL001 / JS-UNDEF001 / JS-IMPORT001 / JS-IMPORT002 / JS-DUP001 / JS-CYCLE001).

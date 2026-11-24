@@ -1,9 +1,12 @@
+import { sqlite_open, sqlite_exec, sqlite_query, parse } from "machin";
+/** @typedef {import("./model.js").Todo} Todo */
+
 /**
  * Open the database and make sure the table exists.
  * @param {string} path SQLite file, or ":memory:".
  * @returns {int} database handle.
  */
-function openStore(path) {
+export function openStore(path) {
   //why: CREATE IF NOT EXISTS makes startup idempotent, so no migration step.
   const db = sqlite_open(path);
   sqlite_exec(db, "CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY, title TEXT, done INTEGER DEFAULT 0)");
@@ -16,7 +19,7 @@ function openStore(path) {
  * @param {string} title
  * @returns {int} sqlite result code, 0 on success.
  */
-function addTodo(db, title) {
+export function addTodo(db, title) {
   //why: bound parameter (?) — never concatenate user text into SQL.
   return sqlite_exec(db, "INSERT INTO todos (title) VALUES (?)", [title]);
 }
@@ -27,7 +30,7 @@ function addTodo(db, title) {
  * @param {int} id
  * @returns {int} sqlite result code, 0 on success.
  */
-function toggleTodo(db, id) {
+export function toggleTodo(db, id) {
   //why: 1 - done flips 0<->1 in SQL, so no read-modify-write race.
   return sqlite_exec(db, "UPDATE todos SET done = 1 - done WHERE id = ?", [String(id)]);
 }
@@ -38,7 +41,7 @@ function toggleTodo(db, id) {
  * @param {int} id
  * @returns {int} sqlite result code, 0 on success.
  */
-function removeTodo(db, id) {
+export function removeTodo(db, id) {
   //why: deleting a missing id is not an error — it is already gone.
   return sqlite_exec(db, "DELETE FROM todos WHERE id = ?", [String(id)]);
 }
@@ -48,7 +51,7 @@ function removeTodo(db, id) {
  * @param {int} db
  * @returns {Todo[]}
  */
-function listTodos(db) {
+export function listTodos(db) {
   //why: parse() decodes the JSON rows straight into Todo[] by column name.
   return parse(sqlite_query(db, "SELECT id, title, done FROM todos ORDER BY id"), []);
 }

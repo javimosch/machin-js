@@ -2,10 +2,13 @@
 //why: one-directional on purpose; machin core is untouched, we only emit text
 //     that `machin encode` already accepts.
 import * as acorn from "npm:acorn@8.14.0";
+import { dirname, basename, resolve } from "jsr:@std/path@1";
 
 export type Diag = { code: string; msg: string; file: string; line: number };
 type Cmt = { block: boolean; text: string; start: number; end: number };
-type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; retElem: string; fns: Set<string> };
+type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; retElem: string; fns: Set<string>; imported: Set<string>; scope: Set<string> };
+type Imp = { source: string; names: string[]; line: number };
+const GLOBALS = new Set(["String", "console"]);
 
 const MAX_LINES = 20;
 const PREC: Record<string, number> = { "||": 1, "&&": 2, "==": 3, "===": 3, "!=": 3, "!==": 3,
@@ -38,8 +41,10 @@ function typedefs(c: Ctx): string[] {
 
 /** The JSDoc block directly above a function, or null. */
 function docOf(c: Ctx, fn: any): string | null {
-  const m = c.cmts.find((x) => x.block && x.text.startsWith("*") && x.end <= fn.start
-    && c.src.slice(x.end, fn.start).trim() === "");
+  //why: for `export function`, the doc sits above the `export` keyword, not the `function` one.
+  const at = fn.docStart ?? fn.start;
+  const m = c.cmts.find((x) => x.block && x.text.startsWith("*") && x.end <= at
+    && c.src.slice(x.end, at).trim() === "");
   return m ? m.text : null;
 }
 
@@ -66,10 +71,12 @@ function expr(c: Ctx, e: any, p = 0): string {
     case "Literal": return typeof e.value === "string" ? str(e.value) : String(e.value);
     case "Identifier":
       //why: machin functions are not values; the typecheck error for this is cryptic, so catch it here.
-      if (c.fns.has(e.name)) return diag(c, "JS-FNVAL001", `${e.name} is a function; pass an arrow: (x) => ${e.name}(x)`, e);
+      if (!c.scope.has(e.name)) return diag(c, "JS-UNDEF001", `${e.name} is not defined or imported`, e);
+      if (c.fns.has(e.name) || c.imported.has(e.name)) return diag(c, "JS-FNVAL001", `${e.name} is a function; pass an arrow: (x) => ${e.name}(x)`, e);
       return e.name;
     case "ArrowFunctionExpression":
       if (e.body.type === "BlockStatement") return diag(c, "JS-UNSUP001", "arrow with block body unsupported; use an expression body", e);
+      e.params.forEach((x: any) => c.scope.add(x.name));
       return `func(${e.params.map((x: any) => x.name).join(", ")}) { return ${expr(c, e.body)} }`;
     case "MemberExpression":
       if (!e.computed && e.property.name === "length") return `len(${expr(c, e.object)})`;
@@ -97,6 +104,8 @@ function call(c: Ctx, e: any): string {
   let name = f.type === "Identifier" ? f.name : "";
   if (f.type === "MemberExpression" && f.object.name === "console" && f.property.name === "log") name = "println";
   if (!name) return diag(c, "JS-UNSUP001", "only plain function calls are supported", e);
+  if (!c.scope.has(name) && !GLOBALS.has(name) && name !== "println")
+    return diag(c, "JS-UNDEF001", `${name} is not defined or imported`, e);
   if (name === "String") name = "str";
   const args = e.arguments.map((a: any) => expr(c, a));
   //why: `parse(x, [])` needs a typed witness; it comes from the function's @returns.
@@ -167,8 +176,18 @@ function returnsValue(n: any): boolean {
   return Object.values(n).some((v) => Array.isArray(v) ? v.some(returnsValue) : returnsValue(v));
 }
 
+/** Collect every `const`/`let` name declared anywhere inside n. */
+function locals(n: any, out: Set<string>): Set<string> {
+  if (!n || typeof n !== "object") return out;
+  if (n.type === "VariableDeclarator") out.add(n.id.name);
+  for (const v of Object.values(n)) Array.isArray(v) ? v.forEach((x) => locals(x, out)) : locals(v, out);
+  return out;
+}
+
 /** Emit a function declaration. */
 function func(c: Ctx, fn: any): string[] {
+  //why: a name is visible only if declared here, in this module, or imported — no ambient globals.
+  c.scope = new Set([...c.fns, ...c.imported, ...fn.params.map((p: any) => p.name), ...locals(fn.body, new Set())]);
   const doc = docOf(c, fn);
   lint(c, fn, doc);
   c.retElem = doc ? retElem(doc) : "";
@@ -177,30 +196,88 @@ function func(c: Ctx, fn: any): string[] {
   return [`func ${fn.id.name}(${ps})${res} {`, ...block(c, fn.body), "}", ""];
 }
 
-/** Transpile one JS source file. */
-export function transpile(file: string, src: string): { out: string; diags: Diag[] } {
+export type Mod = { out: string; diags: Diag[]; imports: Imp[]; exports: Set<string>; fns: Set<string>; deps: string[] };
+
+/** Transpile one JS source file (an ES module). */
+export function transpile(file: string, src: string): Mod {
   const cmts: Cmt[] = [];
-  const ast: any = acorn.parse(src, { ecmaVersion: "latest", sourceType: "script", locations: true,
+  const ast: any = acorn.parse(src, { ecmaVersion: "latest", sourceType: "module", locations: true,
     onComment: (block: boolean, text: string, start: number, end: number) => cmts.push({ block, text, start, end }) });
-  const fns = new Set<string>(ast.body.filter((n: any) => n.type === "FunctionDeclaration").map((n: any) => n.id.name));
-  const c: Ctx = { file, src, cmts, diags: [], retElem: "", fns };
-  const lines = [...typedefs(c)];
+  const imports: Imp[] = [], exports = new Set<string>(), decls: any[] = [], imported = new Set<string>();
   for (const n of ast.body) {
+    if (n.type === "ImportDeclaration") {
+      imports.push({ source: n.source.value, names: n.specifiers.map((x: any) => x.imported.name), line: n.loc.start.line });
+      n.specifiers.forEach((x: any) => imported.add(x.local.name));
+    } else if (n.type === "ExportNamedDeclaration" && n.declaration?.type === "FunctionDeclaration") {
+      exports.add(n.declaration.id.name); n.declaration.docStart = n.start; decls.push(n.declaration);
+    } else decls.push(n);
+  }
+  const fns = new Set<string>(decls.filter((n) => n.type === "FunctionDeclaration").map((n) => n.id.name));
+  const c: Ctx = { file, src, cmts, diags: [], retElem: "", fns, imported, scope: new Set() };
+  const lines = [...typedefs(c)];
+  for (const n of decls) {
     if (n.type === "FunctionDeclaration") lines.push(...func(c, n));
     else lines.push(diag(c, "JS-UNSUP001", `top-level ${n.type} unsupported`, n));
   }
-  return { out: lines.join("\n").trimEnd() + "\n", diags: c.diags };
+  //why: `@typedef {import("./model.js").Todo} Todo` is the JS way to name a type from another file;
+  //     it also tells us the dependency, so type-only modules (model.js) still get emitted.
+  const deps = cmts.filter((x) => x.block).flatMap((x) => [...x.text.matchAll(/import\(["'](\.[^"']+)["']\)/g)].map((m) => m[1]));
+  return { out: lines.join("\n").trimEnd() + "\n", diags: c.diags, imports, exports, fns, deps };
+}
+
+/** Names exported by the hand-kept `machin/web` typings. */
+async function webNames(): Promise<Set<string>> {
+  const t = await Deno.readTextFile(new URL("../types/machweb.d.ts", import.meta.url));
+  return new Set([...t.matchAll(/export (?:function|type) (\w+)/g)].map((m) => m[1]));
+}
+
+/** Follow imports from `entry`; return modules in dependency order, plus every diagnostic. */
+export async function buildGraph(entry: string): Promise<{ order: { path: string; out: string }[]; diags: Diag[] }> {
+  const builtins = new Set<string>(JSON.parse(await Deno.readTextFile(new URL("../types/machin-builtins.json", import.meta.url))));
+  const web = await webNames();
+  const mods = new Map<string, Mod>(), order: { path: string; out: string }[] = [], diags: Diag[] = [];
+  const stack: string[] = [];
+  const add = (file: string, line: number, code: string, msg: string) => diags.push({ code, msg, file, line });
+
+  async function visit(path: string, from?: string) {
+    if (mods.has(path)) return;
+    if (stack.includes(path)) return add(from ?? path, 1, "JS-CYCLE001", `import cycle: ${[...stack, path].map((p) => basename(p)).join(" -> ")}`);
+    stack.push(path);
+    const m = transpile(path, await Deno.readTextFile(path));
+    diags.push(...m.diags);
+    const rel = (src: string) => resolve(dirname(path), src);
+    const relative = [...m.imports.filter((i) => i.source.startsWith(".")).map((i) => i.source), ...m.deps];
+    for (const src of relative) await visit(rel(src), path);
+    for (const i of m.imports) check(path, i, m);
+    mods.set(path, m); order.push({ path, out: m.out });
+    stack.pop();
+  }
+  /** Validate one import: the module exists and exports every name asked for. */
+  function check(path: string, i: Imp, _m: Mod) {
+    const known = i.source === "machin" ? builtins : i.source === "machin/web" ? web
+      : i.source.startsWith(".") ? mods.get(resolve(dirname(path), i.source))?.exports : null;
+    if (!known) return add(path, i.line, "JS-IMPORT002", `unknown module "${i.source}"`);
+    for (const n of i.names) if (!known.has(n)) add(path, i.line, "JS-IMPORT001", `"${i.source}" has no export ${n}`);
+  }
+  await visit(resolve(entry));
+  //why: machin has one flat namespace, so two modules defining the same function name would clash.
+  const seen = new Map<string, string>();
+  for (const [p, m] of mods) for (const f of m.fns) {
+    if (seen.has(f)) add(p, 1, "JS-DUP001", `function ${f} is also defined in ${basename(seen.get(f)!)} (machin has one namespace)`);
+    seen.set(f, p);
+  }
+  return { order, diags };
 }
 
 if (import.meta.main) {
-  //why: CLI = `transpile out_dir file.js...`; any diagnostic fails the run (exit 1).
-  const [outDir, ...files] = Deno.args;
+  //why: CLI = `transpile out_dir entry.js`; writes one .src per module in dependency order
+  //     plus order.txt; any diagnostic fails the run (exit 1).
+  const [outDir, entry] = Deno.args;
   await Deno.mkdir(outDir, { recursive: true });
-  let bad = 0;
-  for (const f of files) {
-    const r = transpile(f, await Deno.readTextFile(f));
-    r.diags.forEach((d) => { bad++; console.error(`${d.file}:${d.line}: ${d.code} ${d.msg}`); });
-    await Deno.writeTextFile(`${outDir}/${f.split("/").pop()!.replace(/\.js$/, ".src")}`, r.out);
-  }
-  Deno.exit(bad ? 1 : 0);
+  const { order, diags } = await buildGraph(entry);
+  diags.forEach((d) => console.error(`${d.file}:${d.line}: ${d.code} ${d.msg}`));
+  const names = order.map((o) => basename(o.path).replace(/\.js$/, ""));
+  for (const [i, o] of order.entries()) await Deno.writeTextFile(`${outDir}/${names[i]}.src`, o.out);
+  await Deno.writeTextFile(`${outDir}/order.txt`, names.join("\n") + "\n");
+  Deno.exit(diags.length ? 1 : 0);
 }

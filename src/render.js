@@ -1,3 +1,6 @@
+import { replace } from "machin";
+/** @typedef {import("./model.js").Todo} Todo */
+
 /**
  * Escape text for safe inclusion in HTML.
  * @param {string} s
@@ -13,7 +16,7 @@ function escapeHtml(s) {
  * @param {Todo} t
  * @returns {string}
  */
-function renderLine(t) {
+export function renderLine(t) {
   //why: a text form lets the CLI demo and tests avoid HTML parsing.
   const mark = t.done == 1 ? "[x]" : "[ ]";
   return mark + " " + String(t.id) + " " + t.title;
@@ -56,7 +59,7 @@ function renderStyle() {
  * @param {Todo[]} todos
  * @returns {string}
  */
-function renderPage(todos) {
+export function renderPage(todos) {
   //why: server-side rendering keeps the pilot free of wasm and a client build.
   const form = "<form method=\"post\" action=\"/add\"><input name=\"title\" placeholder=\"what needs doing?\"><button>add</button></form>";
   let items = "";

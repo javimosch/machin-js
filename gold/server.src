@@ -1,3 +1,6 @@
 func main() {
-    serve(8080, func(req) { return handle(req) })
+    fromEnv := parse_int(env("PORT"))
+    port := fromEnv
+    if fromEnv == 0 { port = 8080 }
+    serve(port, func(req) { return handle(req) })
 }

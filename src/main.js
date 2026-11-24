@@ -1,3 +1,7 @@
+import { sqlite_close } from "machin";
+import { openStore, addTodo, toggleTodo, removeTodo, listTodos } from "./store.js";
+import { renderLine, renderPage } from "./render.js";
+
 /**
  * Print every todo, one per line.
  * @param {Todo[]} todos
@@ -14,7 +18,7 @@ function printAll(todos) {
  * Demo: exercise the store end to end against an in-memory database.
  * @returns {void}
  */
-function main() {
+export function main() {
   //why: in-memory so the demo leaves no file behind and runs anywhere.
   const db = openStore(":memory:");
   addTodo(db, "buy milk");

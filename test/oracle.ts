@@ -1,12 +1,5 @@
-// Oracle: run src/*.js under Deno with the shim; print stdout for diffing with gold/expected.txt.
-const dir = new URL("../", import.meta.url);
-const order = ["store", "render", "main"];
-let code = `import * as m from "${new URL("shim/machin.js", dir).href}";\n`;
-code += "const {sqlite_open,sqlite_exec,sqlite_query,sqlite_close,parse,replace}=m;\n";
-for (const f of order) code += await Deno.readTextFile(new URL(`src/${f}.js`, dir)) + "\n";
-code += "main();\n";
-const tmp = await Deno.makeTempFile({ suffix: ".mjs" });
-await Deno.writeTextFile(tmp, code);
-const out = await new Deno.Command("deno", { args: ["run", "-A", tmp] }).output();
-await Deno.stdout.write(out.stdout);
-Deno.exit(out.code);
+// Oracle: run the demo (src/main.js) under Deno, as real ES modules, against the shim.
+//why: "machin" resolves to shim/machin.js via deno.json's import map — the same import
+//     lines the transpiler checks, so source files need no test-only edits.
+import { main } from "../src/main.js";
+main();
