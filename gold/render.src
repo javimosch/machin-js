@@ -19,6 +19,10 @@ func renderItem(t) (r) {
     return "<li class=\"" + cls + "\">" + toggle + renderButton("/delete/" + str(t.id), "x") + "</li>"
 }
 
+func renderStyle() (r) {
+    return "<style>body{font:16px sans-serif;max-width:28rem;margin:2rem auto}ul{padding:0;list-style:none}li{display:flex;gap:.5rem}li form:first-child{flex:1}li form:first-child button{width:100%;text-align:left}.done form:first-child button{text-decoration:line-through;color:#888}</style>"
+}
+
 func renderPage(todos) (r) {
     form := "<form method=\"post\" action=\"/add\"><input name=\"title\" placeholder=\"what needs doing?\"><button>add</button></form>"
     items := ""
@@ -27,5 +31,5 @@ func renderPage(todos) (r) {
         items = items + renderItem(todos[i])
     i = i + 1
     }
-    return "<!doctype html><title>todos</title><h1>todos</h1>" + form + "<ul>" + items + "</ul>"
+    return "<!doctype html><title>todos</title>" + renderStyle() + "<h1>todos</h1>" + form + "<ul>" + items + "</ul>"
 }

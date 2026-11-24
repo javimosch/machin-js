@@ -2,4 +2,4 @@
 [ ] 2 write <b>docs</b>
 -- after remove --
 [x] 1 buy milk
-<!doctype html><title>todos</title><h1>todos</h1><form method="post" action="/add"><input name="title" placeholder="what needs doing?"><button>add</button></form><ul><li class="done"><form method="post" action="/toggle/1"><button>buy milk</button></form><form method="post" action="/delete/1"><button>x</button></form></li></ul>
+<!doctype html><title>todos</title><style>body{font:16px sans-serif;max-width:28rem;margin:2rem auto}ul{padding:0;list-style:none}li{display:flex;gap:.5rem}li form:first-child{flex:1}li form:first-child button{width:100%;text-align:left}.done form:first-child button{text-decoration:line-through;color:#888}</style><h1>todos</h1><form method="post" action="/add"><input name="title" placeholder="what needs doing?"><button>add</button></form><ul><li class="done"><form method="post" action="/toggle/1"><button>buy milk</button></form><form method="post" action="/delete/1"><button>x</button></form></li></ul>

@@ -43,6 +43,15 @@ function renderItem(t) {
 }
 
 /**
+ * The page stylesheet: a narrow centered column, done items struck through.
+ * @returns {string}
+ */
+function renderStyle() {
+  //why: inline <style> keeps the app one binary with no static-file serving.
+  return "<style>body{font:16px sans-serif;max-width:28rem;margin:2rem auto}ul{padding:0;list-style:none}li{display:flex;gap:.5rem}li form:first-child{flex:1}li form:first-child button{width:100%;text-align:left}.done form:first-child button{text-decoration:line-through;color:#888}</style>";
+}
+
+/**
  * The whole todo list as an HTML page, with an add form on top.
  * @param {Todo[]} todos
  * @returns {string}
@@ -54,5 +63,5 @@ function renderPage(todos) {
   for (let i = 0; i < todos.length; i++) {
     items = items + renderItem(todos[i]);
   }
-  return "<!doctype html><title>todos</title><h1>todos</h1>" + form + "<ul>" + items + "</ul>";
+  return "<!doctype html><title>todos</title>" + renderStyle() + "<h1>todos</h1>" + form + "<ul>" + items + "</ul>";
 }
