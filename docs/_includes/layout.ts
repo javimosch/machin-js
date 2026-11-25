@@ -6,7 +6,7 @@ const NAV: [string, [string, string][]][] = [
   ["Learn", [["/getting-started/", "Getting started"], ["/tutorial/", "Reading the todo app"]]],
   ["Reference", [["/language/", "The JavaScript you can write"], ["/diagnostics/", "Diagnostics"], ["/modules/", "Modules"]]],
   ["Under the hood", [["/how-it-works/", "How it works"], ["/troubleshooting/", "Troubleshooting"]]],
-  ["Project", [["/VISION/", "Vision"], ["/NORTH-STAR/", "North star"]]],
+  ["Project", [["/VISION/", "Vision"], ["/NORTH-STAR/", "North star"], ["/ROADMAP/", "Roadmap"]]],
 ];
 const PAGES = NAV.flatMap(([, links]) => links);
 

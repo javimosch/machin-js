@@ -10,5 +10,6 @@ SRCS=$(for f in $(cat build-desktop/order.txt); do echo "build-desktop/$f.src"; 
 machin encode $(cat build-desktop/native.txt) $SRCS \
   | sed "s#header \"raylib.h\"#cflags \"-I$RL/include -L$RL/lib\" header \"raylib.h\"#; s#link \"raylib\"#link \":libraylib.a\"#" \
   > build-desktop/todo.mfl
-machin build build-desktop/todo.mfl -o todo-desktop
+# --safe: an out-of-bounds read stops the program instead of returning a silent empty value
+machin build build-desktop/todo.mfl -o todo-desktop --safe
 echo "built ./todo-desktop  (run it from a terminal; needs a display)"

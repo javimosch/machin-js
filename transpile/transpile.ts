@@ -11,8 +11,12 @@ type Imp = { source: string; names: string[]; line: number };
 const GLOBALS = new Set(["String", "console"]);
 
 const MAX_LINES = 20;
-const PREC: Record<string, number> = { "||": 1, "&&": 2, "==": 3, "===": 3, "!=": 3, "!==": 3,
-  "<": 4, ">": 4, "<=": 4, ">=": 4, "+": 5, "-": 5, "*": 6, "/": 6, "%": 6 };
+//why: allow-list — only operators proven to mean the same in both languages. `/` is absent
+//     because machin divides integers (7 / 2 == 3). All comparisons share one level so that
+//     parentheses survive: machin ranks == and < equally, JavaScript does not.
+const PREC: Record<string, number> = { "||": 1, "&&": 2, "==": 4, "===": 4, "!=": 4, "!==": 4,
+  "<": 4, ">": 4, "<=": 4, ">=": 4, "+": 5, "-": 5, "*": 6, "%": 6 };
+const ASSIGN = new Set(["=", "+=", "-=", "*=", "%="]);
 
 /** Record a diagnostic at a node's line. */
 function diag(c: Ctx, code: string, msg: string, n: any): string {
@@ -24,7 +28,7 @@ function diag(c: Ctx, code: string, msg: string, n: any): string {
 /** MFL string literal for a JS string value. */
 function str(v: string): string {
   //why: built from the value, not the raw source, so JS escapes can't leak through.
-  return '"' + v.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n") + '"';
+  return '"' + v.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t") + '"';
 }
 
 /** Emit `{a: int, b: string}` typedefs found in any block comment as structs. */
@@ -65,10 +69,25 @@ function lint(c: Ctx, fn: any, doc: string | null) {
   if (n > MAX_LINES) diag(c, "JS-SIZE001", `function ${fn.id.name} is ${n} lines (max ${MAX_LINES})`, fn);
 }
 
+/** Emit a literal, rejecting the kinds that would behave differently natively. */
+function literal(c: Ctx, e: any): string {
+  if (typeof e.value === "boolean") return String(e.value);
+  if (typeof e.value === "number") {
+    //why: machin integers are exact int64; floats print differently and huge values round in JS.
+    return Number.isSafeInteger(e.value) && /^\d+$/.test(e.raw) ? String(e.value)
+      : diag(c, "JS-NUM001", `only plain whole numbers up to 2^53-1 are supported, not ${e.raw}`, e);
+  }
+  if (typeof e.value !== "string") return diag(c, "JS-UNSUP001", `literal ${e.raw} unsupported`, e);
+  //why: machin strings are bytes, JS strings are UTF-16: length and slicing differ beyond ASCII.
+  if (!/^[\x20-\x7e\n\t]*$/.test(e.value))
+    return diag(c, "JS-STR001", "string literals must be printable ASCII (plus \\n and \\t)", e);
+  return str(e.value);
+}
+
 /** Emit an expression; `p` is the parent's precedence, for minimal parens. */
 function expr(c: Ctx, e: any, p = 0): string {
   switch (e.type) {
-    case "Literal": return typeof e.value === "string" ? str(e.value) : String(e.value);
+    case "Literal": return literal(c, e);
     case "Identifier":
       //why: machin functions are not values; the typecheck error for this is cryptic, so catch it here.
       if (!c.scope.has(e.name)) return diag(c, "JS-UNDEF001", `${e.name} is not defined or imported`, e);
@@ -76,23 +95,29 @@ function expr(c: Ctx, e: any, p = 0): string {
       return e.name;
     case "ArrowFunctionExpression":
       if (e.body.type === "BlockStatement") return diag(c, "JS-UNSUP001", "arrow with block body unsupported; use an expression body", e);
-      e.params.forEach((x: any) => c.scope.add(x.name));
-      return `func(${e.params.map((x: any) => x.name).join(", ")}) { return ${expr(c, e.body)} }`;
+      if (e.async) return diag(c, "JS-UNSUP001", "async is not supported", e);
+      return scoped(c, () => {
+        const ps = e.params.map((x: any) => declare(c, x));
+        return `func(${ps.join(", ")}) { return ${expr(c, e.body)} }`;
+      });
     case "MemberExpression":
       if (!e.computed && e.property.name === "length") return `len(${expr(c, e.object)})`;
       return e.computed ? `${expr(c, e.object)}[${expr(c, e.property)}]` : `${expr(c, e.object)}.${e.property.name}`;
-    case "UnaryExpression": return `${e.operator}${expr(c, e.argument, 9)}`;
+    case "UnaryExpression":
+      if (e.operator !== "!" && e.operator !== "-") return diag(c, "JS-UNSUP001", `operator ${e.operator} unsupported`, e);
+      return `${e.operator}${expr(c, e.argument, 9)}`;
     case "BinaryExpression": case "LogicalExpression": {
       const q = PREC[e.operator];
+      if (e.operator === "/") return diag(c, "JS-NUM002", "/ is not supported yet: machin integer division drops the fraction", e);
       if (!q) return diag(c, "JS-UNSUP001", `operator ${e.operator} unsupported`, e);
       const op = e.operator === "===" ? "==" : e.operator === "!==" ? "!=" : e.operator;
       const s = `${expr(c, e.left, q)} ${op} ${expr(c, e.right, q + 1)}`;
       return q < p ? `(${s})` : s;
     }
-    case "ArrayExpression": {
-      const t = e.elements[0]?.type === "Literal" ? "string" : e.elements[0] ? "string" : "string";
-      return `[]${t}{${e.elements.map((x: any) => expr(c, x)).join(", ")}}`;
-    }
+    case "ArrayExpression":
+      if (e.elements.some((x: any) => !x || (x.type === "Literal" && typeof x.value !== "string")))
+        return diag(c, "JS-UNSUP001", "only arrays of strings are supported", e);
+      return `[]string{${e.elements.map((x: any) => expr(c, x)).join(", ")}}`;
     case "CallExpression": return call(c, e);
     default: return diag(c, "JS-UNSUP001", `${e.type} unsupported`, e);
   }
@@ -116,20 +141,66 @@ function call(c: Ctx, e: any): string {
 /** Emit one statement as lines. */
 function stmt(c: Ctx, s: any): string[] {
   switch (s.type) {
-    case "VariableDeclaration": return s.declarations.flatMap((d: any) => decl(c, d));
+    case "VariableDeclaration":
+      if (s.kind !== "const" && s.kind !== "let") {
+        s.declarations.forEach((d: any) => names(d.id).forEach((n) => c.scope.add(n)));
+        return [diag(c, "JS-UNSUP001", `use const or let, not ${s.kind}`, s)];
+      }
+      return s.declarations.flatMap((d: any) => decl(c, d));
     case "ExpressionStatement": return [assignOrExpr(c, s.expression)];
     case "ReturnStatement": return [s.argument ? `return ${expr(c, s.argument)}` : "return"];
     case "IfStatement": return ifs(c, s);
     case "WhileStatement": return [`while ${expr(c, s.test)} {`, ...block(c, s.body), "}"];
     case "ForStatement": return forLoop(c, s);
-    case "BreakStatement": return ["break"];
+    case "BreakStatement": return s.label ? [diag(c, "JS-UNSUP001", "labels are not supported", s)] : ["break"];
     default: return [diag(c, "JS-UNSUP001", `${s.type} unsupported`, s)];
   }
 }
 
+/** Run `fn` in a nested lexical scope: names it declares vanish afterwards. */
+function scoped<T>(c: Ctx, fn: () => T): T {
+  const outer = c.scope;
+  c.scope = new Set(outer);
+  try {
+    return fn();
+  } finally {
+    c.scope = outer;
+  }
+}
+
+/** Every identifier in a binding pattern — used so one rejection doesn't cascade into more. */
+function names(n: any): string[] {
+  if (!n || typeof n !== "object") return [];
+  if (n.type === "Identifier") return [n.name];
+  return Object.values(n).flatMap((v) => Array.isArray(v) ? v.flatMap(names) : names(v));
+}
+
+/** Declare a plain name in the current scope. */
+function declare(c: Ctx, id: any): string {
+  if (id.type !== "Identifier") {
+    names(id).forEach((n) => c.scope.add(n));
+    return diag(c, "JS-UNSUP001", "destructuring, defaults and rest are not supported", id);
+  }
+  //why: machin has one scope per function, so a shadowing name would overwrite the outer one.
+  if (c.scope.has(id.name)) diag(c, "JS-SCOPE001", `${id.name} is already visible here; use another name`, id);
+  c.scope.add(id.name);
+  return id.name;
+}
+
 /** `const x = v`, with `c ? a : b` lowered to init-else-then-override. */
 function decl(c: Ctx, d: any): string[] {
-  const name = d.id.name;
+  if (!d.init) {
+    declare(c, d.id);
+    return [diag(c, "JS-UNSUP001", "a variable needs an initial value", d)];
+  }
+  if (d.id.type !== "Identifier") return [declare(c, d.id)];
+  const out = declValue(c, d, d.id.name);
+  declare(c, d.id);
+  return out;
+}
+
+/** The lines that give `name` its initial value (emitted before the name becomes visible). */
+function declValue(c: Ctx, d: any, name: string): string[] {
   if (d.init?.type !== "ConditionalExpression") return [`${name} := ${expr(c, d.init)}`];
   const k = d.init;
   //why: else-branch is evaluated eagerly, so it must be a literal or identifier.
@@ -141,8 +212,14 @@ function decl(c: Ctx, d: any): string[] {
 /** Assignments (`=`, `+=`, `++`) or a bare call. */
 function assignOrExpr(c: Ctx, e: any): string {
   if (e.type === "AssignmentExpression") {
+    if (!ASSIGN.has(e.operator)) return diag(c, "JS-UNSUP001", `operator ${e.operator} unsupported`, e);
+    //why: machin copies structs where JS shares them, so changing a field would silently diverge.
+    if (e.left.type === "MemberExpression" && !e.left.computed)
+      return diag(c, "JS-UNSUP001", "assigning to an object field is not supported", e);
     const t = expr(c, e.left);
-    return e.operator === "=" ? `${t} = ${expr(c, e.right)}` : `${t} = ${t} ${e.operator[0]} ${expr(c, e.right, 5)}`;
+    const op = e.operator[0];
+    //why: `x *= a + b` must become `x = x * (a + b)`, so the right side binds tighter than op.
+    return e.operator === "=" ? `${t} = ${expr(c, e.right)}` : `${t} = ${t} ${op} ${expr(c, e.right, PREC[op] + 1)}`;
   }
   if (e.type === "UpdateExpression") return `${expr(c, e.argument)} = ${expr(c, e.argument)} ${e.operator[0]} 1`;
   return expr(c, e);
@@ -158,15 +235,18 @@ function ifs(c: Ctx, s: any): string[] {
 /** `for(init;test;update)` -> init + while with the update appended. */
 function forLoop(c: Ctx, s: any): string[] {
   //why: machin has only `while`; `continue` is rejected since it would skip the update.
-  const body = block(c, s.body);
-  if (body.some((l) => l.trim() === "continue")) return [diag(c, "JS-UNSUP001", "continue inside for", s)];
-  return [...stmt(c, s.init), `while ${expr(c, s.test)} {`, ...body, assignOrExpr(c, s.update), "}"];
+  if (!s.init || !s.test || !s.update) return [diag(c, "JS-UNSUP001", "for needs init, test and update", s)];
+  return scoped(c, () => {
+    const init = s.init.type === "VariableDeclaration" ? stmt(c, s.init) : [assignOrExpr(c, s.init)];
+    const test = expr(c, s.test);
+    return [...init, `while ${test} {`, ...block(c, s.body), assignOrExpr(c, s.update), "}"];
+  });
 }
 
 /** Statements of a block or single statement, indented. */
 function block(c: Ctx, b: any): string[] {
   const list = b.type === "BlockStatement" ? b.body : [b];
-  return list.flatMap((x: any) => stmt(c, x)).map((l: string) => "    " + l);
+  return scoped(c, () => list.flatMap((x: any) => stmt(c, x)).map((l: string) => "    " + l));
 }
 
 /** Does the function return a value anywhere? */
@@ -176,24 +256,45 @@ function returnsValue(n: any): boolean {
   return Object.values(n).some((v) => Array.isArray(v) ? v.some(returnsValue) : returnsValue(v));
 }
 
-/** Collect every `const`/`let` name declared anywhere inside n. */
-function locals(n: any, out: Set<string>): Set<string> {
-  if (!n || typeof n !== "object") return out;
-  if (n.type === "VariableDeclarator") out.add(n.id.name);
-  for (const v of Object.values(n)) Array.isArray(v) ? v.forEach((x) => locals(x, out)) : locals(v, out);
-  return out;
+/** Does every path through this statement end in `return`? */
+function alwaysReturns(n: any): boolean {
+  if (!n) return false;
+  if (n.type === "ReturnStatement") return true;
+  if (n.type === "BlockStatement") return n.body.some(alwaysReturns);
+  return n.type === "IfStatement" && alwaysReturns(n.consequent) && alwaysReturns(n.alternate);
+}
+
+/** Is there a `return;` without a value anywhere inside n? */
+function bareReturn(n: any): boolean {
+  if (!n || typeof n !== "object") return false;
+  if (n.type === "ReturnStatement") return !n.argument;
+  return Object.values(n).some((v) => Array.isArray(v) ? v.some(bareReturn) : bareReturn(v));
 }
 
 /** Emit a function declaration. */
 function func(c: Ctx, fn: any): string[] {
   //why: a name is visible only if declared here, in this module, or imported — no ambient globals.
-  c.scope = new Set([...c.fns, ...c.imported, ...fn.params.map((p: any) => p.name), ...locals(fn.body, new Set())]);
+  c.scope = new Set([...c.fns, ...c.imported]);
+  if (fn.async || fn.generator) diag(c, "JS-UNSUP001", "async functions and generators are not supported", fn);
+  const params = fn.params.map((p: any) => declare(c, p));
   const doc = docOf(c, fn);
   lint(c, fn, doc);
   c.retElem = doc ? retElem(doc) : "";
-  const res = returnsValue(fn.body) ? " (r)" : "";
-  const ps = fn.params.map((p: any) => p.name).join(", ");
-  return [`func ${fn.id.name}(${ps})${res} {`, ...block(c, fn.body), "}", ""];
+  const valued = returnsValue(fn.body);
+  //why: a missing return is `undefined` in JS but a silent zero value in machin.
+  if (valued && (bareReturn(fn.body) || !alwaysReturns(fn.body)))
+    diag(c, "JS-RET001", `${fn.id.name} returns a value, so every path must return one`, fn);
+  const res = valued ? " (r)" : "";
+  return [`func ${fn.id.name}(${params.join(", ")})${res} {`, ...block(c, fn.body), "}", ""];
+}
+
+/** Emit a function; a transpiler bug becomes a diagnostic instead of a stack trace. */
+function guarded(c: Ctx, fn: any): string[] {
+  try {
+    return func(c, fn);
+  } catch (err) {
+    return [diag(c, "JS-INTERNAL001", `transpiler bug, please report it: ${(err as Error).message}`, fn)];
+  }
 }
 
 export type Mod = { out: string; diags: Diag[]; imports: Imp[]; exports: Set<string>; fns: Set<string>; deps: string[] };
@@ -205,7 +306,9 @@ export function transpile(file: string, src: string): Mod {
     onComment: (block: boolean, text: string, start: number, end: number) => cmts.push({ block, text, start, end }) });
   const imports: Imp[] = [], exports = new Set<string>(), decls: any[] = [], imported = new Set<string>();
   for (const n of ast.body) {
-    if (n.type === "ImportDeclaration") {
+    if (n.type === "ImportDeclaration" && n.specifiers.some((x: any) => x.type !== "ImportSpecifier" || x.imported.name !== x.local.name)) {
+      decls.push({ type: "default, namespace or renamed import", loc: n.loc });
+    } else if (n.type === "ImportDeclaration") {
       imports.push({ source: n.source.value, names: n.specifiers.map((x: any) => x.imported.name), line: n.loc.start.line });
       n.specifiers.forEach((x: any) => imported.add(x.local.name));
     } else if (n.type === "ExportNamedDeclaration" && n.declaration?.type === "FunctionDeclaration") {
@@ -216,7 +319,7 @@ export function transpile(file: string, src: string): Mod {
   const c: Ctx = { file, src, cmts, diags: [], retElem: "", fns, imported, scope: new Set() };
   const lines = [...typedefs(c)];
   for (const n of decls) {
-    if (n.type === "FunctionDeclaration") lines.push(...func(c, n));
+    if (n.type === "FunctionDeclaration") lines.push(...guarded(c, n));
     else lines.push(diag(c, "JS-UNSUP001", `top-level ${n.type} unsupported`, n));
   }
   //why: `@typedef {import("./model.js").Todo} Todo` is the JS way to name a type from another file;

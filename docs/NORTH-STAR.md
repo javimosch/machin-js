@@ -5,6 +5,7 @@
 
 See [VISION.md](VISION.md) for the why. This file is the measurable target and the gap roadmap.
 Status reflects what is **verified in this repo today**, nothing aspirational.
+The order of work toward 1.0, with exit tests, is in [ROADMAP.md](ROADMAP.md).
 
 ## How we know we are getting there
 

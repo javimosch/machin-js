@@ -24,7 +24,7 @@ export function shell(o: { title: string; kind: string; body: string; menu?: boo
   ${menu}
   <a class="brand" href="/"><img src="/assets/logo.svg" alt="" width="30" height="30">machin-js</a>
   <span class="badge">alpha</span>
-  <nav class="toplinks" aria-label="Site"><a href="/getting-started/">Docs</a><a href="/NORTH-STAR/">Roadmap</a><a href="${REPO}">GitHub</a></nav>
+  <nav class="toplinks" aria-label="Site"><a href="/getting-started/">Docs</a><a href="/ROADMAP/">Roadmap</a><a href="${REPO}">GitHub</a></nav>
 </header>
 ${o.body}
 </body>

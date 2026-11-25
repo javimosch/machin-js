@@ -22,6 +22,7 @@ added. `"machin/desktop"` has none.
 | Check | What it shows |
 |---|---|
 | `deno test -A test/` | diagnostics fire, and the docs' marked examples behave as stated |
+| parity cases (`test/parity_test.ts`) | each tricky program behaves natively as under Deno, or is rejected with the expected code |
 | gold comparison | transpiler output has not changed unexpectedly |
 | demo, Deno and native | both produce the same output |
 | HTTP smoke test, Deno and native | the same requests give the expected results on both |

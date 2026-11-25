@@ -109,3 +109,77 @@ private helpers.
 ## JS-CYCLE001: import cycle
 
 Move the shared code into a third module that both can import.
+
+## JS-NUM001: unsupported number
+
+<!-- check: JS-NUM001 -->
+```js
+/** Example. */
+function f(a) {
+  //why: example.
+  return 1.5;
+}
+```
+
+Only whole numbers up to 2^53-1. Decimals print differently natively.
+
+## JS-NUM002: division is not supported yet
+
+<!-- check: JS-NUM002 -->
+```js
+/** Example. */
+function f(a) {
+  //why: example.
+  return a / 2;
+}
+```
+
+machin divides integers, so `7 / 2` would be `3`. It returns once the transpiler knows types.
+
+## JS-STR001: string literal is not plain ASCII
+
+<!-- check: JS-STR001 -->
+```js
+/** Example. */
+function f(a) {
+  //why: example.
+  return "héllo";
+}
+```
+
+machin counts bytes and JavaScript counts UTF-16 units. Printable ASCII, `\n` and `\t` are allowed.
+
+## JS-SCOPE001: name is already visible
+
+<!-- check: JS-SCOPE001 -->
+```js
+/** Example. */
+function f(a) {
+  //why: example.
+  if (a == 1) {
+    const a = 2;
+    console.log(a);
+  }
+}
+```
+
+machin has one scope per function, so an inner name would overwrite the outer one. Rename it. Two loops one after the other may both use `i`.
+
+## JS-RET001: not every path returns a value
+
+<!-- check: JS-RET001 -->
+```js
+/** Example. */
+function f(a) {
+  //why: example.
+  if (a == 1) {
+    return 5;
+  }
+}
+```
+
+JavaScript would return `undefined`; machin would silently return `0` or `""`. End with a `return`, or return on both sides of an `if` / `else`.
+
+## JS-INTERNAL001: transpiler bug
+
+The transpiler failed on your code. Please [report it](https://github.com/javimosch/machin-js/issues) with the snippet.

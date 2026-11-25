@@ -19,9 +19,9 @@ machin encode $(cat "$T/srv/native.txt") $(glist "$T/srv") > "$T/g.mfl"; machin 
 diff "$T/g.mfl" "$T/o.mfl" >/dev/null || { echo "server gold mismatch"; exit 1; }
 echo "canonical MFL identical to gold"
 machin encode $(list "$T/demo") > "$T/demo.mfl"
-machin run "$T/demo.mfl" | diff - gold/expected.txt && echo "demo: native output matches"
+machin run "$T/demo.mfl" --safe | diff - gold/expected.txt && echo "demo: native output matches"
 deno run -A test/oracle.ts | diff - gold/expected.txt && echo "demo: Deno oracle matches"
-machin build "$T/o.mfl" -o "$T/srvbin" >/dev/null
+machin build "$T/o.mfl" -o "$T/srvbin" --safe >/dev/null
 check() { mkdir -p "$T/$1" && (cd "$T/$1"; shift; "$@" >/dev/null 2>&1 & echo $! > pid; sleep 2
   if MACHINJS_SMOKE=1 sh "$ROOT/test/smoke.sh"; then r=0; else r=1; fi; kill "$(cat pid)" 2>/dev/null; return $r); }
 check native "$T/srvbin"

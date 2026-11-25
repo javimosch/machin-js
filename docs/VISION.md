@@ -19,9 +19,10 @@ a human can read.
 1. **Readable by construction.** Tiny functions, a JSDoc block on every function, a `//why:` line
    for intent. These are compiler errors, not style advice — so agent-written code can't drift
    into the unreadable.
-2. **A strict subset, never silent divergence.** If the transpiler can't type or faithfully lower a
-   construct, it refuses with a stable error code. A program that compiles means the same thing
-   as the JS you wrote.
+2. **A strict subset, aiming at no silent divergence.** Only constructs on an allow-list are
+   translated; anything else is refused with a stable error code. This is the goal, not yet a
+   guarantee: the [known differences](language.md#known-differences) are listed, and any other
+   difference is a bug.
 3. **JS is the source; machin is the artifact.** One direction only. Edit the JS. Never decompile
    machin back.
 4. **Run it as plain JS.** The same modules run under Deno against thin shims, so you can debug

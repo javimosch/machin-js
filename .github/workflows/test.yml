@@ -1,0 +1,38 @@
+name: test
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+env:
+  MACHIN_VERSION: v0.142.1
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: "2.2.8"
+      - name: Install SQLite headers
+        run: sudo apt-get update -q && sudo apt-get install -y -q libsqlite3-dev
+      - name: Fetch the pinned machin framework (machweb.src)
+        uses: actions/checkout@v4
+        with:
+          repository: javimosch/machin
+          ref: ${{ env.MACHIN_VERSION }}
+          path: .machin
+      - name: Install the pinned machin binary (checksum verified)
+        run: |
+          mkdir -p "$RUNNER_TEMP/m" && cd "$RUNNER_TEMP/m"
+          gh release download "$MACHIN_VERSION" --repo javimosch/machin --pattern "machin-$MACHIN_VERSION-linux-amd64" --pattern SHA256SUMS.txt
+          sha256sum --check --ignore-missing SHA256SUMS.txt
+          install -m755 "machin-$MACHIN_VERSION-linux-amd64" machin
+          echo "$PWD" >> "$GITHUB_PATH"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Transpiler, docs and parity tests
+        run: deno test -A test/
+      - name: Todo gate (gold, Deno vs native, HTTP smoke; desktop is skipped without raylib)
+        run: MACHIN_FRAMEWORK="$GITHUB_WORKSPACE/.machin/framework" examples/todo/test/gate.sh

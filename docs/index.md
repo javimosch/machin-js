@@ -15,4 +15,4 @@ machin-js turns a strict, JSDoc-typed subset of JavaScript into
 | [Modules](modules.md) | builtins, web and desktop |
 | [How it works](how-it-works.md) | the pipeline and how it is tested |
 | [Troubleshooting](troubleshooting.md) | common failures |
-| [Vision](VISION.md) · [North star](NORTH-STAR.md) | why, and where it is going |
+| [Vision](VISION.md) · [North star](NORTH-STAR.md) · [Roadmap](ROADMAP.md) | why, and where it is going |

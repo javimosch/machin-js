@@ -19,6 +19,7 @@
   <a href="https://javimosch.github.io/machin-js/"><b>Docs site</b></a> ·
   <a href="docs/VISION.md">Vision</a> ·
   <a href="docs/NORTH-STAR.md">North star</a> ·
+  <a href="docs/ROADMAP.md">Roadmap</a> ·
   <a href="examples/todo">Example: todo app</a>
 </p>
 
@@ -68,7 +69,9 @@ The JSDoc is the type system and the documentation at once, so they cannot drift
 | `JS-IMPORT001/002` | imports must resolve and name something that is actually exported |
 | `JS-DUP001` / `JS-CYCLE001` | no two modules define the same function (machin has one namespace); no import cycles |
 | `JS-FNVAL001` | a function name can't be passed as a value — wrap it in an arrow |
-| `JS-UNSUP001` | anything outside the supported subset is rejected, never silently emitted |
+| `JS-RET001` / `JS-SCOPE001` | every path of a valued function returns; no shadowed names |
+| `JS-NUM001/002` / `JS-STR001` | no decimals, division or non-ASCII literals yet (they would behave differently) |
+| `JS-UNSUP001` | anything outside the supported allow-list is rejected |
 
 Diagnostics print `file:line: CODE message` and exit non-zero, so an agent writing in this mode
 can't produce code a human can't read.
@@ -111,6 +114,7 @@ This is an **alpha**. It has one worked example, and the language is a deliberat
 - **Not yet:** classes, `async`, template literals, `??`, `switch`, method calls like `.push`, object literals, `continue` in `for`, block-bodied arrows, typed arrays beyond `string`.
 - **Never (by design):** prototypes, `this`, `eval`, dynamic keys, `==` coercion, npm.
 - **Numbers and strings:** `int`/`float` come from JSDoc; machin strings are bytes, not UTF-16 — see the [open questions](docs/NORTH-STAR.md#open-questions).
+- **Known differences:** some behavior can still differ from plain JavaScript; they are [listed](docs/language.md#known-differences).
 - **No source maps yet:** a native panic reports machin lines, not `file.js:line`.
 
 Where this is going, in measurable steps: [docs/NORTH-STAR.md](docs/NORTH-STAR.md).
@@ -129,6 +133,8 @@ docs/          human documentation (start at index.md), vision, north star
 ```
 
 ## Docs site
+
+CI (`.github/workflows/test.yml`) runs the tests and the todo gate against a pinned machin; the desktop check is skipped there.
 
 Built with [Lume](https://lume.land) (pinned to 3.2.0, which runs on Deno 2.2.8) and deployed by `.github/workflows/pages.yml`.
 

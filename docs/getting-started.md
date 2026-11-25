@@ -44,7 +44,7 @@ Transpile it, then run the result with machin:
 ```sh
 deno run -A transpile/transpile.ts hello/out hello/main.js
 machin encode $(for f in $(cat hello/out/order.txt); do echo hello/out/$f.src; done) > hello/app.mfl
-machin run hello/app.mfl
+machin run hello/app.mfl --safe
 ```
 
 `order.txt` lists your modules in dependency order. If your program imports `machin/web` or
