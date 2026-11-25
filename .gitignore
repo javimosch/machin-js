@@ -8,5 +8,7 @@ examples/todo/todo
 examples/todo/todo-desktop
 examples/todo/todos.db
 *.png
+!assets/*.png
+!docs/assets/shots/*.png
 docs/_site/
 docs/_cache/
