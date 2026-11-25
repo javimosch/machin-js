@@ -59,7 +59,4 @@ None open. The first four walls were cleared in machin 0.143.0, now the minimum 
 
 ## Open questions
 
-- **Numbers:** `int` vs `float` come from JSDoc today. Is "default `number` → `float`" the right
-  rule once inference lands, or should an unannotated numeric literal stay `int`?
-- **Strings:** machin strings are bytes, JS strings are UTF-16. Reject non-ASCII indexing, or define
-  and test the mapping?
+- **Decimals:** worth our own `int`/`float` analysis? Decide when an app needs them.

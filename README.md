@@ -70,7 +70,8 @@ The JSDoc is both the documentation and the types the build checks.
 | `JS-DUP001` / `JS-CYCLE001` | no two modules define the same function (machin has one namespace); no import cycles |
 | `JS-FNVAL001` | a machin builtin can't be passed as a value — wrap it in an arrow (your own functions can) |
 | `JS-RET001` / `JS-SCOPE001` | every path of a valued function returns; no shadowed names |
-| `JS-NUM001/002` / `JS-STR001` | no decimals, division or non-ASCII literals yet (they would behave differently) |
+| `JS-NUM001/002` / `JS-STR001` | no decimals, plain `/` or non-ASCII literals yet (they would behave differently) |
+| `JS-ADD001` `CMP001` `VAL001` `STR002` `ARR001` `ANY001` `LOG001` | type-based rules: reject what would behave differently natively |
 | `JS-TYPE001` | your JSDoc types are checked (by the TypeScript checker, on plain `.js`) |
 | `JS-UNSUP001` | anything outside the supported allow-list is rejected |
 
@@ -111,10 +112,10 @@ test/gate.sh                              # everything: gold files, Deno-vs-nati
 
 This is an **alpha**. It has one worked example, and the language is a deliberately small subset:
 
-- **Supported:** functions, closures via arrows, `const`/`let`, `if`/`while`/`for`, string/int arithmetic, arrays of strings, `@typedef` structs, ES-module imports/exports.
-- **Not yet:** classes, `async`, template literals, `??`, `switch`, method calls like `.push`, object literals, `continue` in `for`, block-bodied arrows, typed arrays beyond `string`.
+- **Supported:** functions (also as values), `const`/`let`, `if`/`while`/`for`, integer and string operations, `Math.trunc` division, arrays of scalars and structs, `@typedef` structs, ES modules.
+- **Not yet:** decimals, classes, `async`, template literals, `??`, `switch`, method calls like `.push`, object literals, `continue`, block-bodied arrows.
 - **Never (by design):** prototypes, `this`, `eval`, dynamic keys, `==` coercion, npm.
-- **Numbers and strings:** `int` and `float` are not told apart by the type check yet; machin strings are bytes, not UTF-16 — see the [open questions](docs/NORTH-STAR.md#open-questions).
+- **Numbers and strings:** numbers are integers (no decimals yet), and strings are counted in bytes (`len`, `substr`).
 - **Known differences:** some behavior can still differ from plain JavaScript; they are [listed](docs/language.md#known-differences).
 - **No source maps yet:** a native panic reports machin lines, not `file.js:line`.
 
@@ -128,7 +129,7 @@ types/         machin.d.ts (generated), machweb.d.ts, desktop.d.ts
 bindings/      machin code a JS import needs (desktop.src: raylib FFI)
 shim/          Deno twins of the builtins
 tools/         gen-dts.ts — regenerate types/machin.d.ts after upgrading machin
-test/          transpiler diagnostics tests + checks of the docs' examples
+test/          diagnostics, parity, typings, docs examples and random-program tests
 examples/todo/ the example app (start reading here)
 docs/          human documentation (start at index.md), vision, north star
 ```

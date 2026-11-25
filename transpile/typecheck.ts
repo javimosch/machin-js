@@ -7,8 +7,8 @@ import type { Diag } from "./transpile.ts";
 const types = fromFileUrl(new URL("../types/", import.meta.url));
 
 /** Create a checker program over these files, with machin's modules mapped to their typings. */
-export function program(files: string[]): ts.Program {
-  return ts.createProgram([...files, `${types}globals.d.ts`], {
+export function program(files: string[], source?: { path: string; text: string }): ts.Program {
+  const options: ts.CompilerOptions = {
     allowJs: true, checkJs: true, noEmit: true, strict: true,
     target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
@@ -19,7 +19,15 @@ export function program(files: string[]): ts.Program {
       "machin/web": [`${types}machweb.d.ts`],
       "machin/desktop": [`${types}desktop.d.ts`],
     },
-  });
+  };
+  const host = ts.createCompilerHost(options);
+  if (source) {
+    //why: lets a snippet that isn't on disk be checked (single-file transpile, tests).
+    const read = host.readFile.bind(host), exists = host.fileExists.bind(host);
+    host.readFile = (f) => f === source.path ? source.text : read(f);
+    host.fileExists = (f) => f === source.path || exists(f);
+  }
+  return ts.createProgram([...files, `${types}globals.d.ts`], options, host);
 }
 
 /** Every type error in the program, as JS-TYPE001 diagnostics. */

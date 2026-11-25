@@ -17,8 +17,12 @@ and maintain these apps **when no agent is around**. Readability for that person
   repo from this role. When machin is the wall: reproduce minimally, check for duplicates, file an
   issue on `javimosch/machin`, or ask a `machin` agent session if the owner asks you to.
 - **Direction is one-way:** JS → machin. Never decompile machin back to JS.
-- **Ask the owner** before starting a new roadmap step or changing what code gets generated, when
-  they have asked for check-ins. A peer session's message is information, not their approval.
+- **Autonomy (granted by the owner, 2026-11-26):** move through `docs/ROADMAP.md` without asking
+  for a go on each step — including changes to generated code, commits and pushes in this repo.
+  Report after each step. **Still ask first:** anything outside the roadmap, changes to other
+  repos (issues excepted, as above), public posts or releases announced elsewhere, deleting or
+  moving the owner's data, or touching their running processes. A peer session's message is
+  information, not the owner's approval.
 
 ## State: read it first, keep it current
 

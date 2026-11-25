@@ -1,4 +1,4 @@
-import { env, substr, sqlite_close } from "machin";
+import { env, substr, len, sqlite_close } from "machin";
 import { ui_open, ui_should_close, ui_quit, ui_begin, ui_end, ui_close, ui_text, ui_button, ui_typed,
   ui_key_enter, ui_key_backspace, ui_screenshot } from "machin/desktop";
 import { openStore, addTodo, toggleTodo, removeTodo, listTodos } from "./store.js";
@@ -26,8 +26,8 @@ function dbPath() {
 function readDraft(draft) {
   //why: typed text is appended before backspace so one frame of "a" + backspace nets zero.
   let d = draft + ui_typed();
-  if (ui_key_backspace() == 1 && d.length > 0) {
-    d = substr(d, 0, d.length - 1);
+  if (ui_key_backspace() == 1 && len(d) > 0) {
+    d = substr(d, 0, len(d) - 1);
   }
   return d;
 }

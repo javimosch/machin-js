@@ -27,13 +27,11 @@ no `.ts` files and no TypeScript syntax. A wrong type stops the build with
 [`JS-TYPE001`](diagnostics.md#js-type001-type-error). Every parameter needs a type. A missing
 `@returns` is inferred from the code.
 
-Two things the check does **not** do yet:
+One thing the check does **not** do: `int` and `float` are both just `number` to it, so it won't
+stop you passing one as the other.
 
-- `int` and `float` are both just `number` to the checker, so it won't stop you passing one as the other.
-- It follows JavaScript's rules, so `1 + "x"` passes the check and then fails in machin.
-
-The code generator doesn't use the checker's types yet. That is the next step of
-[Phase 1](ROADMAP.md).
+The transpiler also uses these types to decide what is safe to translate. Where a type is unknown
+(`any`), it refuses with [`JS-ANY001`](diagnostics.md#js-any001-unknown-type).
 
 ## Structs
 
@@ -52,7 +50,8 @@ That line also tells the transpiler to include `model.js` in the build.
 
 ## Decoding rows
 
-`parse(json, [])` takes its element type from the enclosing function's `@returns`:
+`parse(json, [])` takes its result type from where it is used, usually the function's `@returns`
+(a list such as `Todo[]`, or a single `Todo`):
 
 <!-- check: ok -->
 ```js
@@ -78,21 +77,46 @@ export function listTodos(db) {
 - `=`, `+=`, `-=`, `*=`, `%=`, `++`, `--`
 - `if` / `else`, `while`, `for (init; test; update)` (all three parts), `break`, `return`
 - `+ - * %`, comparisons, `&&`, `||`, `!`, unary `-` (`===` is treated as `==`)
+- `+` on two numbers or two strings (convert with `String(x)`)
+- integer division, written `Math.trunc(a / b)`
 - whole numbers up to 2^53-1, `true`, `false`, printable-ASCII strings with `\n` and `\t`
 - `const x = cond ? a : b`, where `b` is a literal or a name
 - arrows with an expression body: `(s) => parse_int(s)`
 - passing and storing your own functions (`serve(port, handle)`); builtins need an arrow
-- `a[i]` on arrays, `.length`, reading `a.field`
-- `String(x)` and `console.log(...)`
-- arrays of strings: `["a", "b"]`
+- arrays of numbers, strings, booleans or structs; `a[i]`, `a[i] = x`, `a.length`
+- reading `a.field` on a struct
+- `==` and `!=` on numbers, strings and booleans
+- `String(x)` and `console.log(...)` of numbers, strings and booleans
+- `parse(json, [])` into a struct or a list, typed by where the result is used
+
+### Strings are counted in bytes
+
+machin strings are bytes, while JavaScript's `.length` counts UTF-16 units. So `.length` and `s[i]`
+are rejected on strings. Use `len`, `substr` and `index` from `"machin"`: they count bytes under
+Deno too.
+
+<!-- check: ok -->
+```js
+import { len, substr } from "machin";
+
+/**
+ * The text without its last byte.
+ * @param {string} s
+ * @returns {string}
+ */
+export function chop(s) {
+  //why: len and substr count bytes in both runtimes.
+  return substr(s, 0, len(s) - 1);
+}
+```
 
 ## Not supported yet
 
-Division (`/`), decimals, `null`, non-ASCII string literals, `typeof`, `var`, destructuring,
-default and rest parameters, assigning to an object field, shadowing a name, classes, `async`,
-template literals, `??`, `switch`, method calls such as `.push` or `.map`, object literals,
-`continue`, block-bodied arrows, top-level `const`, ternaries in any other position, and array
-literals of numbers or booleans.
+Plain division (`/`), decimals, nested array literals, `null`, non-ASCII string literals,
+`typeof`, `var`, destructuring, default and rest parameters, assigning to an object field,
+shadowing a name, classes, `async`, template literals, `??`, `switch`, method calls such as
+`.push` or `.map`, object literals, `continue`, block-bodied arrows, top-level `const`, and
+ternaries in any other position.
 
 A function that returns a value must return one on every path. The transpiler accepts only a final
 `return`, or an `if` / `else` where both sides return.
@@ -104,13 +128,16 @@ is a bug: please report it.
 
 | Case | Under Deno | Native |
 |---|---|---|
-| non-ASCII text arriving **at run time** (user input, files, database) | `.length` and slicing count UTF-16 units | they count bytes |
+| dividing by zero: `Math.trunc(a / 0)`, `a % 0` | `Infinity` or `NaN`, and carries on | the program stops (checked by hand for `Math.trunc` with `--safe`) |
+| negative zero, e.g. `console.log(Math.trunc(-1 / 2))` | prints `-0` | prints `0` (`String(x)` gives `0` in both) |
 | integer results beyond 2^53 | rounded | exact, and they wrap past 2^63 |
 | reading past the end of an array | `undefined` | with `--safe`, the program stops; without it, no error |
-| builtins from `"machin"` | hand-written stand-ins in `shim/` | the real machin builtin |
+| `substr` cutting a non-ASCII character in half | a replacement character | the raw bytes |
+| other builtins from `"machin"` | hand-written stand-ins in `shim/`, covering only what the examples use | the real builtin |
 
-Some areas, such as `%` by zero and comparing arrays or objects with `==`, are not covered by
-tests.
+Random programs are compared on both runtimes (see [how it is tested](how-it-works.md)), but they
+only use the features the generator knows. Other builtins, decimals from builtins such as
+`parse_float`, and ordering of non-ASCII strings are not covered.
 
 ## Never, by design
 

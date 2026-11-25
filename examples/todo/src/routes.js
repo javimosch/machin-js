@@ -1,4 +1,4 @@
-import { split, index, substr, url_decode, parse_int, has_prefix, json, sqlite_close } from "machin";
+import { split, index, substr, len, url_decode, parse_int, has_prefix, json, sqlite_close } from "machin";
 import { not_found, redirect, ok_html, ok_json } from "machin/web";
 import { openStore, addTodo, toggleTodo, removeTodo, listTodos } from "./store.js";
 import { renderPage } from "./render.js";
@@ -18,7 +18,7 @@ function formField(body, name) {
   for (let i = 0; i < parts.length; i++) {
     const eq = index(parts[i], "=");
     if (eq > 0 && substr(parts[i], 0, eq) == name) {
-      return url_decode(substr(parts[i], eq + 1, parts[i].length));
+      return url_decode(substr(parts[i], eq + 1, len(parts[i])));
     }
   }
   return "";
@@ -32,7 +32,7 @@ function formField(body, name) {
  */
 function idFromPath(path, prefix) {
   //why: parse_int gives 0 for junk, and no todo has id 0, so junk is a harmless no-op.
-  return parse_int(substr(path, prefix.length, path.length));
+  return parse_int(substr(path, len(prefix), len(path)));
 }
 
 /**

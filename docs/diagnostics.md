@@ -147,18 +147,22 @@ function f(a) {
 
 Only whole numbers up to 2^53-1. Decimals print differently natively.
 
-## JS-NUM002: division is not supported yet
+## JS-NUM002: plain division
 
 <!-- check: JS-NUM002 -->
 ```js
-/** Example. */
+/**
+ * Half.
+ * @param {int} a
+ */
 function f(a) {
   //why: example.
   return a / 2;
 }
 ```
 
-machin divides integers, so `7 / 2` would be `3`. It returns once the transpiler knows types.
+machin divides integers, so `7 / 2` would be `3`. Say what you mean with `Math.trunc(a / 2)`,
+which truncates toward zero in both. Decimals are not supported yet.
 
 ## JS-STR001: string literal is not plain ASCII
 
@@ -203,6 +207,119 @@ function f(a) {
 ```
 
 JavaScript would return `undefined`; machin would silently return `0` or `""`. End with a `return`, or return on both sides of an `if` / `else`.
+
+## JS-ADD001: mixed `+`
+
+<!-- check: JS-ADD001 -->
+```js
+/**
+ * Example.
+ * @param {int} a
+ */
+function f(a) {
+  //why: example.
+  return "total " + a;
+}
+```
+
+Write `"total " + String(a)`. machin never converts implicitly.
+
+## JS-CMP001: comparing arrays or objects
+
+<!-- check: JS-CMP001 -->
+```js
+/**
+ * Example.
+ * @param {int[]} a
+ * @returns {boolean}
+ */
+function f(a) {
+  //why: example.
+  return a == a;
+}
+```
+
+JavaScript compares them by identity; machin has no equivalent. Compare the values you care about.
+
+## JS-VAL001: printing or converting an array or object
+
+<!-- check: JS-VAL001 -->
+```js
+/**
+ * Example.
+ * @param {int[]} a
+ */
+function f(a) {
+  //why: example.
+  console.log(a);
+}
+```
+
+The two runtimes can't print them the same way. Loop over the items.
+
+## JS-STR002: `.length` or indexing on a string
+
+<!-- check: JS-STR002 -->
+```js
+/**
+ * Example.
+ * @param {string} a
+ */
+function f(a) {
+  //why: example.
+  return a.length;
+}
+```
+
+Use `len(s)` or `substr(s, i, i + 1)` from `"machin"`: they count bytes in both runtimes.
+
+## JS-ARR001: unclear array element type
+
+<!-- check: JS-ARR001 -->
+```js
+/**
+ * Example.
+ */
+function f() {
+  //why: example.
+  const mixed = ["x", 1];
+  console.log(mixed.length);
+}
+```
+
+Use one element type. For an empty array, annotate it: `/** @type {int[]} */`. Nested array literals aren't supported.
+
+## JS-ANY001: unknown type
+
+<!-- check: JS-ANY001 -->
+```js
+/**
+ * Example.
+ * @param {any} a
+ */
+function f(a) {
+  //why: example.
+  return a + 1;
+}
+```
+
+The transpiler can't prove the translation is safe without a type. Replace `any` with the real one.
+
+## JS-LOG001: `console.log` would read format codes
+
+<!-- check: JS-LOG001 -->
+```js
+/**
+ * Example.
+ * @param {string} a
+ */
+function f(a) {
+  //why: example.
+  console.log(a, "done");
+}
+```
+
+With two or more arguments, JavaScript treats a string first argument as a format: `%%` prints as `%`, and `%s` takes the next argument. machin does not. Start with a fixed label, or join into one string.
 
 ## JS-INTERNAL001: transpiler bug
 
