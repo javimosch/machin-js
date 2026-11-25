@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="machin-js">
+  <title>machin-js</title>
+  <g fill="#1f1470">
+    <rect x="-30" y="-248" width="60" height="64" rx="6" transform="rotate(0 256 256) translate(256 256)"/><rect x="-30" y="-248" width="60" height="64" rx="6" transform="rotate(30 256 256) translate(256 256)"/><rect x="-30" y="-248" width="60" height="64" rx="6" transform="rotate(60 256 256) translate(256 256)"/><rect x="-30" y="-248" width="60" height="64" rx="6" transform="rotate(90 256 256) translate(256 256)"/><rect x="-30" y="-248" width="60" height="64" rx="6" transform="rotate(120 256 256) translate(256 256)"/><rect x="-30" y="-248" width="60" height="64" rx="6" transform="rotate(150 256 256) translate(256 256)"/><rect x="-30" y="-248" width="60" height="64" rx="6" transform="rotate(180 256 256) translate(256 256)"/><rect x="-30" y="-248" width="60" height="64" rx="6" transform="rotate(210 256 256) translate(256 256)"/><rect x="-30" y="-248" width="60" height="64" rx="6" transform="rotate(240 256 256) translate(256 256)"/><rect x="-30" y="-248" width="60" height="64" rx="6" transform="rotate(270 256 256) translate(256 256)"/><rect x="-30" y="-248" width="60" height="64" rx="6" transform="rotate(300 256 256) translate(256 256)"/><rect x="-30" y="-248" width="60" height="64" rx="6" transform="rotate(330 256 256) translate(256 256)"/>
+    <circle cx="256" cy="256" r="214"/>
+  </g>
+  <circle cx="256" cy="256" r="160" fill="#f7df1e"/>
+  <g fill="none" stroke="#1f1470" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M232 168 C200 168 198 190 198 214 L198 232 C198 248 186 256 170 256 C186 256 198 264 198 280 L198 298 C198 322 200 344 232 344"/>
+    <path d="M280 168 C312 168 314 190 314 214 L314 232 C314 248 326 256 342 256 C326 256 314 264 314 280 L314 298 C314 322 312 344 280 344"/>
+  </g>
+</svg>

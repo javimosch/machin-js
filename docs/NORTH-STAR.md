@@ -1,0 +1,66 @@
+# machin-js — north star
+
+> **A JS-fluent human can build, ship and maintain a real multi-shell app (web + desktop +
+> terminal) in machin-js with the agent switched off.**
+
+See [VISION.md](VISION.md) for the why. This file is the measurable target and the gap roadmap.
+Status reflects what is **verified in this repo today**, nothing aspirational.
+
+## How we know we are getting there
+
+| Signal | Measure | Today |
+|---|---|---|
+| Readability is enforced | every function has JSDoc + `//why:`, ≤ 20 lines — compiler errors, not lint | ✅ enforced (`JS-DOC001`, `JS-WHY001`, `JS-SIZE001`) |
+| Same meaning, two runtimes | example output identical under Deno and as a native binary | ✅ todo demo + HTTP smoke on both |
+| Nothing implicit | undeclared names, bad imports, name clashes, import cycles are errors | ✅ (`JS-UNDEF001`, `JS-IMPORT00x`, `JS-DUP001`, `JS-CYCLE001`) |
+| Shared core, thin shells | ≥ 3 shells over one core | 🟡 web + desktop done; terminal next |
+| Debuggable in JS terms | a native panic reports `file.js:line` | ❌ not yet (source maps) |
+| Real-program coverage | ≥ 2 distinct apps compile and pass their gates | 🟡 one (todo) |
+
+## Tiers
+
+**Tier 0 — the pilot (done).** A todo app as readable JS: transpiler (Deno + acorn) checked against
+hand-reviewed gold, ES modules with dependency ordering, generated `machin.d.ts`, web shell (SSR +
+JSON API) verified by one HTTP smoke test on both runtimes, desktop shell (raylib, via a binding)
+verified with real X input on a private display.
+
+**Tier 1 — a language you can write a second app in.**
+- Typed arrays and objects: element types beyond `string`, object literals → structs.
+- `for…of`, template literals, common array/string methods (`push`, `map`, `filter`, `includes`…).
+- Block-bodied arrows; ternary beyond `const x = c ? a : b`; `switch`.
+- A second, more demanding example app to find the next gaps.
+
+**Tier 2 — debuggable like JavaScript.**
+- Source maps: panics, `--safe` bounds failures, falsifier repros and `certify` counterexamples
+  reported at `file.js:line`.
+- Runtime parity checks widened: property-style differential tests against Node semantics for ints,
+  strings (bytes vs UTF-16), `%` and division.
+
+**Tier 3 — more shells.**
+- Terminal (TUI) shell over the same core.
+- Client UI via machin's wasm/reactive path (JSX or a similar declarative layer).
+- Mobile via PWA/webview — only if a shell above proves the layering.
+
+**Tier 4 — concurrency and distribution.**
+- `async`/`await` lowered to machin's `go`/`chan` (race-freedom comes with it).
+- `deno compile` the toolchain into a single binary; CI; tagged releases.
+
+## Upstream dependencies (machin)
+
+machin-js moves faster when machin removes these walls:
+
+| Issue | Wall |
+|---|---|
+| [machin#710](https://github.com/javimosch/machin/issues/710) | named functions aren't values; the error is cryptic |
+| [machin#711](https://github.com/javimosch/machin/issues/711) | `machin encode` can't canonicalize a library file without a `main` |
+| [machin#712](https://github.com/javimosch/machin/issues/712) | `machin guide` signatures are prose and framework (machweb) is absent |
+| [machin#713](https://github.com/javimosch/machin/issues/713) | no flag to point an extern block at a vendored/static library |
+
+## Open questions
+
+- **Numbers:** `int` vs `float` come from JSDoc today. Is "default `number` → `float`" the right
+  rule once inference lands, or should an unannotated numeric literal stay `int`?
+- **Strings:** machin strings are bytes, JS strings are UTF-16. Reject non-ASCII indexing, or define
+  and test the mapping?
+- **Where does `machin/web` live?** It is hand-typed today because the guide doesn't list framework
+  functions (#712).
