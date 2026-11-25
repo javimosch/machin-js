@@ -11,8 +11,8 @@ ROOT=$(pwd); T=$(mktemp -d); FW=${MACHIN_FRAMEWORK:-$HOME/ai/machin/framework}
 # list() prints the .src files of an entry's build, in dependency order, under dir $1
 list() { for f in $(cat "$1/order.txt"); do echo "$1/$f.src"; done; }
 glist() { for f in $(cat "$1/order.txt"); do echo "gold/$f.src"; done; }
-deno run -A transpile/transpile.ts "$T/demo" src/main.js
-deno run -A transpile/transpile.ts "$T/srv" src/server.js
+deno run -A ../../transpile/transpile.ts "$T/demo" src/main.js
+deno run -A ../../transpile/transpile.ts "$T/srv" src/server.js
 machin encode $(glist "$T/demo") > "$T/g.mfl"; machin encode $(list "$T/demo") > "$T/o.mfl"
 diff "$T/g.mfl" "$T/o.mfl" >/dev/null || { echo "demo gold mismatch"; exit 1; }
 machin encode $(cat "$T/srv/native.txt") $(glist "$T/srv") > "$T/g.mfl"; machin encode $(cat "$T/srv/native.txt") $(list "$T/srv") > "$T/o.mfl"

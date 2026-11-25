@@ -1,7 +1,10 @@
 node_modules/
 build/
 build-desktop/
-todo
-todo-desktop
-todos.db
+/todo
+/todo-desktop
+/todos.db
+examples/todo/todo
+examples/todo/todo-desktop
+examples/todo/todos.db
 *.png
