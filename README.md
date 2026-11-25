@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/index.md"><b>Docs</b></a> ·
+  <a href="https://javimosch.github.io/machin-js/"><b>Docs site</b></a> ·
   <a href="docs/VISION.md">Vision</a> ·
   <a href="docs/NORTH-STAR.md">North star</a> ·
   <a href="examples/todo">Example: todo app</a>
@@ -126,6 +126,14 @@ tools/         gen-dts.ts — regenerate types/machin.d.ts after upgrading machi
 test/          transpiler diagnostics tests + checks of the docs' examples
 examples/todo/ the example app (start reading here)
 docs/          human documentation (start at index.md), vision, north star
+```
+
+## Docs site
+
+Built with [Lume](https://lume.land) (pinned to 3.2.0, which runs on Deno 2.2.8) and deployed by `.github/workflows/pages.yml`.
+
+```sh
+cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.ts
 ```
 
 ## License
