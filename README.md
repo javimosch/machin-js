@@ -16,6 +16,7 @@
 </p>
 
 <p align="center">
+  <a href="docs/index.md"><b>Docs</b></a> ·
   <a href="docs/VISION.md">Vision</a> ·
   <a href="docs/NORTH-STAR.md">North star</a> ·
   <a href="examples/todo">Example: todo app</a>
@@ -122,9 +123,9 @@ types/         machin.d.ts (generated), machweb.d.ts, desktop.d.ts
 bindings/      machin code a JS import needs (desktop.src: raylib FFI)
 shim/          Deno twins of the builtins
 tools/         gen-dts.ts — regenerate types/machin.d.ts after upgrading machin
-test/          transpiler diagnostics tests
+test/          transpiler diagnostics tests + checks of the docs' examples
 examples/todo/ the example app (start reading here)
-docs/          VISION.md, NORTH-STAR.md
+docs/          human documentation (start at index.md), vision, north star
 ```
 
 ## License
