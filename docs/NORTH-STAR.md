@@ -48,14 +48,14 @@ verified with real X input on a private display.
 
 ## Upstream dependencies (machin)
 
-machin-js moves faster when machin removes these walls:
+None open. The first four walls were cleared in machin 0.143.0, now the minimum version:
 
-| Issue | Wall |
-|---|---|
-| [machin#710](https://github.com/javimosch/machin/issues/710) | named functions aren't values; the error is cryptic |
-| [machin#711](https://github.com/javimosch/machin/issues/711) | `machin encode` can't canonicalize a library file without a `main` |
-| [machin#712](https://github.com/javimosch/machin/issues/712) | `machin guide` signatures are prose and framework (machweb) is absent |
-| [machin#713](https://github.com/javimosch/machin/issues/713) | no flag to point an extern block at a vendored/static library |
+| Issue | Was | machin-js now |
+|---|---|---|
+| [machin#710](https://github.com/javimosch/machin/issues/710) | named functions weren't values | passes your functions directly |
+| [machin#711](https://github.com/javimosch/machin/issues/711) | one file couldn't be formatted alone | compares gold files per module with `encode --no-check` |
+| [machin#712](https://github.com/javimosch/machin/issues/712) | signatures were text; machweb was missing | generates `machin.d.ts` and `machweb.d.ts` from structured data |
+| [machin#713](https://github.com/javimosch/machin/issues/713) | no flags for a vendored library | links raylib statically with build flags |
 
 ## Open questions
 
@@ -63,5 +63,3 @@ machin-js moves faster when machin removes these walls:
   rule once inference lands, or should an unannotated numeric literal stay `int`?
 - **Strings:** machin strings are bytes, JS strings are UTF-16. Reject non-ASCII indexing, or define
   and test the mapping?
-- **Where does `machin/web` live?** It is hand-typed today because the guide doesn't list framework
-  functions (#712).

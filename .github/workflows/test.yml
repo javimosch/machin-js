@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 env:
-  MACHIN_VERSION: v0.142.1
+  MACHIN_VERSION: v0.143.0
 jobs:
   test:
     runs-on: ubuntu-latest

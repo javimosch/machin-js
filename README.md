@@ -68,7 +68,7 @@ The JSDoc is both the documentation and the types the build checks.
 | `JS-UNDEF001` | a name must be declared, or imported from `"machin"`, `"machin/web"`, `"machin/desktop"` or a local module |
 | `JS-IMPORT001/002` | imports must resolve and name something that is actually exported |
 | `JS-DUP001` / `JS-CYCLE001` | no two modules define the same function (machin has one namespace); no import cycles |
-| `JS-FNVAL001` | a function name can't be passed as a value — wrap it in an arrow |
+| `JS-FNVAL001` | a machin builtin can't be passed as a value — wrap it in an arrow (your own functions can) |
 | `JS-RET001` / `JS-SCOPE001` | every path of a valued function returns; no shadowed names |
 | `JS-NUM001/002` / `JS-STR001` | no decimals, division or non-ASCII literals yet (they would behave differently) |
 | `JS-TYPE001` | your JSDoc types are checked (by the TypeScript checker, on plain `.js`) |
@@ -87,7 +87,7 @@ can't produce code a human can't read.
 
 ## Quick start
 
-Needs [`deno`](https://deno.com), [`machin`](https://github.com/javimosch/machin) (developed against 0.142.1) and a C compiler.
+Needs [`deno`](https://deno.com), [`machin`](https://github.com/javimosch/machin) 0.143.0 or newer and a C compiler.
 
 ```sh
 git clone https://github.com/javimosch/machin-js && cd machin-js

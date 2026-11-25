@@ -13,15 +13,18 @@ deno run -A tools/gen-dts.ts
 ```
 
 The generator stops with an error on a type word it doesn't know, rather than typing it `any`.
-Parameter names are mostly placeholders (`a0`, `a1`), because the guide's text signatures lack them.
+Most builtin parameters have placeholder names (`a0`, `a1`), because machin doesn't name them.
 
 ## `"machin/web"`: HTTP server
 
-`serve(port, handler)`, `ok_html`, `ok_json`, `ok_text`, `not_found`, `bad_request`, `redirect`.
-The handler takes a request with `method`, `path` (including the query string) and `body`. This
-wraps machin's `machweb` framework, which is read from `MACHIN_FRAMEWORK`
-(default `~/ai/machin/framework`, so you need a machin source checkout). The typings are kept by
-hand.
+machin's `machweb` framework: `serve(port, handler)`, `ok_html`, `ok_json`, `ok_text`,
+`not_found`, `bad_request`, `redirect` and more. The handler takes a request (`method`, `path`
+including the query string, `body`) and returns a response. The typings in `types/machweb.d.ts`
+are generated from `machin guide --framework machweb`, by the same command as above. The Deno
+stand-in covers only what the todo app uses.
+
+The framework's source is read at build time from `MACHIN_FRAMEWORK`
+(default `~/ai/machin/framework`), so you need a machin source checkout.
 
 ## `"machin/desktop"`: window and drawing
 

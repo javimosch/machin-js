@@ -31,15 +31,13 @@ Every function is tiny, has a JSDoc block (the types) and a `//why:` line (the i
 ## Verify it
 
     test/gate.sh                       # JS->machin == gold; demo native==Deno; HTTP smoke on Deno AND native; desktop input
-    deno test -A test/diag_test.ts     # JS-DOC001 / JS-WHY001 / JS-SIZE001 / JS-UNSUP001 / JS-FNVAL001
 
 The gate serves on its own port (`PORT`, default 18080), never on 8080, and refuses to run if that
 port is busy: the HTTP smoke test adds/toggles/deletes todos, so it must only hit a throwaway server.
 
 Diagnostics fail the run (exit 1) with `file:line: CODE message`.
 
-## Subset notes (what you can't write yet)
+## What you can write
 
-No classes, async, template literals, `??`, `switch`, method calls (`a.push`), object literals,
-`continue` in `for`, or block-bodied arrows. Named functions aren't values in machin: pass
-`(req) => handle(req)`, not `handle` (JS-FNVAL001 / JS-UNDEF001 / JS-IMPORT001 / JS-IMPORT002 / JS-DUP001 / JS-CYCLE001).
+See [the language page](../../docs/language.md) and [the diagnostics](../../docs/diagnostics.md).
+Transpiler tests run from the repo root: `deno test -A test/`.

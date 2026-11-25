@@ -7,7 +7,7 @@ import { dirname, basename, resolve } from "jsr:@std/path@1";
 
 export type Diag = { code: string; msg: string; file: string; line: number };
 type Cmt = { block: boolean; text: string; start: number; end: number };
-type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; retElem: string; fns: Set<string>; imported: Set<string>; scope: Set<string> };
+type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; retElem: string; fns: Set<string>; imported: Set<string>; builtins: Set<string>; scope: Set<string> };
 type Imp = { source: string; names: string[]; line: number };
 const GLOBALS = new Set(["String", "console"]);
 
@@ -90,9 +90,9 @@ function expr(c: Ctx, e: any, p = 0): string {
   switch (e.type) {
     case "Literal": return literal(c, e);
     case "Identifier":
-      //why: machin functions are not values; the typecheck error for this is cryptic, so catch it here.
       if (!c.scope.has(e.name)) return diag(c, "JS-UNDEF001", `${e.name} is not defined or imported`, e);
-      if (c.fns.has(e.name) || c.imported.has(e.name)) return diag(c, "JS-FNVAL001", `${e.name} is a function; pass an arrow: (x) => ${e.name}(x)`, e);
+      //why: your own and bridge functions are values in machin; builtins are not.
+      if (c.builtins.has(e.name)) return diag(c, "JS-FNVAL001", `${e.name} is a machin builtin; pass an arrow: (x) => ${e.name}(x)`, e);
       return e.name;
     case "ArrowFunctionExpression":
       if (e.body.type === "BlockStatement") return diag(c, "JS-UNSUP001", "arrow with block body unsupported; use an expression body", e);
@@ -319,7 +319,8 @@ export function transpile(file: string, src: string): Mod {
     } else decls.push(n);
   }
   const fns = new Set<string>(decls.filter((n) => n.type === "FunctionDeclaration").map((n) => n.id.name));
-  const c: Ctx = { file, src, cmts, diags: [], retElem: "", fns, imported, scope: new Set() };
+  const builtins = new Set<string>(imports.filter((i) => i.source === "machin").flatMap((i) => i.names));
+  const c: Ctx = { file, src, cmts, diags: [], retElem: "", fns, imported, builtins, scope: new Set() };
   const lines = [...typedefs(c)];
   for (const n of decls) {
     if (n.type === "FunctionDeclaration") lines.push(...guarded(c, n));

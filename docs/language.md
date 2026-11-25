@@ -80,7 +80,8 @@ export function listTodos(db) {
 - `+ - * %`, comparisons, `&&`, `||`, `!`, unary `-` (`===` is treated as `==`)
 - whole numbers up to 2^53-1, `true`, `false`, printable-ASCII strings with `\n` and `\t`
 - `const x = cond ? a : b`, where `b` is a literal or a name
-- arrows with an expression body: `(req) => handle(req)`
+- arrows with an expression body: `(s) => parse_int(s)`
+- passing and storing your own functions (`serve(port, handle)`); builtins need an arrow
 - `a[i]` on arrays, `.length`, reading `a.field`
 - `String(x)` and `console.log(...)`
 - arrays of strings: `["a", "b"]`

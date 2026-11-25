@@ -28,6 +28,7 @@ needs them.
 
 ## Risks
 
-- **machin dependencies:** [#710](https://github.com/javimosch/machin/issues/710)–[#713](https://github.com/javimosch/machin/issues/713); #711–#713 matter most for Phase 4.
+- **machin dependencies:** none open. #710–#713 were cleared in machin 0.143.0. Bundling bridges
+  (Phase 4) still needs a way to ship `machweb.src` without a machin checkout.
 - **machin changes often:** CI pins a version; testing the latest one too is still to do.
 - **Numbers never match completely:** document the limits, and reject or check what we can.

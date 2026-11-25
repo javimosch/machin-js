@@ -1,73 +1,93 @@
-// Generate types/machin.d.ts (+ builtin name list) from `machin guide`, so builtins never drift.
+// Generate types/machin.d.ts, types/machweb.d.ts and the builtin name list from `machin guide`.
 //why: the guide is compiled into the machin binary — it is the one source of truth for what exists.
 //     An unknown type word is an error: silently typing something `any` would switch checking off.
-const guide = JSON.parse(new TextDecoder().decode(
-  (await new Deno.Command("machin", { args: ["guide"] }).output()).stdout));
+
+/** Run `machin guide` (JSON) with extra flags. */
+async function guide(...flags: string[]) {
+  const r = await new Deno.Command("machin", { args: ["guide", ...flags] }).output();
+  if (!r.success) throw new Error(`machin guide ${flags.join(" ")} failed — machin 0.143.0 or newer is required`);
+  return JSON.parse(new TextDecoder().decode(r.stdout));
+}
 
 const SCALAR: Record<string, string> = {
   int: "number", float: "number", number: "number", string: "string", bool: "boolean",
-  bytes: "Bytes", any: "any", void: "void", "": "void", size: "number",
-  map: "object", chan: "object", slice: "unknown[]", T: "T", K: "K", "T{}": "unknown",
+  bytes: "Bytes", any: "any", map: "object", chan: "object", slice: "unknown[]", "T{}": "unknown",
+  //why: the guide gives some struct fields as a bare `func`, with no signature to translate.
+  func: "(...args: never[]) => unknown",
 };
+const GENERIC = new Set(["T", "K", "V"]);
+const RESERVED = new Set(["delete", "default", "new", "function", "var", "in", "class", "with"]);
 
-/** One machin type word -> its TypeScript spelling. Records the generics it uses. */
-function type(t: string, generics: Set<string>): string {
-  t = t.trim();
-  if (t.includes("|")) return t.split("|").map((x) => type(x, generics)).join(" | ");
-  const fn = /^func\((.*)\)\s*(\S*)$/.exec(t);
-  if (fn) return `((${list(fn[1]).map((x, i) => `b${i}: ${type(x, generics)}`).join(", ")}) => ${type(fn[2], generics)})`;
-  if (t.startsWith("[]")) return `(${type(t.slice(2), generics)})[]`;
-  const map = /^map\[(\w+)\](\w+)$/.exec(t);
-  if (map) return (generics.add(map[1]), generics.add(map[2]), `Map<${map[1]}, ${map[2]}>`);
-  if (t === "T" || t === "K") generics.add(t);
+/** One machin type word -> TypeScript. `structs` are names that may be used as they are. */
+function type(word: string, generics: Set<string>, structs: Set<string>): string {
+  const t = word.trim();
+  const rec = (x: string) => type(x, generics, structs);
+  const fn = /^func\((.*)\)\s*(.*)$/.exec(t);
+  if (fn) {
+    const ps = fn[1].trim() ? fn[1].split(",").map((x, i) => `b${i}: ${rec(x)}`) : [];
+    return `((${ps.join(", ")}) => ${fn[2] ? rec(fn[2]) : "void"})`;
+  }
+  if (t.includes("|")) return t.split("|").map(rec).join(" | ");
+  if (t.startsWith("[]")) return `(${rec(t.slice(2))})[]`;
+  const map = /^map\[(\w+)\](.+)$/.exec(t);
+  if (map) return `Record<${rec(map[1])}, ${rec(map[2])}>`;
+  if (GENERIC.has(t)) return (generics.add(t), t);
+  if (structs.has(t)) return t;
   if (!(t in SCALAR)) throw new Error(`unknown machin type "${t}" — teach tools/gen-dts.ts what it means`);
   return SCALAR[t];
 }
 
-/** Split a comma list, ignoring commas inside brackets or parentheses. */
-function list(s: string): string[] {
-  return s.trim() === "" ? [] : s.split(/,(?![^\[(]*[\])])/).map((x) => x.trim());
-}
+type Fn = { name: string; summary?: string; variadic?: boolean; returns: string[];
+  params: { name?: string; type: string; optional?: boolean }[] };
 
-/** A whole `(params) -> returns` signature -> the text of a TypeScript function type. */
-function signature(name: string, sig: string): string {
-  const m = /^\((.*)\)\s*->\s*(.*)$/.exec(sig);
-  if (!m) throw new Error(`${name}: unreadable signature "${sig}"`);
+/** The `<T>(params): returns` text for one function in the guide's structured form. */
+function signature(f: Fn, structs: Set<string>): string {
+  if (!Array.isArray(f.params)) throw new Error(`${f.name}: no structured params — machin 0.143.0 or newer is required`);
   const generics = new Set<string>();
-  //why: `string[, []string]` marks an optional parameter; rewrite it to `string, ?[]string`.
-  const raw = m[1].replace(/\[,\s*((?:\[\]|[^\[\]])+)\]/g, ", ?$1");
-  const params = list(raw).map((p, i) => {
-    if (p === "...") return "...args: unknown[]";
-    const optional = p.startsWith("?");
-    const named = /^\??(int) (\w+)$/.exec(p); // e.g. "int stride"
-    const word = named ? named[1] : p.replace(/^\?/, "");
-    return `${named ? named[2] : `a${i}`}${optional ? "?" : ""}: ${type(word, generics)}`;
+  const params = f.params.map((p, i) => {
+    const rest = f.variadic && i === f.params.length - 1;
+    const name = !p.name ? (rest ? "args" : `a${i}`) : RESERVED.has(p.name) ? `${p.name}_` : p.name;
+    const ts = type(p.type, generics, structs);
+    if (rest) return `...${name}: ${ts === "any" ? "unknown" : `(${ts})`}[]`;
+    return `${name}${p.optional ? "?" : ""}: ${ts}`;
   });
-  const r = m[2].trim();
-  const ret = r.startsWith("(") ? `[${list(r.slice(1, -1)).map((x) => type(x, generics)).join(", ")}]` : type(r, generics);
+  const rs = f.returns.map((r) => type(r, generics, structs));
+  const ret = rs.length === 0 ? "void" : rs.length === 1 ? rs[0] : `[${rs.join(", ")}]`;
   return `${generics.size ? `<${[...generics].join(", ")}>` : ""}(${params.join(", ")}): ${ret}`;
 }
 
-//why: parse's result type comes from where it is used (e.g. @returns {Todo[]}), not its arguments.
-const OVERRIDE: Record<string, string> = { parse: "<T>(a0: string, witness: unknown): T" };
-const RESERVED = new Set(["delete"]);
-
-let dts = `// GENERATED by tools/gen-dts.ts from \`machin guide\` (machin ${guide.version}). Do not edit.
-/** machin's binary buffer: opaque to JavaScript. */
-export type Bytes = { readonly __machinBytes: true };\n`;
-const names: string[] = [];
-const seen = new Set<string>();
-for (const b of guide.builtins) {
-  const text = OVERRIDE[b.name] ?? signature(b.name, b.sig);
-  const doc = `/** ${String(b.summary).replace(/\*\//g, "* /")} */\n`;
+/** An exported declaration with its doc comment. */
+function declaration(f: Fn, text: string): string {
+  const doc = f.summary ? `/** ${f.summary.replace(/\*\//g, "* /")} */\n` : "";
   //why: a reserved word can't be declared, but it can be exported under that name.
-  const local = RESERVED.has(b.name) ? `${b.name}_` : b.name;
-  dts += RESERVED.has(b.name)
-    ? `${doc}declare function ${local}${text};\nexport { ${local} as ${b.name} };\n`
-    : `${doc}export function ${b.name}${text};\n`;
-  if (!seen.has(b.name)) names.push(b.name);
-  seen.add(b.name);
+  return RESERVED.has(f.name)
+    ? `${doc}declare function ${f.name}_${text};\nexport { ${f.name}_ as ${f.name} };\n`
+    : `${doc}export function ${f.name}${text};\n`;
 }
+
+const core = await guide();
+const header = `// GENERATED by tools/gen-dts.ts from \`machin guide\` (machin ${core.version}). Do not edit.\n`;
+const BYTES = "export type Bytes = { readonly __machinBytes: true };\n";
+//why: parse's result type comes from where it is used (e.g. @returns {Todo[]}), not its arguments.
+const OVERRIDE: Record<string, string> = {
+  parse: "<T>(a0: string, witness: unknown): T",
+  //why: a JavaScript object's keys are strings, and the subset has no other kind of map.
+  keys: "(a0: Record<string, unknown>): string[]",
+};
+
+let dts = `${header}/** machin's binary buffer: opaque to JavaScript. */\n${BYTES}`;
+for (const f of core.builtins as Fn[]) dts += declaration(f, OVERRIDE[f.name] ?? signature(f, new Set(["Bytes"])));
 await Deno.writeTextFile("types/machin.d.ts", dts);
-await Deno.writeTextFile("types/machin-builtins.json", JSON.stringify(names.sort()) + "\n");
-console.log(`wrote ${names.length} builtins (machin ${guide.version})`);
+const names = [...new Set((core.builtins as Fn[]).map((f) => f.name))].sort();
+await Deno.writeTextFile("types/machin-builtins.json", JSON.stringify(names) + "\n");
+
+const web = await guide("--framework", "machweb");
+const structs = new Set<string>(web.types.map((t: { name: string }) => t.name));
+let wdts = `${header}import type { Bytes } from "./machin.d.ts";\n`;
+for (const t of web.types as { name: string; fields: { name: string; type: string }[] }[]) {
+  const fields = t.fields.map((x) => `  ${x.name}: ${type(x.type, new Set(), structs)};`).join("\n");
+  wdts += `export type ${t.name} = {\n${fields}\n};\n`;
+}
+for (const f of web.functions as Fn[]) wdts += declaration(f, signature(f, structs));
+await Deno.writeTextFile("types/machweb.d.ts", wdts);
+console.log(`wrote ${names.length} builtins and ${web.functions.length} machweb functions (machin ${core.version})`);

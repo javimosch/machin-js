@@ -16,9 +16,10 @@ Deno.test("oversize function is reported", () => {
 Deno.test("unsupported syntax is reported, not silently emitted", () => {
   assertEquals(codes("/** x */\nfunction f(a) {\n  //why: t\n  return a ?? 1;\n}"), ["JS-UNSUP001"]);
 });
-Deno.test("passing a bare function name is reported with a hint", () => {
-  const src = "import { serve } from \"machin/web\";\n/** x */\nfunction g(a) {\n  //why: t\n  return a;\n}\n/** x */\nfunction f() {\n  //why: t\n  serve(1, g);\n}";
-  assertEquals(codes(src), ["JS-FNVAL001"]);
+Deno.test("passing a builtin as a value is reported with a hint; your own functions are fine", () => {
+  const head = 'import { parse_int } from "machin";\nimport { serve } from "machin/web";\n/** x */\nfunction g(a) {\n  //why: t\n  return a;\n}\n/** x */\nfunction f() {\n  //why: t\n';
+  assertEquals(codes(`${head}  serve(1, parse_int);\n}`), ["JS-FNVAL001"]);
+  assertEquals(codes(`${head}  serve(1, g);\n}`), []);
 });
 Deno.test("an undeclared, unimported name is reported", () => {
   assertEquals(codes("/** x */\nfunction f() {\n  //why: t\n  return sqlite_open(1);\n}"), ["JS-UNDEF001"]);

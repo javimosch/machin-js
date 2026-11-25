@@ -60,23 +60,26 @@ function f(a) {
 
 See [the supported subset](language.md).
 
-## JS-FNVAL001: a function was used as a value
+## JS-FNVAL001: a builtin was used as a value
 
-machin functions are not values, so wrap the call in an arrow
-([machin#710](https://github.com/javimosch/machin/issues/710)).
+Your own functions, and those from `"machin/web"` and `"machin/desktop"`, can be passed around as
+in JavaScript. machin's **builtins** (imported from `"machin"`) cannot, so wrap one in an arrow.
 
 <!-- check: JS-FNVAL001 -->
 ```js
-import { serve } from "machin/web";
-/** Handle a request. */
-function handle(req) {
+import { parse_int } from "machin";
+/**
+ * Apply a converter.
+ * @param {(s: string) => number} convert
+ */
+function use(convert) {
   //why: example.
-  return req;
+  return convert("1");
 }
-/** Start. */
-function main() {
+/** Run. */
+function run() {
   //why: example.
-  serve(8080, handle);
+  return use(parse_int);
 }
 ```
 
@@ -84,19 +87,19 @@ Fixed:
 
 <!-- check: ok -->
 ```js
-import { serve, ok_text } from "machin/web";
+import { parse_int } from "machin";
 /**
- * Handle a request.
- * @param {import("machin/web").Request} req
+ * Apply a converter.
+ * @param {(s: string) => number} convert
  */
-function handle(req) {
+function use(convert) {
   //why: example.
-  return ok_text(req.path);
+  return convert("1");
 }
-/** Start. */
-function main() {
-  //why: the arrow is required.
-  serve(8080, (req) => handle(req));
+/** Run. */
+function run() {
+  //why: the arrow makes the builtin a value.
+  return use((s) => parse_int(s));
 }
 ```
 

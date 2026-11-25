@@ -10,18 +10,22 @@ if curl -s -o /dev/null --max-time 1 "http://127.0.0.1:$PORT/"; then
 ROOT=$(pwd); T=$(mktemp -d); FW=${MACHIN_FRAMEWORK:-$HOME/ai/machin/framework}
 # list() prints the .src files of an entry's build, in dependency order, under dir $1
 list() { for f in $(cat "$1/order.txt"); do echo "$1/$f.src"; done; }
-glist() { for f in $(cat "$1/order.txt"); do echo "gold/$f.src"; done; }
 deno run -A ../../transpile/transpile.ts "$T/demo" src/main.js
 deno run -A ../../transpile/transpile.ts "$T/srv" src/server.js
-machin encode $(glist "$T/demo") > "$T/g.mfl"; machin encode $(list "$T/demo") > "$T/o.mfl"
-diff "$T/g.mfl" "$T/o.mfl" >/dev/null || { echo "demo gold mismatch"; exit 1; }
-machin encode $(cat "$T/srv/native.txt") $(glist "$T/srv") > "$T/g.mfl"; machin encode $(cat "$T/srv/native.txt") $(list "$T/srv") > "$T/o.mfl"
-diff "$T/g.mfl" "$T/o.mfl" >/dev/null || { echo "server gold mismatch"; exit 1; }
+# Gold is compared module by module (--no-check formats one file alone), so a mismatch names it;
+# the builds below type-check the whole generated program.
+for entry in demo srv; do
+  for m in $(cat "$T/$entry/order.txt"); do
+    machin encode --no-check "gold/$m.src" > "$T/g.mfl"; machin encode --no-check "$T/$entry/$m.src" > "$T/o.mfl"
+    diff "$T/g.mfl" "$T/o.mfl" >/dev/null || { echo "gold mismatch: $m.src"; exit 1; }
+  done
+done
 echo "canonical MFL identical to gold"
 machin encode $(list "$T/demo") > "$T/demo.mfl"
 machin run "$T/demo.mfl" --safe | diff - gold/expected.txt && echo "demo: native output matches"
 deno run -A test/oracle.ts | diff - gold/expected.txt && echo "demo: Deno oracle matches"
-machin build "$T/o.mfl" -o "$T/srvbin" --safe >/dev/null
+machin encode $(cat "$T/srv/native.txt") $(list "$T/srv") > "$T/srv.mfl"
+machin build "$T/srv.mfl" -o "$T/srvbin" --safe >/dev/null
 check() { mkdir -p "$T/$1" && (cd "$T/$1"; shift; "$@" >/dev/null 2>&1 & echo $! > pid; sleep 2
   if MACHINJS_SMOKE=1 sh "$ROOT/test/smoke.sh"; then r=0; else r=1; fi; kill "$(cat pid)" 2>/dev/null; return $r); }
 check native "$T/srvbin"

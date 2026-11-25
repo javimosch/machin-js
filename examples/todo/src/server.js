@@ -7,9 +7,8 @@ import { handle } from "./routes.js";
  * @returns {void}
  */
 export function main() {
-  //why: PORT lets tests run on their own port; the arrow is required because machin
-  //     functions aren't values, so handle is wrapped.
+  //why: PORT lets tests run on their own port.
   const fromEnv = parse_int(env("PORT"));
   const port = fromEnv == 0 ? 8080 : fromEnv;
-  serve(port, (req) => handle(req));
+  serve(port, handle);
 }

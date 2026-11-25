@@ -5,7 +5,7 @@
 | Tool | Why |
 |---|---|
 | [`deno`](https://deno.com) 2.x | runs the transpiler, and runs your app as plain JS |
-| [`machin`](https://github.com/javimosch/machin) | compiles the output to native (developed against 0.142.1) |
+| [`machin`](https://github.com/javimosch/machin) | compiles the output to native (0.143.0 or newer) |
 | a C compiler (`cc`) | machin builds through C |
 
 ```sh

@@ -33,6 +33,10 @@ const CASES: Case[] = [
   { name: "both branches return", body: "console.log(f(0));", extra: fn("f(a)", "if (a == 1) { return 5; } else { return 6; }", "@param {int} a"), expect: "same" },
   { name: "async", body: "console.log(f());", extra: `/** p */\nasync function f() {\n  //why: p.\n  return 1;\n}\n`, expect: "JS-UNSUP001" },
   { name: "default parameter", body: "console.log(f());", extra: fn("f(a = 1)", "return a;"), expect: "JS-UNSUP001" },
+  { name: "function name as a callback", body: "console.log(apply(double, 4));", extra: fn("apply(f, x)", "return f(x);", "@param {(n: int) => int} f @param {int} x") + fn("double(n)", "return n + n;", "@param {int} n"), expect: "same" },
+  { name: "function stored in a const", body: "const g = double; console.log(g(21));", extra: fn("double(n)", "return n + n;", "@param {int} n"), expect: "same" },
+  { name: "builtin used as a value", body: "console.log(apply(parse_int));", extra: 'import { parse_int } from "machin";\n' + fn("apply(f)", 'return f("1");'), expect: "JS-FNVAL001" },
+  { name: "local named like a visible function", body: "if (1 == 1) { const double = 2; console.log(double); } console.log(double(1));", extra: fn("double(n)", "return n + n;", "@param {int} n"), expect: "JS-SCOPE001" },
   { name: "ternary", body: 'const a = 1; const m = a == 1 ? "y" : "n"; console.log(m);', expect: "same" },
 ];
 
