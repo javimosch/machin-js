@@ -5,7 +5,8 @@
     "jsr:@std/internal@^1.0.12": "1.0.14",
     "jsr:@std/internal@^1.0.14": "1.0.14",
     "jsr:@std/path@1": "1.1.6",
-    "npm:acorn@8.14.0": "8.14.0"
+    "npm:acorn@8.14.0": "8.14.0",
+    "npm:typescript@5.7.3": "5.7.3"
   },
   "jsr": {
     "@std/assert@1.0.19": {
@@ -27,6 +28,9 @@
   "npm": {
     "acorn@8.14.0": {
       "integrity": "sha512-cl669nCJTZBsL97OF4kUQm5g5hC2uihk0NxY3WENAC0TYdILVkAyHymAntgxGkl7K+t0cXIrH5siy5S4XkFycA=="
+    },
+    "typescript@5.7.3": {
+      "integrity": "sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw=="
     }
   }
 }

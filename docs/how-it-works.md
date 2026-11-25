@@ -3,6 +3,7 @@
 ```text
 your .js modules
    │  transpile/transpile.ts   (Deno + acorn): checks the rules, orders modules
+   │  transpile/typecheck.ts   (TypeScript checker): checks your JSDoc types
    ▼
 .src files  (+ order.txt, native.txt)
    │  machin encode            canonical MFL
@@ -22,6 +23,7 @@ added. `"machin/desktop"` has none.
 | Check | What it shows |
 |---|---|
 | `deno test -A test/` | diagnostics fire, and the docs' marked examples behave as stated |
+| `test/types_test.ts` | the typings are valid, the todo app type-checks, and type mistakes stop a build |
 | parity cases (`test/parity_test.ts`) | each tricky program behaves natively as under Deno, or is rejected with the expected code |
 | gold comparison | transpiler output has not changed unexpectedly |
 | demo, Deno and native | both produce the same output |

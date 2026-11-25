@@ -56,7 +56,7 @@ func toggleTodo(db, id) (r) {
 }
 ```
 
-The JSDoc is the type system and the documentation at once, so they cannot drift apart.
+The JSDoc is both the documentation and the types the build checks.
 
 ## The rules (compiler errors, not style advice)
 
@@ -71,6 +71,7 @@ The JSDoc is the type system and the documentation at once, so they cannot drift
 | `JS-FNVAL001` | a function name can't be passed as a value — wrap it in an arrow |
 | `JS-RET001` / `JS-SCOPE001` | every path of a valued function returns; no shadowed names |
 | `JS-NUM001/002` / `JS-STR001` | no decimals, division or non-ASCII literals yet (they would behave differently) |
+| `JS-TYPE001` | your JSDoc types are checked (by the TypeScript checker, on plain `.js`) |
 | `JS-UNSUP001` | anything outside the supported allow-list is rejected |
 
 Diagnostics print `file:line: CODE message` and exit non-zero, so an agent writing in this mode
@@ -113,7 +114,7 @@ This is an **alpha**. It has one worked example, and the language is a deliberat
 - **Supported:** functions, closures via arrows, `const`/`let`, `if`/`while`/`for`, string/int arithmetic, arrays of strings, `@typedef` structs, ES-module imports/exports.
 - **Not yet:** classes, `async`, template literals, `??`, `switch`, method calls like `.push`, object literals, `continue` in `for`, block-bodied arrows, typed arrays beyond `string`.
 - **Never (by design):** prototypes, `this`, `eval`, dynamic keys, `==` coercion, npm.
-- **Numbers and strings:** `int`/`float` come from JSDoc; machin strings are bytes, not UTF-16 — see the [open questions](docs/NORTH-STAR.md#open-questions).
+- **Numbers and strings:** `int` and `float` are not told apart by the type check yet; machin strings are bytes, not UTF-16 — see the [open questions](docs/NORTH-STAR.md#open-questions).
 - **Known differences:** some behavior can still differ from plain JavaScript; they are [listed](docs/language.md#known-differences).
 - **No source maps yet:** a native panic reports machin lines, not `file.js:line`.
 

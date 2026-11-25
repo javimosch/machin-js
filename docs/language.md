@@ -22,9 +22,18 @@ export function add(a, b) {
 }
 ```
 
-machin infers types when it compiles. Today the transpiler itself reads JSDoc types in two places:
-`@typedef` structs, and `@returns {T[]}` for `parse` (below). Write accurate types everywhere
-anyway, because they are the documentation, but don't assume every annotation is verified.
+The build type-checks your JSDoc with the TypeScript checker, on your plain `.js` files: there are
+no `.ts` files and no TypeScript syntax. A wrong type stops the build with
+[`JS-TYPE001`](diagnostics.md#js-type001-type-error). Every parameter needs a type. A missing
+`@returns` is inferred from the code.
+
+Two things the check does **not** do yet:
+
+- `int` and `float` are both just `number` to the checker, so it won't stop you passing one as the other.
+- It follows JavaScript's rules, so `1 + "x"` passes the check and then fails in machin.
+
+The code generator doesn't use the checker's types yet. That is the next step of
+[Phase 1](ROADMAP.md).
 
 ## Structs
 
@@ -48,6 +57,8 @@ That line also tells the transpiler to include `model.js` in the build.
 <!-- check: ok -->
 ```js
 import { sqlite_query, parse } from "machin";
+
+/** @typedef {{id: int, title: string, done: int}} Todo */
 
 /**
  * All todos.
@@ -97,9 +108,8 @@ is a bug: please report it.
 | reading past the end of an array | `undefined` | with `--safe`, the program stops; without it, no error |
 | builtins from `"machin"` | hand-written stand-ins in `shim/` | the real machin builtin |
 
-The transpiler does not check types yet, so type mistakes surface as machin errors, and some
-areas, such as `%` by zero and comparing arrays or objects with `==`, are not covered by tests.
-Real type checking is [Phase 1 of the roadmap](ROADMAP.md).
+Some areas, such as `%` by zero and comparing arrays or objects with `==`, are not covered by
+tests.
 
 ## Never, by design
 

@@ -2,6 +2,8 @@ import { sqlite_close } from "machin";
 import { openStore, addTodo, toggleTodo, removeTodo, listTodos } from "./store.js";
 import { renderLine, renderPage } from "./render.js";
 
+/** @typedef {import("./model.js").Todo} Todo */
+
 /**
  * Print every todo, one per line.
  * @param {Todo[]} todos

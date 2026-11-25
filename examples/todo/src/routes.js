@@ -3,6 +3,9 @@ import { not_found, redirect, ok_html, ok_json } from "machin/web";
 import { openStore, addTodo, toggleTodo, removeTodo, listTodos } from "./store.js";
 import { renderPage } from "./render.js";
 
+/** @typedef {import("machin/web").Request} Request */
+/** @typedef {import("machin/web").Response} Response */
+
 /**
  * Read one field from an application/x-www-form-urlencoded body.
  * @param {string} body e.g. "title=buy+milk&x=1".

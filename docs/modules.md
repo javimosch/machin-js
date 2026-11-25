@@ -12,8 +12,8 @@ generated from `machin guide`. After upgrading machin, regenerate them from the 
 deno run -A tools/gen-dts.ts
 ```
 
-Signatures with optional or variadic parameters are typed loosely
-([machin#712](https://github.com/javimosch/machin/issues/712)).
+The generator stops with an error on a type word it doesn't know, rather than typing it `any`.
+Parameter names are mostly placeholders (`a0`, `a1`), because the guide's text signatures lack them.
 
 ## `"machin/web"`: HTTP server
 

@@ -3,9 +3,10 @@
 //why: this is the exit test of roadmap Phase 0 — "no known silent differences".
 import { assertEquals } from "jsr:@std/assert@1";
 import { transpile } from "../transpile/transpile.ts";
+import { program, typeErrors } from "../transpile/typecheck.ts";
 
 type Case = { name: string; body: string; extra?: string; expect: "same" | string };
-const fn = (name: string, body: string) => `/** p */\nfunction ${name} {\n  //why: p.\n  ${body}\n}\n`;
+const fn = (name: string, body: string, doc = "p") => `/** ${doc} */\nfunction ${name} {\n  //why: p.\n  ${body}\n}\n`;
 
 const CASES: Case[] = [
   { name: "integer division", body: "console.log(7 / 2);", expect: "JS-NUM002" },
@@ -29,7 +30,7 @@ const CASES: Case[] = [
   { name: "field mutation", body: "const t = mk(); t.n = 9;", extra: fn("mk()", "return 1;"), expect: "JS-UNSUP001" },
   { name: "missing return", body: "console.log(f(0));", extra: fn("f(a)", "if (a == 1) { return 5; }"), expect: "JS-RET001" },
   { name: "bare return in valued fn", body: "console.log(f(0));", extra: fn("f(a)", "if (a == 1) { return; }\n  return 2;"), expect: "JS-RET001" },
-  { name: "both branches return", body: "console.log(f(0));", extra: fn("f(a)", "if (a == 1) { return 5; } else { return 6; }"), expect: "same" },
+  { name: "both branches return", body: "console.log(f(0));", extra: fn("f(a)", "if (a == 1) { return 5; } else { return 6; }", "@param {int} a"), expect: "same" },
   { name: "async", body: "console.log(f());", extra: `/** p */\nasync function f() {\n  //why: p.\n  return 1;\n}\n`, expect: "JS-UNSUP001" },
   { name: "default parameter", body: "console.log(f());", extra: fn("f(a = 1)", "return a;"), expect: "JS-UNSUP001" },
   { name: "ternary", body: 'const a = 1; const m = a == 1 ? "y" : "n"; console.log(m);', expect: "same" },
@@ -53,6 +54,8 @@ for (const k of CASES) {
     const d = await Deno.makeTempDir();
     await Deno.writeTextFile(`${d}/m.js`, src);
     await Deno.writeTextFile(`${d}/run.mjs`, 'import { main } from "./m.js";\nmain();\n');
+    //why: the checker must not reject a program that behaves correctly.
+    assertEquals(typeErrors(program([`${d}/m.js`])), []);
     await Deno.writeTextFile(`${d}/m.src`, m.out);
     const js = await run("deno", ["run", `${d}/run.mjs`]);
     const enc = await run("machin", ["encode", `${d}/m.src`]);

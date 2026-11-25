@@ -2,6 +2,7 @@
 //why: one-directional on purpose; machin core is untouched, we only emit text
 //     that `machin encode` already accepts.
 import * as acorn from "npm:acorn@8.14.0";
+import { program, typeErrors } from "./typecheck.ts";
 import { dirname, basename, resolve } from "jsr:@std/path@1";
 
 export type Diag = { code: string; msg: string; file: string; line: number };
@@ -311,6 +312,8 @@ export function transpile(file: string, src: string): Mod {
     } else if (n.type === "ImportDeclaration") {
       imports.push({ source: n.source.value, names: n.specifiers.map((x: any) => x.imported.name), line: n.loc.start.line });
       n.specifiers.forEach((x: any) => imported.add(x.local.name));
+    } else if (n.type === "ExportNamedDeclaration" && !n.declaration && !n.source && n.specifiers.length === 0) {
+      continue; // `export {}` only marks a type-only file as a module
     } else if (n.type === "ExportNamedDeclaration" && n.declaration?.type === "FunctionDeclaration") {
       exports.add(n.declaration.id.name); n.declaration.docStart = n.start; decls.push(n.declaration);
     } else decls.push(n);
@@ -382,6 +385,8 @@ export async function buildGraph(entry: string): Promise<{ order: { path: string
     if (seen.has(f)) add(p, 1, "JS-DUP001", `function ${f} is also defined in ${basename(seen.get(f)!)} (machin has one namespace)`);
     seen.set(f, p);
   }
+  //why: only once everything else is clean, so one mistake isn't reported twice in two ways.
+  if (!diags.length) diags.push(...typeErrors(program(order.map((o) => o.path))));
   return { order, native: [...native], diags };
 }
 

@@ -2,6 +2,24 @@
 
 Every problem prints as `file:line: CODE message`, and the transpiler exits non-zero.
 
+## JS-TYPE001: type error
+
+The TypeScript checker read your JSDoc and found a mismatch. The message ends with TypeScript's own
+code, such as `(TS2345)`, which you can search for. Type errors are reported only after all other
+diagnostics are fixed, and only by a full build (it needs your imports).
+
+<!-- check: JS-TYPE001 -->
+```js
+/**
+ * Name of a user.
+ * @param {{name: string}} user
+ */
+export function nameOf(user) {
+  //why: example, with a misspelled field.
+  return user.nmae;
+}
+```
+
 ## JS-DOC001: function has no JSDoc block
 
 <!-- check: JS-DOC001 -->
@@ -66,11 +84,14 @@ Fixed:
 
 <!-- check: ok -->
 ```js
-import { serve } from "machin/web";
-/** Handle a request. */
+import { serve, ok_text } from "machin/web";
+/**
+ * Handle a request.
+ * @param {import("machin/web").Request} req
+ */
 function handle(req) {
   //why: example.
-  return req;
+  return ok_text(req.path);
 }
 /** Start. */
 function main() {

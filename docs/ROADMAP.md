@@ -17,7 +17,7 @@ needs them.
 | Phase | Work | Exit test | Status |
 |---|---|---|---|
 | **0. Honest** (0.2) | correct the claims; allow-list; reject known divergences; parity tests; CI | every parity case matches or gets a `JS-` error, and none crashes | done |
-| **1. Typed** (0.3) | type-check JSDoc (first trial the TypeScript compiler's checker on plain `.js`); define division, numbers, strings | wrong types fail with a JS line number; generated random programs show no differences | next |
+| **1. Typed** (0.3) | type-check JSDoc (first trial the TypeScript compiler's checker on plain `.js`); define division, numbers, strings | wrong types fail with a JS line number; generated random programs show no differences | in progress: type checking done; using the types, and random testing, still to do |
 | **2. Useful** (0.4–0.6) | typed arrays, object literals, `for…of`, template literals, `push`/`map`/`filter`, error handling; a CLI tool and an API service | all three apps pass their checks without workarounds | |
 | **3. Debuggable** (0.7) | source maps for compile errors and crashes; shims for every supported builtin; debugging guide | the agent-off test: a planted bug is found and fixed by a human alone | |
 | **4. Shippable** (0.8–0.9) | a `machin-js` command (`new`, `build`, `run`, `check`) via `deno compile`; bundled bridges; tested machin versions; releases and changelog | a clean machine goes from install to a running app using only the docs | |
