@@ -4,7 +4,7 @@
 import { basename, dirname, join, resolve, toFileUrl } from "jsr:@std/path@1";
 import { buildGraph } from "../transpile/transpile.ts";
 
-export const VERSION = "0.8.1";
+export const VERSION = "0.9.0";
 const MIN_MACHIN = [0, 144, 3];
 const USAGE = `machin-js ${VERSION} — native machin apps from JSDoc-typed JavaScript
 

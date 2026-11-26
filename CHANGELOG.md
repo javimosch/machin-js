@@ -2,7 +2,19 @@
 
 Newest first.
 
-## Unreleased
+## 0.9.0 (2026-11-26)
+
+An **alpha** prerelease for Linux x86-64 (glibc). **Before upgrading, upgrade machin to 0.144.3 or
+newer.**
+
+### May reject a program that built before
+
+- A store into a list reached through another list, such as `rows[0].tags[0] = f(rows)`, is now
+  `JS-ORDER001` when the value calls something that could replace the row. This is a precaution:
+  machin doesn't guarantee the evaluation order. In the case tried, 0.8.1 happened to behave
+  correctly. Fix: compute the value into a variable first.
+
+### Changes
 
 - **Nested lists:** `[[1, 2], [3]]`, `grid[i][j]` reads and stores, and grids built with `push`.
 - **Needs machin 0.144.3 or newer** (was 0.144.0). Runaway or very deep recursion now stops with
