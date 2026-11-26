@@ -32,7 +32,7 @@ export default function () {
   <p class="lede">machin-js compiles a strict, documented subset of JavaScript to <a href="https://github.com/javimosch/machin">machin</a>, and from there to a single native binary.</p>
   <p class="actions"><a class="btn primary" href="/getting-started/">Get started</a><a class="btn" href="/tutorial/">Read the todo app</a></p>
   <p class="lede"><code>machin-js new hello && cd hello && machin-js run main.js</code></p>
-  <p><a href="${REPO}/releases/tag/v0.8.0">v0.8.0 alpha</a> · Linux x86-64</p>
+  <p><a href="${REPO}/releases/tag/v0.8.1">v0.8.1 alpha</a> · Linux x86-64</p>
 </section>
 <section class="flow wrap" aria-label="From JavaScript to a native binary">
   ${panel("source", "store.js — you read and edit this", "javascript", JS)}

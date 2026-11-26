@@ -34,7 +34,7 @@ Then machin-js:
 <!-- run: install -->
 ```sh
 mkdir -p ~/.cache/machin-js-install && cd ~/.cache/machin-js-install
-B=https://github.com/javimosch/machin-js/releases/download/v0.8.0
+B=https://github.com/javimosch/machin-js/releases/download/v0.8.1
 curl -fsSLO $B/machin-js-x86_64-unknown-linux-gnu
 curl -fsSL -o machin-js.SHA256SUMS $B/SHA256SUMS.txt
 sha256sum --check --ignore-missing machin-js.SHA256SUMS
@@ -43,7 +43,7 @@ cd ~
 ```
 
 The release is an **alpha prerelease**. The licences of what the binary contains are in
-`THIRD_PARTY_LICENSES.txt` on the [release page](https://github.com/javimosch/machin-js/releases/tag/v0.8.0).
+`THIRD_PARTY_LICENSES.txt` on the [release page](https://github.com/javimosch/machin-js/releases/tag/v0.8.1).
 
 ### Or build it from source
 

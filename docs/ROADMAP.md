@@ -28,8 +28,8 @@ needs them.
 
 ## Risks
 
-- **machin dependencies:** open: [#718](https://github.com/javimosch/machin/issues/718) (nested list literals) and [#719](https://github.com/javimosch/machin/issues/719) (silent
-  stack overflow). #715 and #716 were cleared in 0.144.0.
+- **machin dependencies:** none open. [#718](https://github.com/javimosch/machin/issues/718) and [#719](https://github.com/javimosch/machin/issues/719) were fixed in machin
+  0.144.1; adopting them (and nested array literals) means raising the minimum version.
 - **machin changes often:** CI pins a version, and a weekly job tests the newest release.
 - **Numbers never match completely:** document the limits, and reject or check what we can.
 
@@ -103,4 +103,6 @@ needs them.
 - **Left before 1.0:** the owner's approval of the [compatibility policy](compatibility.md) (a
   draft); a decision on 1.0 criterion 3 (a **human** fixes a bug with the agent off); a period of
   real use with no new features.
+- **v0.8.1** ([release](https://github.com/javimosch/machin-js/releases/tag/v0.8.1)) ships the audit's
+  fixes, including the `__proto__` difference that 0.8.0 has.
 

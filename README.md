@@ -10,7 +10,7 @@
 
 <p align="center">
   <img alt="status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
-  <a href="https://github.com/javimosch/machin-js/releases"><img alt="release: v0.8.0" src="https://img.shields.io/badge/release-v0.8.0-1f1470"></a>
+  <a href="https://github.com/javimosch/machin-js/releases"><img alt="release: v0.8.1" src="https://img.shields.io/badge/release-v0.8.1-1f1470"></a>
   <img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-blue">
   <img alt="runtime: Deno" src="https://img.shields.io/badge/toolchain-Deno-black">
   <img alt="targets: machin" src="https://img.shields.io/badge/compiles%20to-machin%20→%20native-1f1470">
@@ -132,7 +132,7 @@ This is an **alpha**. It has three worked examples, and the language is a delibe
 - **Numbers and strings:** numbers are integers (no decimals yet), and strings are counted in bytes (`len`, `substr`).
 - **JSON input:** read field by field with `machin/json` (top-level fields only); `parse` is for database rows and JSON your code builds.
 - **Known differences:** some behavior can still differ from plain JavaScript; they are [listed](docs/language.md#known-differences).
-- **Debugging:** out-of-range list access and division by zero stop with your `file.js:line:column` and the expression; endless recursion still crashes with no message. See [Debugging](docs/debugging.md).
+- **Debugging:** out-of-range list access and division by zero stop with your `file.js:line:column` and the expression; runaway recursion gives no `.js` line (and no message at all on machin 0.144.0). See [Debugging](docs/debugging.md).
 
 Where this is going, in measurable steps: [docs/NORTH-STAR.md](docs/NORTH-STAR.md).
 

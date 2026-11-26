@@ -212,7 +212,7 @@ export function chop(s) {
 
 ## Not supported yet
 
-Plain division (`/`), decimals, nested array literals ([machin#718](https://github.com/javimosch/machin/issues/718)), `null`, non-ASCII string literals,
+Plain division (`/`), decimals, nested array literals, `null`, non-ASCII string literals,
 `typeof`, `var`, destructuring, default and rest parameters, assigning to an object field,
 shadowing a name, looping over a `Map`, classes, `async`, `??`, `switch`, method calls other than `push` (such as `.map`),
 object spread and computed keys, tagged templates, `continue`, block-bodied arrows, top-level `const`, and
@@ -232,7 +232,7 @@ is a bug: please report it.
 | negative zero, e.g. `console.log(Math.trunc(-1 / 2))` | prints `-0` | prints `0` (`String(x)` gives `0` in both) |
 | integer results beyond 2^53 | rounded | exact, and they wrap past 2^63 |
 | reading or writing past the end of an array | `undefined`, or the array grows | stops, naming the place, the expression and the index |
-| recursion that never ends | `RangeError` with a stack trace | crashes with no message (exit 139) |
+| recursion that never ends | `RangeError` with a stack trace | `panic: stack overflow` with machin 0.144.1 or newer; with 0.144.0, no message. Newer machin also stops a very deep recursion (1,000,000 calls) that would otherwise finish |
 | `substr` cutting a non-ASCII character in half | a replacement character | the raw bytes |
 | other builtins from `"machin"` | a hand-written stand-in in `shim/`, if there is one | the real builtin |
 | `parse_int` of a number beyond 2^53 | rounded | exact, limited to 64 bits |

@@ -100,6 +100,7 @@ runtimes.
 
 | Symptom | Likely cause |
 |---|---|
-| the native program dies with **no message** (exit code 139), or seems to hang, and earlier output may be missing | recursion that never ends ([machin#719](https://github.com/javimosch/machin/issues/719)). Under Deno you get a `RangeError` with a stack trace |
+| `panic: stack overflow` (machin 0.144.1 or newer) | recursion that never ends, or goes too deep. Earlier output is kept, but no `.js` line is given: run it under Deno for a stack trace |
+| the native program dies with **no message** (exit code 139), or seems to hang, and earlier output may be missing | the same, with machin 0.144.0: upgrade machin to get the message |
 | the program hangs | an endless loop; pause it in the debugger under Deno |
 | the desktop app misbehaves | it has no Deno version; debug the shared logic through the web or console build |
