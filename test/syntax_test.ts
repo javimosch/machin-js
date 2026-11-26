@@ -165,6 +165,12 @@ export const SNIPPETS: Snippet[] = [
   ["map forEach", MAP + "m.forEach((v) => v);"],
   ["map get on rhs of or", MAP + 'console.log(m.get("a") || 1);'],
   ["Set", "const s = new Set(); console.log(s.size);"],
+  // nested lists
+  ["nested list literal", "const g = [[1], [2, 3]]; console.log(g[1][1]);"],
+  ["nested list store", "const g = [[1]]; g[0][0] = 5; g[0][0] += 2; console.log(g[0][0]);"],
+  ["nested list of mixed depth", "const g = [[1], 2]; console.log(g.length);"],
+  ["ragged and empty rows", "/** @type {int[][]} */\n  const g = [[], [1]]; console.log(g[0].length + g[1].length);"],
+  ["push onto a stored row", "const g = [[1]]; g[0].push(2); console.log(g[0].length);"],
   // identifiers that might mean something to machin or C
   ["underscore name", "const _ = 5; console.log(_);"],
   ["two underscores", "const __x = 5; console.log(__x);"],

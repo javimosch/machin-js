@@ -2,6 +2,17 @@
 
 Newest first.
 
+## Unreleased
+
+- **Nested lists:** `[[1, 2], [3]]`, `grid[i][j]` reads and stores, and grids built with `push`.
+- **Needs machin 0.144.3 or newer** (was 0.144.0). Runaway or very deep recursion now stops with
+  `panic: stack overflow` and keeps earlier output. machin reports that its check makes
+  recursion-heavy `--safe` builds, which machin-js always uses, about 2x slower in its benchmark,
+  and that recursion deeper than 1,000,000 calls stops even where it used to finish
+  (`MFL_MAX_DEPTH` raises the limit).
+- `+=`, `++` and `--` on a grid cell are accepted when the row and column are simple and the value
+  calls nothing; `push([])` and `push([…])` take the list's row type.
+
 ## 0.8.1 (2026-11-26)
 
 An **alpha** prerelease for Linux x86-64 (glibc); needs machin 0.144.0 or newer. **Upgrade from

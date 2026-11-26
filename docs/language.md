@@ -105,6 +105,7 @@ An audit of edge cases, with the exact result for each, is in
 - arrows with an expression body: `(s) => parse_int(s)`
 - passing and storing your own functions (`serve(port, handle)`); builtins need an arrow
 - arrays of numbers, strings, booleans or structs; `a[i]`, `a[i] = x`, `a.length`
+- lists of lists: `[[1, 2], [3]]`, `grid[i][j]` *(on the current source; not in release 0.8.1)*
 - reading `a.field` on a struct
 - `==` and `!=` on numbers, strings and booleans
 - `String(x)` and `console.log(...)` of numbers, strings and booleans
@@ -212,7 +213,7 @@ export function chop(s) {
 
 ## Not supported yet
 
-Plain division (`/`), decimals, nested array literals, `null`, non-ASCII string literals,
+Plain division (`/`), decimals, `null`, non-ASCII string literals,
 `typeof`, `var`, destructuring, default and rest parameters, assigning to an object field,
 shadowing a name, looping over a `Map`, classes, `async`, `??`, `switch`, method calls other than `push` (such as `.map`),
 object spread and computed keys, tagged templates, `continue`, block-bodied arrows, top-level `const`, and
@@ -232,7 +233,7 @@ is a bug: please report it.
 | negative zero, e.g. `console.log(Math.trunc(-1 / 2))` | prints `-0` | prints `0` (`String(x)` gives `0` in both) |
 | integer results beyond 2^53 | rounded | exact, and they wrap past 2^63 |
 | reading or writing past the end of an array | `undefined`, or the array grows | stops, naming the place, the expression and the index |
-| recursion that never ends | `RangeError` with a stack trace | `panic: stack overflow` with machin 0.144.1 or newer; with 0.144.0, no message. Newer machin also stops a very deep recursion (1,000,000 calls) that would otherwise finish |
+| recursion that never ends, or very deep recursion | `RangeError` with a stack trace, typically after some thousands of calls | `panic: stack overflow`, exit 1, with earlier output kept. The limit is much higher: the stack's size, or 1,000,000 calls (`MFL_MAX_DEPTH` to change) |
 | `substr` cutting a non-ASCII character in half | a replacement character | the raw bytes |
 | other builtins from `"machin"` | a hand-written stand-in in `shim/`, if there is one | the real builtin |
 | `parse_int` of a number beyond 2^53 | rounded | exact, limited to 64 bits |

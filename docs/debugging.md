@@ -100,7 +100,6 @@ runtimes.
 
 | Symptom | Likely cause |
 |---|---|
-| `panic: stack overflow` (machin 0.144.1 or newer) | recursion that never ends, or goes too deep. Earlier output is kept, but no `.js` line is given: run it under Deno for a stack trace |
-| the native program dies with **no message** (exit code 139), or seems to hang, and earlier output may be missing | the same, with machin 0.144.0: upgrade machin to get the message |
+| `panic: stack overflow` | recursion that never ends, or goes too deep. Earlier output is kept, but no `.js` line is given: run it under Deno for a stack trace. If the depth is intended, `MFL_MAX_DEPTH` raises the 1,000,000-call limit (the real stack size still applies) |
 | the program hangs | an endless loop; pause it in the debugger under Deno |
 | the desktop app misbehaves | it has no Deno version; debug the shared logic through the web or console build |

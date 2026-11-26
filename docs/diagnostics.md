@@ -287,7 +287,7 @@ function f() {
 }
 ```
 
-Use one element type. For an empty array, annotate it: `/** @type {int[]} */`. Nested array literals aren't supported.
+Use one element type, at every level of a nested list. For an empty array, annotate it: `/** @type {int[]} */`.
 
 ## JS-ANY001: unknown type
 
@@ -436,8 +436,9 @@ Native code writes `a[i] += x` as `a[i] = a[i] + x`, so it would call `pick` twi
 JavaScript does. So:
 
 - for `+=`, `-=`, `*=`, `%=`, `++` and `--` on an element, the index (and the list) must be simple:
-  variables, constants and arithmetic, with no calls and no list reads;
-- a plain store is fine if the index or the value is simple, or if neither one calls anything that
+  variables, constants and arithmetic, with no calls and no list reads. In a nested list, `g[i][j] += x`
+  is fine when `i` and `j` are simple and `x` calls nothing that could replace the row;
+- a plain store is fine if the list and index together, or the value, are simple, or if neither one calls anything that
   could change something. `String`, `len`, `substr`, map reads and the other built-ins that only
   compute don't count. Your own functions always do.
 

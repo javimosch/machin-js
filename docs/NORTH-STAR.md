@@ -15,7 +15,7 @@ The order of work toward 1.0, with exit tests, is in [ROADMAP.md](ROADMAP.md).
 | Same meaning, two runtimes | example output identical under Deno and as a native binary | ✅ todo demo + HTTP smoke on both |
 | Nothing implicit | undeclared names, bad imports, name clashes, import cycles are errors | ✅ (`JS-UNDEF001`, `JS-IMPORT00x`, `JS-DUP001`, `JS-CYCLE001`) |
 | Shared core, thin shells | ≥ 3 shells over one core | 🟡 web + desktop done; terminal next |
-| Debuggable in JS terms | a native crash reports `file.js:line:column` | 🟡 list and division crashes do; a stack overflow doesn't name a line. Tested with a simulated user, not yet a human |
+| Debuggable in JS terms | a native crash reports `file.js:line:column` | 🟡 list and division crashes do; a stack overflow says so but doesn't name a line. Tested with a simulated user, not yet a human |
 | Real-program coverage | ≥ 2 distinct apps compile and pass their gates | ✅ three (todo, tally, linkbox) |
 
 ## Tiers
@@ -50,9 +50,8 @@ verified with real X input on a private display.
 
 **Open:** none.
 
-**Fixed in machin, not yet adopted** (machin 0.144.1; machin-js still accepts 0.144.0):
-[#718](https://github.com/javimosch/machin/issues/718) (nested list literals; machin-js still refuses nested array literals) and
-[#719](https://github.com/javimosch/machin/issues/719) (silent stack overflow; newer machin now reports it).
+**Cleared** in machin 0.144.1 (machin-js now requires 0.144.3): [#718](https://github.com/javimosch/machin/issues/718) (nested list
+literals) and [#719](https://github.com/javimosch/machin/issues/719) (silent stack overflow).
 
 **Cleared** in machin 0.144.0, now the minimum version: [#715](https://github.com/javimosch/machin/issues/715) (`json()` could emit invalid
 JSON) and [#716](https://github.com/javimosch/machin/issues/716) (nothing could tell that JSON was invalid; `json_valid` now can).

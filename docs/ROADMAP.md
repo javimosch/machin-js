@@ -28,8 +28,8 @@ needs them.
 
 ## Risks
 
-- **machin dependencies:** none open. [#718](https://github.com/javimosch/machin/issues/718) and [#719](https://github.com/javimosch/machin/issues/719) were fixed in machin
-  0.144.1; adopting them (and nested array literals) means raising the minimum version.
+- **machin dependencies:** none open. machin-js requires 0.144.3; [#718](https://github.com/javimosch/machin/issues/718) and
+  [#719](https://github.com/javimosch/machin/issues/719) are adopted.
 - **machin changes often:** CI pins a version, and a weekly job tests the newest release.
 - **Numbers never match completely:** document the limits, and reject or check what we can.
 
@@ -56,7 +56,7 @@ needs them.
   bookmarks API.
 - **JSON input arrived** with machin 0.144.0's `json_valid`: linkbox now accepts JSON request bodies,
   through `machin/json`. It reads top-level fields only.
-- **Remaining limits no example needs yet:** nested JSON, nested array literals, looping over a map.
+- **Remaining limits no example needs yet:** nested JSON input, looping over a map.
 
 ## Phase 3 notes
 
@@ -96,7 +96,7 @@ needs them.
 
 ## Phase 5 notes
 
-- **Pinned:** the [reference](specification.md) records the result of 185 audited constructs, and the
+- **Pinned:** the [reference](specification.md) records the result of 190 audited constructs, and the
   tests fail if any changes.
 - **What the audit found:** 18 constructs that weren't handled soundly on its first run, one of them
   a silent difference (`__proto__` as a key) that is in v0.8.0.

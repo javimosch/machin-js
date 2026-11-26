@@ -97,7 +97,7 @@ can't produce code a human can't read.
 
 ## Quick start
 
-Linux x86-64, with [`machin`](https://github.com/javimosch/machin) 0.144.0 or newer and a C compiler.
+Linux x86-64, with [`machin`](https://github.com/javimosch/machin) 0.144.3 or newer and a C compiler.
 Download the [latest release](https://github.com/javimosch/machin-js/releases) (an alpha prerelease), or
 follow [Getting started](https://javimosch.github.io/machin-js/getting-started/), which also installs
 machin and checks both downloads.
@@ -126,13 +126,13 @@ examples/todo/test/gate.sh                 # also: examples/tally and examples/l
 
 This is an **alpha**. It has three worked examples, and the language is a deliberately small subset:
 
-- **Supported:** `Map` lookups, functions (also as values), `const`/`let`, `if`/`while`/`for`/`for…of`, integer and string operations, template literals, `Math.trunc` division, arrays (with `push` while unshared), object literals as `@typedef` structs, ES modules.
+- **Supported:** `Map` lookups, functions (also as values), `const`/`let`, `if`/`while`/`for`/`for…of`, integer and string operations, template literals, `Math.trunc` division, arrays, including nested ones (with `push` while unshared), object literals as `@typedef` structs, ES modules.
 - **Not yet:** decimals, classes, `async`, `??`, `switch`, `.map`/`.filter`, looping over a `Map`, `continue`, block-bodied arrows.
 - **Never (by design):** prototypes, `this`, `eval`, dynamic keys, `==` coercion, npm.
 - **Numbers and strings:** numbers are integers (no decimals yet), and strings are counted in bytes (`len`, `substr`).
 - **JSON input:** read field by field with `machin/json` (top-level fields only); `parse` is for database rows and JSON your code builds.
 - **Known differences:** some behavior can still differ from plain JavaScript; they are [listed](docs/language.md#known-differences).
-- **Debugging:** out-of-range list access and division by zero stop with your `file.js:line:column` and the expression; runaway recursion gives no `.js` line (and no message at all on machin 0.144.0). See [Debugging](docs/debugging.md).
+- **Debugging:** out-of-range list access and division by zero stop with your `file.js:line:column` and the expression; runaway recursion reports `panic: stack overflow` without a `.js` line. See [Debugging](docs/debugging.md).
 
 Where this is going, in measurable steps: [docs/NORTH-STAR.md](docs/NORTH-STAR.md).
 

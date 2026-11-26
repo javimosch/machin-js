@@ -1,7 +1,7 @@
 // Parity: each program must either behave natively exactly as under Deno, or be rejected with
 // the expected JS- code. Add a case here for every divergence found, before fixing it.
 //why: this is the exit test of roadmap Phase 0 — "no known silent differences".
-import { assertEquals } from "jsr:@std/assert@1";
+import { assert, assertEquals } from "jsr:@std/assert@1";
 import { buildGraph } from "../transpile/transpile.ts";
 
 type Case = { name: string; body: string; extra?: string; imports?: string; expect: "same" | string };
@@ -23,7 +23,7 @@ const CASES: Case[] = [
   { name: "null", body: "const a = null; console.log(a);", expect: "JS-UNSUP001" },
   { name: "number array", body: "const a = [1, 2, 3]; a[1] = a[0] + a[2]; console.log(a[1] + a.length);", expect: "same" },
   { name: "boolean array", body: "const a = [true, false]; console.log(a[0]); console.log(a.length);", expect: "same" },
-  { name: "nested array literal", body: 'const a = [["x"], ["y", "z"]]; console.log(a[1][1]);', expect: "JS-ARR001" },
+  { name: "nested array literal", body: 'const a = [["x"], ["y", "z"]]; console.log(a[1][1]); console.log(a[1].length + a.length);', expect: "same" },
   { name: "empty typed array", body: "/** @type {int[]} */\n  const a = []; console.log(a.length);", expect: "same" },
   { name: "array of structs", body: "const a = [one(), one()]; console.log(a[1].n + a.length);", imports: "parse", extra: "/** @typedef {{n: int, ok: boolean, tags: string[]}} T */\n" + fn("one()", 'return parse("{\\"n\\":1,\\"ok\\":true,\\"tags\\":[]}", []);', "@returns {T}"), expect: "same" },
   { name: "mixed array", body: 'const a = ["x", 1]; console.log(a.length);', expect: "JS-ARR001" },
@@ -128,6 +128,23 @@ const CASES: Case[] = [
   { name: "store: effectful key through a callback", body: "const log = [0]; const g = next; const a = [1, 2, 3]; a[g(log)] = log[0]; console.log(a[1]);", extra: fn("next(log)", "log[0] += 1; return log[0];", "@param {int[]} log"), expect: "JS-ORDER001" },
   { name: "store: a function of yours that only looks pure", body: "/** @type {Map<string, int>} */\n  const m = new Map(); const log = [0]; m.set(String(next(log)), log[0]); console.log(m.has(\"1\"));", extra: fn("next(log)", "log[0] += 1; return log[0];", "@param {int[]} log"), expect: "JS-ORDER001" },
   { name: "text widths over many non-ASCII strings", body: "for (const e of [\"\", \"a\", \"caf%C3%A9\", \"%E6%97%A5%E6%9C%AC%E8%AA%9E\", \"%F0%9F%98%80%F0%9F%98%80\", \"%C3%A9%CC%82\", \"a%C2%A0b\", \"%25\", \"%2580\", \"100%25%20%C3%A9\", \"%09%0A\", \"%7F%C2%80%DF%BF%E0%A0%80%EF%BF%BF\", \"xxxxxxxxxxxxxxxxxxxx\"]) { const s = url_decode(e); console.log(`${text_length(s)} [${pad_end(s, 5)}] [${pad_start(s, 5)}]`); }", imports: "url_decode", extra: 'import { text_length, pad_end, pad_start } from "machin/text";', expect: "same" },
+  { name: "nested: read, write and a plain store", body: "const g = [[1, 2], [3]]; g[0][1] = 9; g[1][0] = g[0][1] + 1; console.log(`${g[0][0]} ${g[0][1]} ${g[1][0]}`);", expect: "same" },
+  { name: "nested: rows are shared, and a replaced row leaves the old one", body: "const g = [[1, 2], [3]]; const row = g[0]; row[0] = 9; console.log(g[0][0]); g[0] = [5]; row[1] = 8; console.log(`${g[0][0]} ${row[0]}${row[1]}`);", expect: "same" },
+  { name: "nested: three levels and for of", body: "const cube = [[[1], [2, 3]], [[4]]]; cube[0][1][0] = 7; let total = 0; for (const plane of cube) { for (const row of plane) { for (const v of row) { total = total * 10 + v; } } } console.log(total);", expect: "same" },
+  { name: "nested: empty rows and a typed empty grid", body: "/** @type {int[][]} */\n  const g = [];\n  /** @type {int[]} */\n  const none = []; g.push(none); g.push([]); console.log(`${g.length} ${g[0].length} ${g[1].length}`); const h = [[], [1]]; console.log(h[0].length + h[1][0]);", expect: "same" },
+  { name: "nested: build a grid with push", body: "/** @type {int[][]} */\n  const g = []; for (let i = 0; i < 4; i++) {\n    /** @type {int[]} */\n    const row = []; for (let j = 0; j <= i; j++) { row.push(i * 10 + j); } g.push(row); } g[2][1] += 100; g[3][0]++; console.log(`${g.length} ${g[2][1]} ${g[3][0]} ${g[3].length}`);", expect: "same" },
+  { name: "nested: push to a row after it is stored", body: "/** @type {int[][]} */\n  const g = [];\n  /** @type {int[]} */\n  const row = []; g.push(row); row.push(1); console.log(g[0].length);", expect: "JS-PUSH001" },
+  { name: "nested: push into a row of the grid", body: "const g = [[1, 2], [3]]; g[0].push(4); console.log(g[0].length);", expect: "JS-UNSUP001" },
+  { name: "nested: value replaces the row being written", body: "const g = [[1, 2], [3]]; g[0][0] = rep(g); console.log(g[0][0]);", extra: fn("rep(g)", "g[0] = [5]; return 7;", "@param {int[][]} g"), expect: "JS-ORDER001" },
+  { name: "nested: row index call changes what the value reads", body: "const g = [[1, 2], [3]]; g[pick(g)][0] = g[1][0]; console.log(g[0][0]);", extra: fn("pick(g)", "g[1] = [8, 8]; return 0;", "@param {int[][]} g"), expect: "JS-ORDER001" },
+  { name: "nested: simple row, call as value that leaves rows alone", body: "const g = [[1, 2], [3]]; const i = 1; g[i][0] = len(String(12345)); console.log(g[1][0]);", imports: "len", expect: "same" },
+  { name: "nested: compound with variables for indexes", body: "const g = [[1, 2], [3]]; const i = 0; const j = 1; g[i][j] += 10; g[i][j]--; console.log(g[0][1]);", expect: "same" },
+  { name: "nested: out of range row and column are loud", body: "const g = [[1, 2], [3]]; const i = 1; console.log(g[i][0]);", expect: "same" },
+  { name: "nested: rows compared", body: "const g = [[1, 2], [3]]; console.log(g[0] == g[1]);", expect: "JS-CMP001" },
+  { name: "nested: += with a value that replaces the row", body: "const g = [[1]]; g[0][0] += rep(g); console.log(g[0][0]);", extra: fn("rep(g)", "g[0] = [5]; return 7;", "@param {int[][]} g"), expect: "JS-ORDER001" },
+  { name: "nested: += where the row index is read from a list", body: "const g = [[0], [1]]; g[g[0][0]][0] += 1; console.log(g[0][0]);", expect: "JS-ORDER001" },
+  { name: "nested data decoded by parse", body: "const t = one(); console.log(`${t.g.length} ${t.g[0][1]} ${t.g[1].length}`); t.g[1].push(1);", imports: "parse", extra: "/** @typedef {{g: int[][]}} T */\n" + fn("one()", 'return parse("{\\"g\\":[[1,2],[]]}", []);', "@returns {T}"), expect: "JS-UNSUP001" },
+  { name: "nested data decoded by parse, read", body: "const t = one(); console.log(`${t.g.length} ${t.g[0][1]} ${t.g[1].length}`);", imports: "parse", extra: "/** @typedef {{g: int[][]}} T */\n" + fn("one()", 'return parse("{\\"g\\":[[1,2],[]]}", []);', "@returns {T}"), expect: "same" },
   { name: "ternary", body: 'const a = 1; const m = a == 1 ? "y" : "n"; console.log(m);', expect: "same" },
 ];
 
@@ -169,6 +186,8 @@ for (const k of CASES) {
 
 // A crash must say where in the .js it happened — with or without --safe.
 const CRASHES: [string, string, string][] = [
+  ["nested read past a row", "const g = [[1]];\n  console.log(g[0][3]);", "m.js:5:15: reading g[0][3]: index 3 is outside the list (length 1)"],
+  ["nested store past the rows", "const g = [[1]];\n  g[2][0] = 1;", "m.js:5:3: reading g[2]: index 2 is outside the list (length 1)"],
   ["read past the end", "const a = [1];\n  console.log(a[5]);", "m.js:5:15: reading a[5]: index 5 is outside the list (length 1)"],
   ["negative index", "const a = [1]; const i = 0 - 1;\n  console.log(a[i]);", "m.js:5:15: reading a[i]: index -1 is outside the list (length 1)"],
   ["store past the end", "const a = [1];\n\n  a[3] = 2;", "m.js:6:3: writing a[3]: index 3 is outside the list (length 1)"],
@@ -196,3 +215,20 @@ for (const [name, body, message] of CRASHES) {
     });
   }
 }
+
+Deno.test("runaway recursion: both runtimes stop with an error and keep earlier output", async () => {
+  const d = await Deno.makeTempDir();
+  const src = '/**\n * d\n * @param {int} n\n * @returns {int}\n */\nfunction down(n) {\n  //why: t.\n  return down(n + 1) + 1;\n}\n/** m */\nexport function main() {\n  //why: t.\n  console.log("before");\n  console.log(down(0));\n}\n';
+  await Deno.writeTextFile(`${d}/m.js`, src);
+  await Deno.writeTextFile(`${d}/run.mjs`, 'import { main } from "./m.js";\nmain();\n');
+  const built = await buildGraph(`${d}/m.js`);
+  assertEquals(built.diags, []);
+  await Deno.writeTextFile(`${d}/m.src`, built.order.map((o) => o.out).join("\n"));
+  const enc = await run("machin", ["encode", `${d}/m.src`]);
+  await Deno.writeTextFile(`${d}/m.mfl`, enc.out);
+  const js = await run("deno", ["run", "--no-config", `${d}/run.mjs`]);
+  const native = await run("machin", ["run", `${d}/m.mfl`, "--safe"]);
+  assertEquals([js.code, js.out, native.code, native.out], [1, "before\n", 1, "before\n"]);
+  assert(native.err.startsWith("panic: stack overflow"), native.err);
+  assert(js.err.includes("RangeError"), js.err);
+});

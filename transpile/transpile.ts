@@ -132,6 +132,13 @@ function checkParseInput(c: Ctx, x: any) {
     typeDiag(c, "JS-JSON001", `parse only accepts sqlite_query(...) or JSON your code builds; read outside JSON field by field with "machin/json"`, x);
 }
 
+/** A list reached with plain names and constants: `a`, `t.rows`, `g[i]`, `cube[i][2]`. */
+function path(x: any): boolean {
+  if (x.type === "Identifier") return true;
+  if (x.type !== "MemberExpression") return false;
+  return path(x.object) && (!x.computed || steady(x.property));
+}
+
 /** Reading it twice, or at another moment, can't change anything: no calls, no list reads. */
 function steady(x: any): boolean {
   if (x.type === "Literal" || x.type === "Identifier") return true;
@@ -162,10 +169,11 @@ function isPure(c: Ctx, x: any): boolean {
 }
 
 /** A store `a[key] = value` or `m.set(key, value)`: neither side may be able to affect the other. */
-function checkStoreOrder(c: Ctx, key: any, value: any, n: any) {
+function checkStoreOrder(c: Ctx, target: any[], value: any, n: any) {
   //why: machin doesn't promise JavaScript's order (key, then value). It can't matter if one side
-  //     is made of plain variables, or if neither side calls anything.
-  if (steady(key) || steady(value) || (!calls(c, key) && !calls(c, value))) return;
+  //     is made of plain variables, or if neither side calls anything. The target is the list (a
+  //     row like g[i] counts too: a call could replace it) together with the index.
+  if (target.every(steady) || steady(value) || (!target.some((x) => calls(c, x)) && !calls(c, value))) return;
   diag(c, "JS-ORDER001", "put the key or index in a variable first, then use it in the store", n);
 }
 
@@ -173,9 +181,12 @@ function checkStoreOrder(c: Ctx, key: any, value: any, n: any) {
 function checkElementOrder(c: Ctx, target: any, value: any, twice: boolean) {
   if (target.type !== "MemberExpression" || !target.computed) return;
   if (steady(target.object) && steady(target.property)) return;
+  //why: a row like g[i] is found twice too, which is the same row only if the value calls
+  //     nothing that could replace it.
+  if (twice && path(target.object) && steady(target.property) && (!value || !calls(c, value))) return;
   //why: `a[i] += x` and `a[i]++` are written as `a[i] = a[i] + x`, which evaluates i twice.
   if (twice) diag(c, "JS-ORDER001", "put the index in a variable first: const i = ...; then use a[i]", target);
-  else checkStoreOrder(c, target.property, value, target);
+  else checkStoreOrder(c, [target.object, target.property], value, target);
 }
 
 /** With two or more arguments, console.log reads a string first argument as a format string. */
@@ -245,7 +256,12 @@ function push(c: Ctx, e: any): string | null {
   const k = c.types.kind(f.object);
   if (k !== "array") return typeDiag(c, k === "any" ? "JS-ANY001" : "JS-UNSUP001", "push is only supported on a list with a known type", e);
   const list = expr(c, f.object);
-  return `${list} = append(${list}, ${expr(c, e.arguments[0])})`;
+  //why: a literal pushed onto a list takes its type from the list's element type.
+  const element = c.types.spell(f.object)?.replace(/^\[\]/, "");
+  const v = e.arguments[0];
+  const item = v.type === "ObjectExpression" ? object(c, v, element)
+    : v.type === "ArrayExpression" && element?.startsWith("[]") ? array(c, v, undefined, element) : expr(c, v);
+  return `${list} = append(${list}, ${item})`;
 }
 
 /** The method name when `e` is a call on a Map, else "". */
@@ -286,7 +302,7 @@ function mapStatement(c: Ctx, e: any): string | null {
   const [key, value] = e.arguments;
   if (e.arguments.length !== (method === "set" ? 2 : 1)) return typeDiag(c, "JS-MAP001", MAP_RULE, e);
   if (method === "delete") return `delete(${map}, ${expr(c, key)})`;
-  checkStoreOrder(c, key, value, e);
+  checkStoreOrder(c, [e.callee.object, key], value, e);
   //why: an object literal stored in a map takes its struct name from the map's value type.
   const type = c.types.spell(e.callee.object)?.replace(/^map\[\w+\]/, "");
   const stored = value.type === "ObjectExpression" ? object(c, value, type) : expr(c, value);
@@ -351,16 +367,15 @@ function divisor(c: Ctx, x: any, precedence: number): string {
 }
 
 /** An array literal; machin needs its element type spelled out. */
-function array(c: Ctx, e: any, declared?: any): string {
+function array(c: Ctx, e: any, declared?: any, expected?: string): string {
   if (e.elements.some((x: any) => !x)) return diag(c, "JS-UNSUP001", "holes in arrays are not supported", e);
-  const type = (declared && c.types.spell(declared)) || c.types.spell(e);
+  const type = expected ?? ((declared && c.types.spell(declared)) || c.types.spell(e));
   //why: an object literal inside a list takes its struct name from the list's element type.
   const element = type?.startsWith("[]") ? type.slice(2) : undefined;
-  const items = e.elements.map((x: any) => x.type === "ObjectExpression" ? object(c, x, element) : expr(c, x)).join(", ");
+  const items = e.elements.map((x: any) => x.type === "ObjectExpression" ? object(c, x, element)
+    : x.type === "ArrayExpression" && element?.startsWith("[]") ? array(c, x, undefined, element) : expr(c, x)).join(", ");
   if (!type?.startsWith("[]"))
     return typeDiag(c, "JS-ARR001", "the element type is unclear or mixed; use one type, or annotate with /** @type {int[]} */", e);
-  //why: machin cannot write a literal of arrays (`[][]string{...}` does not parse).
-  if (type.startsWith("[][]")) return typeDiag(c, "JS-ARR001", "nested array literals are not supported", e);
   return `${type}{${items}}`;
 }
 

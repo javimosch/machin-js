@@ -31,7 +31,7 @@ added. `"machin/desktop"` has none.
 | `tools/smoke-release.sh` | the compiled binary works with no checkout of machin-js or machin and an empty home |
 | `.github/workflows/latest-machin.yml` | weekly: the tests and app gates against the newest machin release |
 | `test/json_test.ts` | `json_valid` and `machin/json` agree on hand-picked and random documents, many of them broken |
-| `test/syntax_test.ts` | 185 JavaScript constructs each behave the same or are refused with a pinned code; also generates the [reference](specification.md) |
+| `test/syntax_test.ts` | 190 JavaScript constructs each behave the same or are refused with a pinned code; also generates the [reference](specification.md) |
 | parity cases (`test/parity_test.ts`) | each tricky program behaves natively as under Deno, or is rejected with the expected code |
 | random programs (`test/fuzz_test.ts`, `tools/fuzz.ts`) | generated well-typed programs behave the same under Deno and natively; 30 fixed seeds run in the tests, and `deno run -A tools/fuzz.ts 600 1234` searches further |
 | `test/shim_test.ts` | the Deno stand-ins for string and list builtins give the same results as the real ones |
@@ -54,4 +54,8 @@ checks are the independent ones.
 > failing `diff` there does **not** stop the script, so they could print `ALL GREEN` over a
 > mismatch. They now fail explicitly, and each app's gate was checked against a planted mismatch.
 > Re-running the fixed todo and tally gates on the previously published code found no hidden failure.
+
+Native builds use machin's `--safe`, which adds overflow and stack-depth checks. machin reports that
+its stack check makes recursion-heavy code about twice as slow in its own benchmark; machin-js
+hasn't measured it.
 

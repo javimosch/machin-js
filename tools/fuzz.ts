@@ -99,7 +99,16 @@ export function generate(seed: number): string {
   const clamp = (name: string) => `${name} %= 1009;`;
   const statement = (depth: number, v: string[]): string => {
     const target = r.pick(ints);
-    switch (r.int(depth > 0 ? 22 : 7)) {
+    switch (r.int(depth > 0 ? 24 : 7)) {
+      //why: a grid read and written by row and column, rows shared and replaced.
+      case 22: {
+        const g = `grid${fresh++}`, row = `row${fresh++}`, i = `i${fresh++}`, a = `r${fresh++}`;
+        return `const ${g} = [[${num(1, v)} % 1009, ${r.int(9)}], [${r.int(9)}, ${num(1, v)} % 1009, 3]]; const ${row} = ${g}[${r.int(2)}]; ${row}[${r.int(2)}] = ${num(1, v)} % 1009; ${g}[${r.int(2)}] = [${r.int(9)}, ${r.int(9)}]; const ${a} = ${r.int(2)}; ${g}[${a}][${r.int(2)}] += ${r.int(50)}; ${g}[${a}][${r.int(2)}]++; ${g}[1 - ${a}][${r.int(2)}] = ${num(2, v)} % 1009; for (const ${i} of ${g}) { console.log(String(${i}.length), String(${i}[0]), String(${i}[1])); } console.log(String(${row}[0] + ${row}[1]));`;
+      }
+      case 23: {
+        const g = `built${fresh++}`, line = `line${fresh++}`, i = `i${fresh++}`, j = `j${fresh++}`, each = `each${fresh++}`;
+        return `\n    /** @type {int[][]} */\n    const ${g} = []; for (let ${i} = 0; ${i} < ${1 + r.int(3)}; ${i}++) {\n    /** @type {int[]} */\n    const ${line} = []; for (let ${j} = 0; ${j} <= ${i}; ${j}++) { ${line}.push(${j} + ${num(1, v)} % 1009); } ${g}.push(${line}); } ${g}.push([]); ${g}[0][0] += ${r.int(9)}; for (const ${each} of ${g}) { console.log(String(${each}.length)); } console.log(String(${g}[0][0]), ${g}.length);`;
+      }
       //why: a map read, written, deleted and shared through an alias, with colliding and odd keys.
       case 19: {
         const m = `map${fresh++}`, n = `alias${fresh++}`, i = `i${fresh++}`;
