@@ -77,6 +77,7 @@ The JSDoc is both the documentation and the types the build checks.
 | `JS-NUM001/002` / `JS-STR001` | no decimals, plain `/` or non-ASCII literals yet (they would behave differently) |
 | `JS-ADD001` `CMP001` `VAL001` `STR002` `ARR001` `ANY001` `LOG001` | type-based rules: reject what would behave differently natively |
 | `JS-MAP001` | a `Map` is read with `m.get(k) ?? fallback` and never looped over |
+| `JS-FIELDS001` / `JS-SHAPE001` | objects, database rows and built JSON have exactly their struct's fields, in order |
 | `JS-COND001` | conditions are `true` or `false` (no truthiness) |
 | `JS-ORDER001` | element updates whose index would be evaluated twice, or out of order |
 | `JS-TYPE001` | your JSDoc types are checked (by the TypeScript checker, on plain `.js`) |

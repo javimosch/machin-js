@@ -473,7 +473,7 @@ function f(counts) {
 ```
 
 Say what a missing key means: `counts.get("a") ?? 0`. Also reported for looping over a map, a map
-with no declared types, and other methods. See [key-value lookups](language.md#key-value-lookups-with-map).
+with no declared types, other methods, and passing a map (or a list of maps) to a builtin or module function such as `json` or `len`. See [key-value lookups](language.md#key-value-lookups-with-map).
 
 ## JS-COND001: a condition that isn't true or false
 
@@ -504,6 +504,42 @@ const = 1;
 
 The file isn't valid JavaScript for a module (modules are always in strict mode, so words such as
 `static` and `yield` are reserved). Only the first syntax error is reported.
+
+## JS-FIELDS001: object fields out of order
+
+<!-- check: JS-FIELDS001 -->
+```js
+/** @typedef {{id: int, name: string}} User */
+/**
+ * Example.
+ * @returns {User}
+ */
+function f() {
+  //why: example.
+  return { name: "ada", id: 1 };
+}
+```
+
+`json()` would print `{"id":1,"name":"ada"}` natively and `{"name":"ada","id":1}` in JavaScript. Write `{ id: 1, name: "ada" }`.
+
+## JS-SHAPE001: `parse` shape doesn't match
+
+<!-- check: JS-SHAPE001 -->
+```js
+import { sqlite_query, parse } from "machin";
+/** @typedef {{id: int, name: string}} User */
+/**
+ * Example.
+ * @param {int} db
+ * @returns {User[]}
+ */
+function f(db) {
+  //why: example.
+  return parse(sqlite_query(db, "SELECT name, id FROM users"), []);
+}
+```
+
+The columns are `name, id` but the struct is `id, name`. Native `parse` reorders, drops extra columns and fills missing ones with empty values; JavaScript keeps the rows as they are. Name exactly the struct's fields, in order. The SQL must be a constant. For JSON your code builds, it must have exactly the struct's shape.
 
 ## JS-INTERNAL001: transpiler bug
 

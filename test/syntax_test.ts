@@ -88,6 +88,7 @@ export const SNIPPETS: Snippet[] = [
   ["proto key", "/** @type {T} */\n  const a = { __proto__: 1 }; console.log(a.__proto__);", "/** @typedef {{__proto__: int}} T */"],
   ["duplicate key", "/** @type {T} */\n  const a = { n: 1, n: 2 }; console.log(a.n);", "/** @typedef {{n: int}} T */"],
   ["object keys out of order with effects", "const log = [0]; const t = pair(log); console.log(`${t.a} ${t.b}`);", "/** @typedef {{a: int, b: int}} P */\n" + fn("next(xs)", "xs[0] += 1; return xs[0];", "@param {int[]} xs") + fn("pair(xs)", "return { b: next(xs), a: next(xs) };", "@param {int[]} xs\n * @returns {P}")],
+  ["object values with effects, in typedef order", "const log = [0]; const t = pair(log); console.log(`${t.a} ${t.b}`);", "/** @typedef {{a: int, b: int}} P */\n" + fn("next(xs)", "xs[0] += 1; return xs[0];", "@param {int[]} xs") + fn("pair(xs)", "return { a: next(xs), b: next(xs) };", "@param {int[]} xs\n * @returns {P}")],
   ["field named like a keyword", "/** @type {T} */\n  const a = { type: 1, map: 2, func: 3, range: 4, int: 5 }; console.log(a.type + a.map + a.func + a.range + a.int);", "/** @typedef {{type: int, map: int, func: int, range: int, int: int}} T */"],
   ["getter", "const a = { get n() { return 1; } }; console.log(a.n);"],
   ["method in object", "const a = { n() { return 1; } }; console.log(a.n());"],

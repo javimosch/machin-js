@@ -2,6 +2,23 @@
 
 Newest first.
 
+## Unreleased
+
+### Soundness fixes: **v0.9.0 and earlier have all of these**
+
+Each behaves differently from its JavaScript and is now rejected. All involve data that reaches
+`json()` or `parse`, or a `Map` given to a builtin.
+
+| Under Deno vs native | Now | Rewrite |
+|---|---|---|
+| `json()` of an object whose fields weren't written in typedef order: different key order | `JS-FIELDS001` | write the fields in the typedef's order |
+| `json(map)` or a list of maps: `{}` vs the entries; `len(map)`: `undefined` vs the count | `JS-MAP001` | pass the values; use `m.size` |
+| `parse` of database rows whose columns differ from the struct: extra, missing or reordered keys | `JS-SHAPE001` | name exactly the struct's fields, in order, in constant SQL |
+| `parse` of program-built JSON that doesn't have the struct's exact shape | `JS-SHAPE001` | build exactly that shape |
+
+An object that is never serialized behaved the same whatever its field order; it must be reordered
+too, because the build can't tell which objects reach `json()`.
+
 ## 0.9.0 (2026-11-26)
 
 An **alpha** prerelease for Linux x86-64 (glibc). **Before upgrading, upgrade machin to 0.144.3 or

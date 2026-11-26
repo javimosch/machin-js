@@ -3,16 +3,24 @@
 //     machin element types. Both parsers read the same text, so offsets line up.
 import ts from "npm:typescript@5.7.3";
 
+/** A JSDoc field type in machin's spelling: `boolean` -> `bool`, `string[]` -> `[]string`. */
+export function machinType(t: string): string {
+  if (t.endsWith("[]")) return `[]${machinType(t.slice(0, -2))}`;
+  return t === "boolean" ? "bool" : t === "number" ? "int" : t;
+}
+
 export type Kind = "int" | "string" | "bool" | "array" | "map" | "object" | "any" | "other";
 type At = { start: number; end: number };
 
 export class Types {
   #ck: ts.TypeChecker;
+  #program: ts.Program;
   #nodes = new Map<string, ts.Node>();
 
   /** Index every expression and name in `file` by its offsets. */
   constructor(program: ts.Program, file: string) {
     this.#ck = program.getTypeChecker();
+    this.#program = program;
     const sf = program.getSourceFile(file);
     if (!sf) throw new Error(`no source file ${file}`);
     const walk = (n: ts.Node) => {
@@ -75,6 +83,22 @@ export class Types {
     }
     //why: only named typedefs become machin structs.
     return kind === "object" ? t.aliasSymbol?.name ?? null : null;
+  }
+
+  /** The fields of a named struct, in declaration order, as [name, machin type]. */
+  fields(name: string): [string, string][] | null {
+    for (const sf of this.#program.getSourceFiles()) {
+      //why: the same two spellings the build emits structs from: JSDoc typedefs and our .d.ts.
+      const jsdoc = new RegExp(`@typedef\\s+\\{\\{([^{}]*)\\}\\}\\s*${name}\\b`).exec(sf.text);
+      if (jsdoc && !sf.isDeclarationFile) {
+        return jsdoc[1].split(",").map((f) => f.trim().split(/\s*:\s*/)).map(([n, t]) => [n, machinType(t)]);
+      }
+      for (const s of sf.statements) {
+        if (ts.isTypeAliasDeclaration(s) && s.name.text === name && ts.isTypeLiteralNode(s.type))
+          return s.type.members.filter(ts.isPropertySignature).map((m) => [m.name.getText(sf), ""]);
+      }
+    }
+    return null;
   }
 
   /** The machin type an expression should have: what its context expects, else its own type. */

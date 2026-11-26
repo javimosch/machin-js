@@ -3,14 +3,14 @@
 //     that `machin encode` already accepts.
 import * as acorn from "npm:acorn@8.14.0";
 import { program, typeErrors } from "./typecheck.ts";
-import { Types } from "./types.ts";
+import { Types, machinType } from "./types.ts";
 import { pushProblems } from "./ownership.ts";
 import { GUARD_MODULE, guardModule } from "./guards.ts";
 import { dirname, basename, resolve } from "jsr:@std/path@1";
 
 export type Diag = { code: string; msg: string; file: string; line: number };
 type Cmt = { block: boolean; text: string; start: number; end: number };
-type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; typed: Diag[]; types: Types; guards: Set<string>; stable: Set<string>; arrow: Set<string> | null; fns: Set<string>; imported: Set<string>; builtins: Set<string>; scope: Set<string> };
+type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; typed: Diag[]; external: Set<string>; types: Types; guards: Set<string>; stable: Set<string>; arrow: Set<string> | null; fns: Set<string>; imported: Set<string>; builtins: Set<string>; scope: Set<string> };
 type Imp = { source: string; names: string[]; line: number };
 const GLOBALS = new Set(["String", "console"]);
 
@@ -35,13 +35,6 @@ function str(v: string): string {
   return '"' + v.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t") + '"';
 }
 
-/** A JSDoc field type in machin's spelling: `boolean` -> `bool`, `string[]` -> `[]string`. */
-function fieldType(t: string): string {
-  //why: a map inside a struct isn't covered; leave it to be reported by the type spelling.
-  if (t.endsWith("[]")) return `[]${fieldType(t.slice(0, -2))}`;
-  return t === "boolean" ? "bool" : t === "number" ? "int" : t;
-}
-
 /** Emit `{a: int, b: string}` typedefs found in any block comment as structs. */
 function typedefs(c: Ctx): string[] {
   const out: string[] = [];
@@ -50,7 +43,7 @@ function typedefs(c: Ctx): string[] {
     if (!t) continue;
     const pairs = t[1].split(",").map((f) => f.trim().split(/\s*:\s*/));
     pairs.forEach(([n]) => checkField(c, n, { loc: { start: { line: c.src.slice(0, m.start).split("\n").length } } }));
-    const fields = pairs.map(([n, ty]) => `${n} ${fieldType(ty)}`);
+    const fields = pairs.map(([n, ty]) => `${n} ${machinType(ty)}`);
     out.push(`type ${t[2]} struct { ${fields.join("  ")} }`);
   }
   return out;
@@ -123,13 +116,88 @@ function authored(c: Ctx, x: any): boolean {
   return x.type === "CallExpression" && x.callee.name === "String" && plain(x.arguments[0]);
 }
 
+//why: native parse keeps only the struct's fields, in its order, and fills gaps with zero values;
+//     JSON.parse keeps what is there. They agree only when the JSON already has exactly that shape.
+
+/** The column names of the `SELECT …` or `… RETURNING …` list in a SQL string, or null. */
+function columns(sql: string): string[] | null {
+  const list = /^\s*SELECT\s+(?:DISTINCT\s+)?(.*?)(?:\s+FROM\b.*)?$/is.exec(sql)?.[1] ?? /\bRETURNING\s+([^;]*?)\s*;?\s*$/is.exec(sql)?.[1];
+  if (!list) return null;
+  const parts = list.split(/,(?![^()]*\))/).map((p) => p.trim());
+  //why: a column is a plain name, or any expression named with AS; * hides the names.
+  const named = parts.map((p) => /\bAS\s+([A-Za-z_]\w*)$/i.exec(p)?.[1] ?? /^(?:\w+\.)?([A-Za-z_]\w*)$/.exec(p)?.[1]);
+  return named.every(Boolean) ? named as string[] : null;
+}
+
+/** The text of a SQL argument made only of string constants. */
+function constantText(x: any): string | null {
+  if (x?.type === "Literal") return typeof x.value === "string" ? x.value : null;
+  if (x?.type === "TemplateLiteral" && x.expressions.length === 0) return x.quasis[0].value.cooked;
+  if (x?.type !== "BinaryExpression" || x.operator !== "+") return null;
+  const a = constantText(x.left), b = constantText(x.right);
+  return a === null || b === null ? null : a + b;
+}
+
+/** Why rows from this query might not decode the same, or "". */
+function rowProblem(c: Ctx, sql: any, type: string): string {
+  const fields = type.startsWith("[]") ? c.types.fields(type.slice(2)) : null;
+  if (!fields) return `sqlite_query returns a list of rows, so parse needs a list of a @typedef struct, not ${type}`;
+  const text = constantText(sql);
+  const got = text === null ? null : columns(text);
+  const want = fields.map(([n]) => n).join(", ");
+  if (!got) return `write the SQL as a constant that names its columns (SELECT ${want} … or … RETURNING ${want}); not *`;
+  if (got.join(", ") !== want) return `the query's columns (${got.join(", ")}) must be exactly the struct's fields, in order: ${want}`;
+  const bad = fields.find(([, t]) => !["int", "string"].includes(t));
+  return bad ? `a column can only fill an int or string field; ${bad[0]} is ${bad[1]} (use int 0/1 for flags)` : "";
+}
+
+/** Does a decoded value have exactly the shape of a machin type? */
+function fits(c: Ctx, value: unknown, type: string): boolean {
+  if (type === "int") return Number.isSafeInteger(value);
+  if (type === "string") return typeof value === "string";
+  if (type === "bool") return typeof value === "boolean";
+  if (type.startsWith("[]")) return Array.isArray(value) && value.every((v) => fits(c, v, type.slice(2)));
+  const fields = c.types.fields(type);
+  if (!fields || typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  return Object.keys(value).join() === fields.map(([n]) => n).join()
+    && fields.every(([n, t]) => fits(c, (value as Record<string, unknown>)[n], t));
+}
+
+/** JSON text built by the program, with a stand-in for each inserted number or boolean. */
+function sample(c: Ctx, x: any): string {
+  const inserted = (a: any) => c.types.kind(a) === "bool" ? "true" : "7";
+  if (x.type === "Literal") return x.value;
+  if (x.type === "BinaryExpression") return sample(c, x.left) + sample(c, x.right);
+  if (x.type === "TemplateLiteral")
+    return x.quasis.map((q: any, i: number) => q.value.cooked + (x.expressions[i] ? inserted(x.expressions[i]) : "")).join("");
+  return inserted(x.arguments[0]);
+}
+
+/** Why program-built JSON might not decode the same, or "". */
+function textProblem(c: Ctx, x: any, type: string): string {
+  try {
+    const raw = sample(c, x), value = JSON.parse(raw);
+    //why: a decimal such as 1.0 would pass the shape test but decode differently.
+    const decimals = /[:\[,]\s*-?\d+(\.\d|[eE])/.test(raw.replace(/"(?:[^"\\]|\\.)*"/g, '""'));
+    if (!decimals && fits(c, value, type)) return "";
+  } catch {
+    return "this JSON text isn't valid";
+  }
+  return `this JSON must have exactly the shape of ${type}: the same fields in the same order, with the same types`;
+}
+
 /** `parse` is only the same in both runtimes on JSON whose shape the program controls. */
-function checkParseInput(c: Ctx, x: any) {
+function checkParseInput(c: Ctx, x: any, call: any) {
   const rows = x.type === "CallExpression" && x.callee.name === "sqlite_query" && c.builtins.has("sqlite_query");
   //why: machin's parse never fails (bad or mistyped input silently becomes empty values), while
   //     JSON.parse throws or keeps the wrong types — so outside input is refused.
   if (!rows && !authored(c, x))
-    typeDiag(c, "JS-JSON001", `parse only accepts sqlite_query(...) or JSON your code builds; read outside JSON field by field with "machin/json"`, x);
+    return typeDiag(c, "JS-JSON001", `parse only accepts sqlite_query(...) or JSON your code builds; read outside JSON field by field with "machin/json"`, x);
+  const type = c.types.spell(call);
+  //why: an unknown result type is reported by the caller.
+  if (!type) return;
+  const problem = rows ? rowProblem(c, x.arguments[1], type) : textProblem(c, x, type);
+  if (problem) typeDiag(c, "JS-SHAPE001", problem, x);
 }
 
 /** A list reached with plain names and constants: `a`, `t.rows`, `g[i]`, `cube[i][2]`. */
@@ -189,6 +257,12 @@ function checkElementOrder(c: Ctx, target: any, value: any, twice: boolean) {
   else checkStoreOrder(c, [target.object, target.property], value, target);
 }
 
+/** machin's builtins treat a map as data; their JavaScript stand-ins see an empty object. */
+function checkNoMap(c: Ctx, x: any, callee: string) {
+  if (c.types.kind(x) !== "map" && !(c.types.kind(x) === "array" && c.types.spell(x)?.includes("map["))) return;
+  typeDiag(c, "JS-MAP001", `${callee} can't take a Map: it would behave differently under Deno; pass the values you need`, x);
+}
+
 /** With two or more arguments, console.log reads a string first argument as a format string. */
 function checkLogFormat(c: Ctx, args: any[]) {
   if (args.length < 2) return;
@@ -245,6 +319,11 @@ function object(c: Ctx, e: any, expected?: string): string {
   const type = expected ?? c.types.spell(e);
   if (!type || type.startsWith("[]") || SCALARS.has(type))
     return typeDiag(c, "JS-OBJ001", "an object literal needs a named @typedef type here, e.g. from @returns {Todo}", e);
+  //why: native json() writes fields in the typedef's order, JSON.stringify in the literal's.
+  const declared = c.types.fields(type)?.map(([n]) => n);
+  const written = e.properties.map((x: any) => x.key.name);
+  if (declared && declared.length === written.length && written.every((n: string) => declared.includes(n)) && declared.join() !== written.join())
+    typeDiag(c, "JS-FIELDS001", `write the fields in the order ${type} declares them: ${declared.join(", ")}`, e);
   return `${type}{${fields}}`;
 }
 
@@ -462,7 +541,7 @@ function call(c: Ctx, e: any, p = 0): string {
   const converts = name === "String" && !c.scope.has(name);
   if (converts && e.arguments.length !== 1) return diag(c, "JS-UNSUP001", "String(x) takes exactly one value", e);
   if (converts || dotted === "console.log") e.arguments.forEach((x: any) => checkScalar(c, x, "JS-VAL001", "printing or converting"));
-  if (name === "parse" && c.builtins.has(name)) checkParseInput(c, e.arguments[0] ?? e);
+  if (name === "parse" && c.builtins.has(name)) checkParseInput(c, e.arguments[0] ?? e, e);
   //why: `parse(x, [])` needs a typed witness: the type the surrounding code expects back.
   if (name === "parse" && c.builtins.has(name) && e.arguments[1]?.type === "ArrayExpression") {
     const type = c.types.spell(e);
@@ -470,6 +549,7 @@ function call(c: Ctx, e: any, p = 0): string {
     return `parse(${expr(c, e.arguments[0])}, ${type}{})`;
   }
   if (dotted === "console.log") checkLogFormat(c, e.arguments);
+  if (c.external.has(name)) e.arguments.forEach((x: any) => checkNoMap(c, x, name));
   const args = e.arguments.map((a: any) => expr(c, a));
   return `${converts ? "str" : name}(${args.join(", ")})`;
 }
@@ -722,7 +802,8 @@ export function transpile(file: string, src: string, types?: Types): Mod {
     const path = "/__snippet__/snippet.js";
     types = new Types(program([path], { path, text: src }), path);
   }
-  const c: Ctx = { file, src, cmts, diags: [], typed: [], types, guards: new Set(), stable: new Set(), arrow: null, fns, imported, builtins, scope: new Set() };
+  const external = new Set<string>(imports.filter((i) => !i.source.startsWith(".")).flatMap((i) => i.names));
+  const c: Ctx = { file, src, cmts, diags: [], typed: [], external, types, guards: new Set(), stable: new Set(), arrow: null, fns, imported, builtins, scope: new Set() };
   const lines = [...typedefs(c)];
   for (const n of decls) {
     if (n.type === "FunctionDeclaration") lines.push(...guarded(c, n));

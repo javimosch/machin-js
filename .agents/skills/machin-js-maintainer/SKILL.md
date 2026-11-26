@@ -78,6 +78,9 @@ cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.t
 - **A new Deno stand-in needs a `test/shim_test.ts` case.** Four hand-written ones were wrong.
 - **Probe machin's behavior before mapping a feature** (`push`/`append` aliasing and closure capture
   both differed).
+- **Compare serialized output, not just values.** Six silent differences hid because no test compared
+  `json()` of structs (key order), maps, or parsed data. When adding a builtin, ask what type
+  information the Deno stand-in is missing.
 - **Probe a claim before publishing it.** "No silent divergence" was once published and was false.
 - **Gold files** (`examples/todo/gold/`) change only on purpose: read the new `.src`, then copy it.
   They are reviewed snapshots; Deno-versus-native is the independent check.

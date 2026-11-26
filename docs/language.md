@@ -62,10 +62,15 @@ types. Passing it outside input is rejected with
 For JSON from outside, such as a request body, use [`"machin/json"`](modules.md#machinjson-outside-json),
 which reads one top-level field at a time and tells you whether it has the type you expect.
 
-The JSON's shape
-must match the type, and database columns should be `NOT NULL`:
+Because native `parse` keeps only the struct's fields, in its order, and fills gaps with empty
+values, the build checks the shape ([`JS-SHAPE001`](diagnostics.md#js-shape001-parse-shape-doesnt-match)):
 
+- **Database rows:** write the SQL as a constant that names its columns, in a `SELECT …` list or after
+  `RETURNING`. They must be exactly the struct's fields, in the same order, and each field `int` or
+  `string`. `SELECT *` isn't allowed.
+- **JSON your code builds** must already have exactly the struct's fields, in order, with the right types.
 
+Columns should be `NOT NULL`, and hold the type the field says:
 <!-- check: ok -->
 ```js
 import { sqlite_query, parse } from "machin";
@@ -190,6 +195,13 @@ one each time, and machin doesn't.
 > code on the same line.
 
 
+### Object field order, and `json()`
+
+An object literal lists its fields **in the order the `@typedef` declares them**
+([`JS-FIELDS001`](diagnostics.md#js-fields001-object-fields-out-of-order)). Native `json()` writes the
+typedef's order; JavaScript writes the literal's. `json()` and the other builtins and module
+functions can't take a `Map`.
+
 ### Strings are counted in bytes
 
 machin strings are bytes, while JavaScript's `.length` counts UTF-16 units. So `.length` and `s[i]`
@@ -237,6 +249,7 @@ is a bug: please report it.
 | `substr` cutting a non-ASCII character in half | a replacement character | the raw bytes |
 | other builtins from `"machin"` | a hand-written stand-in in `shim/`, if there is one | the real builtin |
 | `parse_int` of a number beyond 2^53 | rounded | exact, limited to 64 bits |
+| a column holding another type than its field (a number in a `string` field) | keeps the stored type | silently becomes `""` or `0` |
 | a `NULL` column reaching `parse` | the stand-in stops with an error, on purpose | silently becomes `""` or `0` |
 | numbered SQL placeholders (`?1`) | the stand-in stops with an error | work |
 | a failing SQL statement | the stand-in throws | returns an error code or `""` |

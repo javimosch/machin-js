@@ -123,4 +123,7 @@ Started **2026-11-26** (at v0.9.0).
   fixes, including the `__proto__` difference that 0.8.0 has.
 - **v0.9.0** ([release](https://github.com/javimosch/machin-js/releases/tag/v0.9.0)): nested lists
   and machin 0.144.3 as the minimum version.
+- **2026-11-26, during the freeze:** preparing a CLI example turned up six silent differences around
+  `json()`, `parse` shapes and `Map` arguments, all present in v0.9.0. Random testing had never
+  compared `json()` output. Fixed (unreleased).
 
