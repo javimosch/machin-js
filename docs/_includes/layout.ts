@@ -4,9 +4,9 @@ import { REPO, shell } from "./shell.ts";
 /** Sidebar order; also drives the previous/next links. */
 const NAV: [string, [string, string][]][] = [
   ["Learn", [["/getting-started/", "Getting started"], ["/tutorial/", "Reading the todo app"], ["/debugging/", "Debugging"]]],
-  ["Reference", [["/language/", "The JavaScript you can write"], ["/diagnostics/", "Diagnostics"], ["/modules/", "Modules"]]],
+  ["Reference", [["/language/", "The JavaScript you can write"], ["/specification/", "Every audited construct"], ["/diagnostics/", "Diagnostics"], ["/modules/", "Modules"]]],
   ["Under the hood", [["/how-it-works/", "How it works"], ["/troubleshooting/", "Troubleshooting"]]],
-  ["Project", [["/VISION/", "Vision"], ["/NORTH-STAR/", "North star"], ["/ROADMAP/", "Roadmap"]]],
+  ["Project", [["/compatibility/", "Compatibility (draft)"], ["/VISION/", "Vision"], ["/NORTH-STAR/", "North star"], ["/ROADMAP/", "Roadmap"]]],
 ];
 const PAGES = NAV.flatMap(([, links]) => links);
 

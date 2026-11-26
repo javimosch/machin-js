@@ -13,6 +13,8 @@ expense summarizer and a bookmarks API.
 | [Reading the todo app](tutorial.md) | a guided tour of real code |
 | [Debugging](debugging.md) | find and fix a bug in JavaScript terms |
 | [The JavaScript you can write](language.md) | what works and what doesn't |
+| [Every audited construct](specification.md) | what runs and what is refused, as tested |
+| [Compatibility](compatibility.md) | the proposed promise for 1.0 (draft) |
 | [Diagnostics](diagnostics.md) | every error code, and how to fix it |
 | [Modules](modules.md) | builtins, web and desktop |
 | [How it works](how-it-works.md) | the pipeline and how it is tested |

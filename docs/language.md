@@ -83,6 +83,14 @@ export function listTodos(db) {
 }
 ```
 
+## Conditions
+
+machin has no "truthy" or "falsy" values. Whatever you test, with `if`, `while`, `for`, `? :`, `!`,
+`&&` or `||`, must be `true` or `false`: write `n != 0`, `s != ""` or `xs.length > 0`.
+
+An audit of edge cases, with the exact result for each, is in
+[the reference](specification.md).
+
 ## Supported
 
 - `function` declarations, `export`, `import { x } from "..."` (no default, `*` or `as`)

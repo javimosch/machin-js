@@ -21,7 +21,7 @@ needs them.
 | **2. Useful** (0.4–0.6) | typed arrays, object literals, `for…of`, template literals, `push`/`map`/`filter`, error handling; a CLI tool and an API service | all three apps pass their checks without workarounds | done (`.map`/`.filter` left out: no app needed them) |
 | **3. Debuggable** (0.7) | errors at `file.js:line`; shims for every supported builtin; debugging guide | the agent-off test: a planted bug is found and fixed by a human alone | done, with a **simulated** human (owner's choice; see notes) |
 | **4. Shippable** (0.8–0.9) | a `machin-js` command (`new`, `build`, `run`, `check`, `debug`) via `deno compile`; bundled bridges; tested machin versions; releases and changelog | a clean machine goes from install to a running app using only the docs | in progress: only the first release is left |
-| **5. Stable** (1.0) | freeze the subset; compatibility policy; a period of real use with no new features | all five criteria hold, with no open silent-difference bugs | |
+| **5. Stable** (1.0) | freeze the subset; compatibility policy; a period of real use with no new features | all five criteria hold, with no open silent-difference bugs | in progress: subset pinned by tests; policy drafted, awaiting the owner |
 
 **Outside 1.0:** the desktop shell stays experimental. A terminal shell, client-side UI,
 `async`/`await` and mobile come later, unless one of the apps needs them.
@@ -93,3 +93,14 @@ needs them.
   prerelease. CI runs the getting-started page as written, downloading the real releases, on a path
   with neither machin nor Deno. The C compiler and SQLite headers are assumed to be installed.
 - **Still open:** other platforms (only Linux x86-64 is built or tested).
+
+## Phase 5 notes
+
+- **Pinned:** the [reference](specification.md) records the result of 185 audited constructs, and the
+  tests fail if any changes.
+- **What the audit found:** 18 constructs that weren't handled soundly on its first run, one of them
+  a silent difference (`__proto__` as a key) that is in v0.8.0.
+- **Left before 1.0:** the owner's approval of the [compatibility policy](compatibility.md) (a
+  draft); a decision on 1.0 criterion 3 (a **human** fixes a bug with the agent off); a period of
+  real use with no new features.
+

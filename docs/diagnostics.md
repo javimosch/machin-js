@@ -388,6 +388,11 @@ function f() {
 
 Some names are machin keywords, a few (`len`, `str`, `append`, `parse`, `println`) are used by the generated code, and your functions can't take a builtin's name. All code ends up in one namespace, so your functions and types also can't reuse a name defined inside a bridge you import: `machin/web`'s source defines `route` and `dispatch`, for example. A full build reports that.
 
+Names must also use only `A-Z`, `a-z`, `0-9` and `_` (no `$`, no accented letters, not a lone `_`),
+because machin's identifiers do. Field names follow the same rule, can't be machin keywords such as
+`type` or `map`, and can't be `__proto__`, which in JavaScript sets the prototype instead of creating
+a field.
+
 ## JS-JSON001: `parse` of outside input
 
 <!-- check: JS-JSON001 -->
@@ -468,6 +473,36 @@ function f(counts) {
 
 Say what a missing key means: `counts.get("a") ?? 0`. Also reported for looping over a map, a map
 with no declared types, and other methods. See [key-value lookups](language.md#key-value-lookups-with-map).
+
+## JS-COND001: a condition that isn't true or false
+
+<!-- check: JS-COND001 -->
+```js
+/**
+ * Example.
+ * @param {int} count
+ */
+function f(count) {
+  //why: example.
+  if (count) {
+    console.log(count);
+  }
+}
+```
+
+JavaScript treats `0` and `""` as false; machin has no such rule. Compare explicitly:
+`if (count != 0)`. The same applies to `while`, `for`, `? :`, `!`, `&&` and `||`, so
+`name || "default"` doesn't work either: use `if`, or `const label = name == "" ? "default" : name;`.
+
+## JS-SYNTAX001: syntax error
+
+<!-- check: JS-SYNTAX001 -->
+```js
+const = 1;
+```
+
+The file isn't valid JavaScript for a module (modules are always in strict mode, so words such as
+`static` and `yield` are reserved). Only the first syntax error is reported.
 
 ## JS-INTERNAL001: transpiler bug
 

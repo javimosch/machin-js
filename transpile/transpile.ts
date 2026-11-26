@@ -48,7 +48,9 @@ function typedefs(c: Ctx): string[] {
   for (const m of c.cmts.filter((x) => x.block)) {
     const t = /@typedef\s+\{\{(.*?)\}\}\s*(\w+)/s.exec(m.text);
     if (!t) continue;
-    const fields = t[1].split(",").map((f) => f.trim().split(/\s*:\s*/)).map(([n, ty]) => `${n} ${fieldType(ty)}`);
+    const pairs = t[1].split(",").map((f) => f.trim().split(/\s*:\s*/));
+    pairs.forEach(([n]) => checkField(c, n, { loc: { start: { line: c.src.slice(0, m.start).split("\n").length } } }));
+    const fields = pairs.map(([n, ty]) => `${n} ${fieldType(ty)}`);
     out.push(`type ${t[2]} struct { ${fields.join("  ")} }`);
   }
   return out;
@@ -93,6 +95,12 @@ function require(c: Ctx, ok: boolean, kinds: string[], code: string, msg: string
   return false;
 }
 
+/** machin has no truthiness: anything used as a condition must be a boolean. */
+function condition(c: Ctx, x: any) {
+  const k = c.types.kind(x);
+  require(c, k === "bool", [k], "JS-COND001", `a condition must be true or false, not ${k}; compare it, e.g. n != 0 or s != ""`, x);
+}
+
 /** `+` must be number+number or string+string: machin has no implicit conversion. */
 function checkAdd(c: Ctx, left: any, right: any, n: any) {
   const a = c.types.kind(left), b = c.types.kind(right);
@@ -103,7 +111,7 @@ function checkAdd(c: Ctx, left: any, right: any, n: any) {
 /** Only numbers, strings and booleans may be compared with == or printed. */
 function checkScalar(c: Ctx, x: any, code: string, what: string) {
   const k = c.types.kind(x);
-  require(c, SCALARS.has(k), [k], code, `${what} an ${k} does not behave the same natively`, x);
+  require(c, SCALARS.has(k), [k], code, `${what} a value that isn't a number, string or boolean (it is ${k === "other" ? "nothing, or a mix of types" : "a " + k}) does not behave the same natively`, x);
 }
 
 /** Is this JSON text written by the program itself: constants plus String(number | boolean)? */
@@ -221,6 +229,7 @@ function template(c: Ctx, e: any, p: number): string {
 function object(c: Ctx, e: any, expected?: string): string {
   const odd = e.properties.find((x: any) => x.type !== "Property" || x.computed || x.method || x.kind !== "init" || x.key.type !== "Identifier");
   if (odd) return diag(c, "JS-UNSUP001", "only plain `name: value` properties are supported", odd);
+  e.properties.forEach((x: any) => checkField(c, x.key.name, x));
   const fields = e.properties.map((x: any) => `${x.key.name}: ${expr(c, x.value)}`).join(", ");
   const type = expected ?? c.types.spell(e);
   if (!type || type.startsWith("[]") || SCALARS.has(type))
@@ -305,6 +314,7 @@ function member(c: Ctx, e: any): string {
     return typeDiag(c, "JS-MAP001", MAP_RULE, e);
   }
   const length = !e.computed && e.property.name === "length";
+  if (!e.computed && e.property.name === "__proto__") checkField(c, "__proto__", e);
   if (e.computed || length) {
     if (k === "string") return typeDiag(c, "JS-STR002", `use len(s) or substr(s, a, b) from "machin" on strings: they count bytes in both`, e);
     if (k === "any") return typeDiag(c, "JS-ANY001", "the type here is unknown; add a JSDoc type", e);
@@ -396,6 +406,7 @@ function expr(c: Ctx, e: any, p = 0): string {
     case "MemberExpression": return member(c, e);
     case "UnaryExpression":
       if (e.operator !== "!" && e.operator !== "-") return diag(c, "JS-UNSUP001", `operator ${e.operator} unsupported`, e);
+      if (e.operator === "!") condition(c, e.argument);
       return `${e.operator}${expr(c, e.argument, 9)}`;
     case "BinaryExpression": case "LogicalExpression": {
       if (e.operator === "??") return mapGet(c, e);
@@ -403,6 +414,8 @@ function expr(c: Ctx, e: any, p = 0): string {
       if (e.operator === "/") return diag(c, "JS-NUM002", "/ is not supported yet: machin integer division drops the fraction", e);
       if (!q) return diag(c, "JS-UNSUP001", `operator ${e.operator} unsupported`, e);
       const op = e.operator === "===" ? "==" : e.operator === "!==" ? "!=" : e.operator;
+      //why: in JavaScript `a || b` yields one of its operands; with booleans that is just a boolean.
+      if (op === "&&" || op === "||") [e.left, e.right].forEach((x) => condition(c, x));
       if (op === "+") checkAdd(c, e.left, e.right, e);
       if (op === "==" || op === "!=") [e.left, e.right].forEach((x) => checkScalar(c, x, "JS-CMP001", "comparing"));
       const left = expr(c, e.left, q);
@@ -432,6 +445,7 @@ function call(c: Ctx, e: any, p = 0): string {
     return diag(c, "JS-UNDEF001", `${name} is not defined or imported`, e);
   if (c.scope.has(name)) checkCapture(c, name, e);
   const converts = name === "String" && !c.scope.has(name);
+  if (converts && e.arguments.length !== 1) return diag(c, "JS-UNSUP001", "String(x) takes exactly one value", e);
   if (converts || dotted === "console.log") e.arguments.forEach((x: any) => checkScalar(c, x, "JS-VAL001", "printing or converting"));
   if (name === "parse" && c.builtins.has(name)) checkParseInput(c, e.arguments[0] ?? e);
   //why: `parse(x, [])` needs a typed witness: the type the surrounding code expects back.
@@ -456,8 +470,12 @@ function stmt(c: Ctx, s: any): string[] {
       return s.declarations.flatMap((d: any) => decl(c, d));
     case "ExpressionStatement": return [push(c, s.expression) ?? mapStatement(c, s.expression) ?? assignOrExpr(c, s.expression)];
     case "ReturnStatement": return [s.argument ? `return ${expr(c, s.argument)}` : "return"];
-    case "IfStatement": return ifs(c, s);
-    case "WhileStatement": return [`while ${expr(c, s.test)} {`, ...block(c, s.body), "}"];
+    case "IfStatement":
+      condition(c, s.test);
+      return ifs(c, s);
+    case "WhileStatement":
+      condition(c, s.test);
+      return [`while ${expr(c, s.test)} {`, ...block(c, s.body), "}"];
     case "ForStatement": return forLoop(c, s);
     case "ForOfStatement": return forOf(c, s);
     case "BreakStatement": return s.label ? [diag(c, "JS-UNSUP001", "labels are not supported", s)] : ["break"];
@@ -489,8 +507,19 @@ const KEYWORDS = new Set(["func", "range", "chan", "make", "map", "struct", "typ
   "export", "nil", "fn", "cstruct", "header", "link", "cflags", "defer", "var"]);
 const EMITTED = new Set(["len", "str", "println", "append", "parse", "has"]);
 
+//why: machin identifiers are ASCII, and a lone _ throws its value away.
+const SPELLABLE = /^(?!_$)[A-Za-z_][A-Za-z0-9_]*$/;
+
+/** A struct field name: spellable, not a machin keyword, and not JavaScript's prototype slot. */
+function checkField(c: Ctx, name: string, n: any) {
+  //why: in JavaScript `__proto__` sets the object's prototype instead of making a field.
+  if (name === "__proto__" || !SPELLABLE.test(name) || KEYWORDS.has(name))
+    diag(c, "JS-NAME001", `${name} can't be used as a field name; choose another`, n);
+}
+
 /** Refuse a declared name that means something to machin. */
 function checkName(c: Ctx, name: string, n: any, taken: Set<string>) {
+  if (!SPELLABLE.test(name)) return diag(c, "JS-NAME001", `${name}: names use only A-Z, a-z, 0-9 and _ (and not a lone _)`, n);
   //why: js_ is the prefix of the runtime checks the transpiler generates.
   if (KEYWORDS.has(name) || taken.has(name) || name.startsWith("js_")) diag(c, "JS-NAME001", `${name} already means something in machin; choose another name`, n);
 }
@@ -526,6 +555,7 @@ function declValue(c: Ctx, d: any, name: string): string[] {
   if (d.init.type === "NewExpression") return [`${name} := ${newMap(c, d.init, d.id)}`];
   if (d.init?.type !== "ConditionalExpression") return [`${name} := ${expr(c, d.init)}`];
   const k = d.init;
+  condition(c, k.test);
   //why: else-branch is evaluated eagerly, so it must be a literal or identifier.
   if (k.alternate.type !== "Literal" && k.alternate.type !== "Identifier")
     return [diag(c, "JS-UNSUP001", "ternary else-branch must be a literal or identifier", k)];
@@ -567,6 +597,7 @@ function forLoop(c: Ctx, s: any): string[] {
   if (!s.init || !s.test || !s.update) return [diag(c, "JS-UNSUP001", "for needs init, test and update", s)];
   return scoped(c, () => {
     const init = s.init.type === "VariableDeclaration" ? stmt(c, s.init) : [assignOrExpr(c, s.init)];
+    condition(c, s.test);
     const test = expr(c, s.test);
     return [...init, `while ${test} {`, ...block(c, s.body), "    " + assignOrExpr(c, s.update), "}"];
   });
@@ -582,7 +613,12 @@ function block(c: Ctx, b: any): string[] {
 function returnsValue(n: any): boolean {
   if (!n || typeof n !== "object") return false;
   if (n.type === "ReturnStatement") return !!n.argument;
-  return Object.values(n).some((v) => Array.isArray(v) ? v.some(returnsValue) : returnsValue(v));
+  return Object.values(n).filter((v) => !isFunction(v)).some((v) => Array.isArray(v) ? v.filter((x) => !isFunction(x)).some(returnsValue) : returnsValue(v));
+}
+
+/** Is this a function of its own, whose `return` statements belong to it? */
+function isFunction(n: any): boolean {
+  return /^(FunctionDeclaration|FunctionExpression|ArrowFunctionExpression|ClassBody)$/.test(n?.type ?? "");
 }
 
 /** Does every path through this statement end in `return`? */
@@ -597,7 +633,7 @@ function alwaysReturns(n: any): boolean {
 function bareReturn(n: any): boolean {
   if (!n || typeof n !== "object") return false;
   if (n.type === "ReturnStatement") return !n.argument;
-  return Object.values(n).some((v) => Array.isArray(v) ? v.some(bareReturn) : bareReturn(v));
+  return Object.values(n).filter((v) => !isFunction(v)).some((v) => Array.isArray(v) ? v.filter((x) => !isFunction(x)).some(bareReturn) : bareReturn(v));
 }
 
 /** Emit a function declaration. */
@@ -611,6 +647,8 @@ function func(c: Ctx, fn: any): string[] {
   for (const p of pushProblems(fn)) diag(c, "JS-PUSH001", p.msg, p.node);
   const doc = docOf(c, fn);
   lint(c, fn, doc);
+  //why: machin functions take exactly their parameters, so an optional one can't be left out.
+  if (doc && /@param\s+\{[^}]*=\}|@param\s+\{[^}]*\}\s+\[/.test(doc)) diag(c, "JS-UNSUP001", "optional parameters are not supported", fn);
   //why: a function with a builtin's name would clash with it.
   checkName(c, fn.id.name, fn, BUILTINS);
   const valued = returnsValue(fn.body);
@@ -618,7 +656,7 @@ function func(c: Ctx, fn: any): string[] {
   if (valued && (bareReturn(fn.body) || !alwaysReturns(fn.body)))
     diag(c, "JS-RET001", `${fn.id.name} returns a value, so every path must return one`, fn);
   //why: the named result must not collide with any of the function's own names.
-  const used = JSON.stringify(fn, (k, v) => (k === "loc" ? undefined : v));
+  const used = JSON.stringify(fn, (k, v) => (k === "loc" ? undefined : typeof v === "bigint" ? String(v) : v));
   let result = "r";
   while (used.includes(`"name":"${result}"`)) result += "_";
   const res = valued ? ` (${result})` : "";
@@ -639,8 +677,16 @@ export type Mod = { out: string; diags: Diag[]; imports: Imp[]; exports: Set<str
 /** Transpile one JS source file (an ES module). */
 export function transpile(file: string, src: string, types?: Types): Mod {
   const cmts: Cmt[] = [];
-  const ast: any = acorn.parse(src, { ecmaVersion: "latest", sourceType: "module", locations: true,
-    onComment: (block: boolean, text: string, start: number, end: number) => cmts.push({ block, text, start, end }) });
+  let ast: any;
+  try {
+    ast = acorn.parse(src, { ecmaVersion: "latest", sourceType: "module", locations: true,
+      onComment: (block: boolean, text: string, start: number, end: number) => cmts.push({ block, text, start, end }) });
+  } catch (e) {
+    //why: acorn throws on the first syntax error; report it like every other problem.
+    const err = e as Error & { loc?: { line: number } };
+    const diags = [{ code: "JS-SYNTAX001", msg: err.message.replace(/ \(\d+:\d+\)$/, ""), file, line: err.loc?.line ?? 1 }];
+    return { out: "", diags, imports: [], exports: new Set(), fns: new Set(), deps: [], defines: new Map(), guards: new Set() };
+  }
   const imports: Imp[] = [], exports = new Set<string>(), decls: any[] = [], imported = new Set<string>();
   for (const n of ast.body) {
     if (n.type === "ImportDeclaration" && n.specifiers.some((x: any) => x.type !== "ImportSpecifier" || x.imported.name !== x.local.name)) {
@@ -718,7 +764,13 @@ export async function buildGraph(entry: string): Promise<{ order: { path: string
     if (mods.has(path)) return;
     if (stack.includes(path)) return add(from ?? path, 1, "JS-CYCLE001", `import cycle: ${[...stack, path].map((p) => basename(p)).join(" -> ")}`);
     stack.push(path);
-    const m = transpile(path, await Deno.readTextFile(path), new Types(checked, path));
+    const text = await Deno.readTextFile(path).catch(() => null);
+    if (text === null) {
+      stack.pop();
+      return add(from ?? path, 1, "JS-IMPORT002", `cannot read the module ${path}`);
+    }
+    //why: a file the checker couldn't load has no types; the parser's own report comes first.
+    const m = transpile(path, text, checked.getSourceFile(path) ? new Types(checked, path) : undefined);
     diags.push(...m.diags);
     const rel = (src: string) => resolve(dirname(path), src);
     const relative = [...m.imports.filter((i) => i.source.startsWith(".")).map((i) => i.source), ...m.deps];

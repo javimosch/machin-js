@@ -57,6 +57,10 @@ cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.t
   `file.js:line`, and a case in the `CRASHES` list of `test/parity_test.ts`. Names starting `js_`
   are reserved for these.
 - **If the emitter writes an expression twice, it must be free of side effects** (see `steady()`).
+- **The subset is pinned** by `test/syntax_expected.json`. Changing what's accepted or refused needs
+  `deno run -A test/syntax_test.ts --write`, a review of that diff, `deno run -A tools/gen-spec.ts`,
+  and a changelog line (newly refused = "Soundness fixes" only, per `docs/compatibility.md`, a
+  draft the owner hasn't approved yet). A new construct you think of goes into the audit.
 - **Allow-list, never block-list.** A construct is translated only when it is proven equivalent.
 - **Docs examples marked `<!-- check: ok|CODE -->` are executed.** Mark new examples.
 - **JSON stand-ins** are checked by `test/json_test.ts`; for a wider search after touching
