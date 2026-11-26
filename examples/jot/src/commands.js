@@ -3,7 +3,6 @@ import { openStore, insert, tasksWhere } from "./store.js";
 import { find, finish, erase } from "./byid.js";
 import { die } from "./errors.js";
 import { expect, idOf, oneLine } from "./check.js";
-import { includes } from "./args.js";
 import { printOne, printMany } from "./output.js";
 
 /** @typedef {import("./model.js").Line} Line */
@@ -41,7 +40,7 @@ export function list(line) {
   //why: open tasks only by default, since that is what there is left to do.
   expect(line, 0, ["--all", "--tag"]);
   const db = openStore();
-  const withDone = includes(line.flags, "--all") ? 1 : 0;
+  const withDone = line.flags.includes("--all") ? 1 : 0;
   printMany(line, tasksWhere(db, withDone, line.tag));
   sqlite_close(db);
 }

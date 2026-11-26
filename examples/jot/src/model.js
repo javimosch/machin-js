@@ -11,4 +11,7 @@
  * @typedef {{command: string, operands: string[], flags: string[], tag: string, problem: string}} Line
  */
 //why: field order here is the order in the JSON that agents receive.
-export {};
+
+//why: the two versions agents see, each written once: jot's own, and its output format's.
+export const BUILD = "0.1.0";
+export const CONTRACT = "1.0";

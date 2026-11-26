@@ -3,14 +3,14 @@
 //     that `machin encode` already accepts.
 import * as acorn from "npm:acorn@8.14.0";
 import { program, typeErrors } from "./typecheck.ts";
-import { Types, machinType } from "./types.ts";
+import { Types, machinType, typedefPairs } from "./types.ts";
 import { pushProblems } from "./ownership.ts";
 import { GUARD_MODULE, guardModule } from "./guards.ts";
 import { dirname, basename, resolve } from "jsr:@std/path@1";
 
 export type Diag = { code: string; msg: string; file: string; line: number };
 type Cmt = { block: boolean; text: string; start: number; end: number };
-type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; typed: Diag[]; external: Set<string>; types: Types; guards: Set<string>; stable: Set<string>; arrow: Set<string> | null; fns: Set<string>; imported: Set<string>; builtins: Set<string>; scope: Set<string> };
+type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; typed: Diag[]; external: Set<string>; types: Types; guards: Set<string>; stable: Set<string>; arrow: Set<string> | null; fns: Set<string>; imported: Set<string>; builtins: Set<string>; scope: Set<string>; constants: Set<string> };
 type Imp = { source: string; names: string[]; line: number };
 const GLOBALS = new Set(["String", "console"]);
 
@@ -41,13 +41,9 @@ function typedefs(c: Ctx): string[] {
   for (const m of c.cmts.filter((x) => x.block)) {
     const t = /@typedef\s+\{\{(.*?)\}\}\s*(\w+)/s.exec(m.text);
     if (!t) continue;
-    if (t[1].includes("\n")) {
-      //why: the field reader would take the comment's `*` as part of a name and say something baffling.
-      diag(c, "JS-UNSUP001", `write @typedef {{...}} ${t[2]} on one line`, { loc: { start: { line: c.src.slice(0, m.start).split("\n").length } } });
-      continue;
-    }
-    const pairs = t[1].split(",").map((f) => f.trim().split(/\s*:\s*/));
-    pairs.forEach(([n]) => checkField(c, n, { loc: { start: { line: c.src.slice(0, m.start).split("\n").length } } }));
+    const pairs = typedefPairs(t[1]);
+    const at = { loc: { start: { line: c.src.slice(0, m.start).split("\n").length } } };
+    pairs.forEach(([n]) => checkField(c, n, at));
     const fields = pairs.map(([n, ty]) => `${n} ${machinType(ty)}`);
     out.push(`type ${t[2]} struct { ${fields.join("  ")} }`);
   }
@@ -530,12 +526,39 @@ function expr(c: Ctx, e: any, p = 0): string {
   }
 }
 
+/** `xs.join(sep)` and `x.includes(y)`, or null if this call is neither. */
+function readMethod(c: Ctx, e: any): string | null {
+  const f = e.callee;
+  if (f.type !== "MemberExpression" || f.computed || !["join", "includes"].includes(f.property.name)) return null;
+  const name = f.property.name, kind = c.types.kind(f.object);
+  if (kind !== "array" && !(kind === "string" && name === "includes")) return null;
+  if (e.arguments.length !== 1) return diag(c, "JS-UNSUP001", `only ${name}(oneValue) is supported`, e);
+  //why: the call is written with a machin builtin's name, which a variable here could hide.
+  const builtin = name === "join" ? "join" : kind === "string" ? "contains" : "";
+  if (builtin && c.scope.has(builtin) && !c.builtins.has(builtin))
+    return diag(c, "JS-NAME001", `a name here hides machin's ${builtin}, which .${name}() uses; choose another name`, e);
+  const spelled = c.types.spell(f.object);
+  if (kind === "array" && !spelled) return typeDiag(c, "JS-ANY001", `${name} needs a list with a known type; add a JSDoc type on its own line`, f.object);
+  const element = spelled?.replace(/^\[\]/, "") ?? "";
+  if (name === "join" && element !== "string")
+    return diag(c, "JS-UNSUP001", "join is only supported on a list of text; turn each value into text first", e);
+  //why: JavaScript compares objects and lists by identity, which machin doesn't have.
+  if (kind === "array" && !["string", "int", "bool"].includes(element))
+    return diag(c, "JS-UNSUP001", "includes is only supported on text, or a list of numbers, text or booleans", e);
+  const args = `${expr(c, f.object)}, ${expr(c, e.arguments[0])}`;
+  if (builtin) return `${builtin}(${args})`;
+  c.guards.add("js_includes");
+  return `js_includes(${args})`;
+}
+
 /** Emit a call, mapping JS builtins to machin ones. */
 function call(c: Ctx, e: any, p = 0): string {
   const f = e.callee;
   const method = mapMethod(c, e);
   if (method === "has" && e.arguments.length === 1) return `has(${expr(c, f.object)}, ${expr(c, e.arguments[0])})`;
   if (method) return typeDiag(c, "JS-MAP001", MAP_RULE, e);
+  const listed = readMethod(c, e);
+  if (listed !== null) return listed;
   const dotted = f.type === "MemberExpression" && !f.computed ? `${f.object.name}.${f.property.name}` : "";
   if (dotted === "Math.trunc") return truncDiv(c, e, p);
   const name = dotted === "console.log" ? "println" : f.type === "Identifier" ? f.name : "";
@@ -741,11 +764,11 @@ function bareReturn(n: any): boolean {
 /** Emit a function declaration. */
 function func(c: Ctx, fn: any): string[] {
   //why: a name is visible only if declared here, in this module, or imported — no ambient globals.
-  c.scope = new Set([...c.fns, ...c.imported]);
+  c.scope = new Set([...c.fns, ...c.imported, ...c.constants]);
   if (fn.async || fn.generator) diag(c, "JS-UNSUP001", "async functions and generators are not supported", fn);
   const params = fn.params.map((p: any) => declare(c, p));
   const direct = fn.body.body.filter((n: any) => n.type === "VariableDeclaration").flatMap((n: any) => n.declarations.flatMap((d: any) => names(d.id)));
-  c.stable = new Set([...params, ...direct]);
+  c.stable = new Set([...c.constants, ...params, ...direct]);
   for (const p of pushProblems(fn)) diag(c, "JS-PUSH001", p.msg, p.node);
   const doc = docOf(c, fn);
   lint(c, fn, doc);
@@ -765,6 +788,32 @@ function func(c: Ctx, fn: any): string[] {
   return [`func ${fn.id.name}(${params.join(", ")})${res} {`, ...block(c, fn.body), "}", ""];
 }
 
+/** Is this the fixed text, whole number or boolean a top-level constant may hold? */
+function fixed(x: any): boolean {
+  if (x?.type === "UnaryExpression" && x.operator === "-") return x.argument.type === "Literal" && typeof x.argument.value === "number";
+  return x?.type === "Literal" && ["string", "number", "boolean"].includes(typeof x.value);
+}
+
+/** The names of the top-level `const`s among a module's declarations. */
+function constantNames(decls: any[]): string[] {
+  const found = decls.filter((n) => n.type === "VariableDeclaration" && n.kind === "const");
+  return found.flatMap((n) => n.declarations.filter((d: any) => d.id.type === "Identifier").map((d: any) => d.id.name));
+}
+
+/** `const NAME = "text";` at the top of a module becomes a machin global. */
+//why: only values nothing can change: a list or object would be shared mutable state, and a
+//     computed one would raise the question of when it runs.
+function constant(c: Ctx, n: any): string[] {
+  if (n.kind !== "const") return [diag(c, "JS-UNSUP001", `a top-level ${n.kind} is not supported; only const`, n)];
+  return n.declarations.map((d: any) => {
+    if (d.id.type !== "Identifier" || !fixed(d.init))
+      return diag(c, "JS-UNSUP001", "a top-level const must be fixed text, a whole number, true or false; make anything else in a function", d);
+    checkName(c, d.id.name, d, BUILTINS);
+    c.scope = new Set();
+    return `var ${d.id.name} = ${expr(c, d.init)}\n`;
+  });
+}
+
 /** Emit a function; a transpiler bug becomes a diagnostic instead of a stack trace. */
 function guarded(c: Ctx, fn: any): string[] {
   try {
@@ -774,7 +823,7 @@ function guarded(c: Ctx, fn: any): string[] {
   }
 }
 
-export type Mod = { out: string; diags: Diag[]; imports: Imp[]; exports: Set<string>; fns: Set<string>; deps: string[]; defines: Map<string, number>; guards: Set<string> };
+export type Mod = { out: string; diags: Diag[]; imports: Imp[]; exports: Set<string>; fns: Set<string>; constants: Set<string>; deps: string[]; defines: Map<string, number>; guards: Set<string> };
 
 /** Transpile one JS source file (an ES module). */
 export function transpile(file: string, src: string, types?: Types): Mod {
@@ -787,7 +836,7 @@ export function transpile(file: string, src: string, types?: Types): Mod {
     //why: acorn throws on the first syntax error; report it like every other problem.
     const err = e as Error & { loc?: { line: number } };
     const diags = [{ code: "JS-SYNTAX001", msg: err.message.replace(/ \(\d+:\d+\)$/, ""), file, line: err.loc?.line ?? 1 }];
-    return { out: "", diags, imports: [], exports: new Set(), fns: new Set(), deps: [], defines: new Map(), guards: new Set() };
+    return { out: "", diags, imports: [], exports: new Set(), fns: new Set(), constants: new Set(), deps: [], defines: new Map(), guards: new Set() };
   }
   const imports: Imp[] = [], exports = new Set<string>(), decls: any[] = [], imported = new Set<string>();
   for (const n of ast.body) {
@@ -798,6 +847,8 @@ export function transpile(file: string, src: string, types?: Types): Mod {
       n.specifiers.forEach((x: any) => imported.add(x.local.name));
     } else if (n.type === "ExportNamedDeclaration" && !n.declaration && !n.source && n.specifiers.length === 0) {
       continue; // `export {}` only marks a type-only file as a module
+    } else if (n.type === "ExportNamedDeclaration" && n.declaration?.type === "VariableDeclaration" && n.declaration.kind === "const") {
+      constantNames([n.declaration]).forEach((name) => exports.add(name)); decls.push(n.declaration);
     } else if (n.type === "ExportNamedDeclaration" && n.declaration?.type === "FunctionDeclaration") {
       exports.add(n.declaration.id.name); n.declaration.docStart = n.start; decls.push(n.declaration);
     } else decls.push(n);
@@ -810,10 +861,11 @@ export function transpile(file: string, src: string, types?: Types): Mod {
     types = new Types(program([path], { path, text: src }), path);
   }
   const external = new Set<string>(imports.filter((i) => !i.source.startsWith(".")).flatMap((i) => i.names));
-  const c: Ctx = { file, src, cmts, diags: [], typed: [], external, types, guards: new Set(), stable: new Set(), arrow: null, fns, imported, builtins, scope: new Set() };
+  const c: Ctx = { file, src, cmts, diags: [], typed: [], external, types, guards: new Set(), stable: new Set(), arrow: null, fns, imported, builtins, scope: new Set(), constants: new Set(constantNames(decls)) };
   const lines = [...typedefs(c)];
   for (const n of decls) {
     if (n.type === "FunctionDeclaration") lines.push(...guarded(c, n));
+    else if (n.type === "VariableDeclaration") lines.push(...constant(c, n));
     else lines.push(diag(c, "JS-UNSUP001", `top-level ${n.type} unsupported`, n));
   }
   //why: `@typedef {import("./model.js").Todo} Todo` is the JS way to name a type from another file;
@@ -826,11 +878,14 @@ export function transpile(file: string, src: string, types?: Types): Mod {
   //why: every function and struct this module adds to the one namespace, with its line.
   const line = (at: number) => src.slice(0, at).split("\n").length;
   const defines = new Map<string, number>(decls.filter((n) => n.type === "FunctionDeclaration").map((n) => [n.id.name, n.loc.start.line]));
+  for (const n of decls.filter((n) => n.type === "VariableDeclaration")) {
+    constantNames([n]).forEach((name) => defines.set(name, n.loc.start.line));
+  }
   for (const x of cmts.filter((x) => x.block)) {
     const t = /@typedef\s+\{\{.*?\}\}\s*(\w+)/s.exec(x.text);
     if (t) defines.set(t[1], line(x.start));
   }
-  return { out: lines.join("\n").trimEnd() + "\n", diags, imports, exports, fns, deps, defines, guards: c.guards };
+  return { out: lines.join("\n").trimEnd() + "\n", diags, imports, exports, fns, constants: c.constants, deps, defines, guards: c.guards };
 }
 
 /** Names exported by a hand-kept typings file in types/. */
@@ -914,8 +969,8 @@ export async function buildGraph(entry: string): Promise<{ order: { path: string
   await visit(resolve(entry));
   //why: machin has one flat namespace, so two modules defining the same function name would clash.
   const seen = new Map<string, string>();
-  for (const [p, m] of mods) for (const f of m.fns) {
-    if (seen.has(f)) add(p, 1, "JS-DUP001", `function ${f} is also defined in ${basename(seen.get(f)!)} (machin has one namespace)`);
+  for (const [p, m] of mods) for (const f of [...m.fns, ...m.constants]) {
+    if (seen.has(f)) add(p, 1, "JS-DUP001", `${f} is also defined in ${basename(seen.get(f)!)} (machin has one namespace)`);
     seen.set(f, p);
   }
   //why: bridge and framework sources share that namespace too, including their internal names.

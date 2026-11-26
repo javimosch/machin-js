@@ -8,6 +8,11 @@ Newest first.
 
 - **`machin/crypto`:** `sha256_hex`, `hmac_sha256_hex`, `random_hex` and `digest_equal`.
 - **linkbox** takes signed webhooks, and compares its token with `digest_equal`.
+- **Top-level constants** holding fixed text, a whole number or a boolean, also across modules.
+- **`.join(separator)`** on lists of text, and **`.includes(x)`** on text and on lists of numbers,
+  text or booleans.
+- A `@typedef` may span several lines.
+- **jot** uses the three above.
 
 ### Soundness fixes
 

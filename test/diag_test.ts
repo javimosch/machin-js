@@ -56,8 +56,3 @@ export function main() {
   const { diags } = await buildGraph(`${d}/m.js`);
   assertEquals(diags.map((x) => [x.code, x.msg.split(" ")[0]]).sort(), [["JS-NAME001", "Response"], ["JS-NAME001", "route"]]);
 });
-Deno.test("a typedef spread over several lines gets one clear message", () => {
-  const src = "/**\n * @typedef {{\n *   a: int,\n *   b: string\n * }} T\n */\n";
-  const found = transpile("t.js", src).diags;
-  assertEquals(found.map((d) => [d.code, d.msg]), [["JS-UNSUP001", "write @typedef {{...}} T on one line"]]);
-});

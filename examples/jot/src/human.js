@@ -8,11 +8,7 @@
  */
 function section(title, lines) {
   //why: every list in the guide renders the same way.
-  let out = `\n## ${title}\n\n`;
-  for (const line of lines) {
-    out += `- ${line}\n`;
-  }
-  return out;
+  return `\n## ${title}\n\n- ${lines.join("\n- ")}\n`;
 }
 
 /**

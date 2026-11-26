@@ -3,6 +3,13 @@
 //     machin element types. Both parsers read the same text, so offsets line up.
 import ts from "npm:typescript@5.7.3";
 
+/** The `name: type` pairs written between the braces of an `@typedef {{...}}`. */
+export function typedefPairs(body: string): string[][] {
+  //why: inside a comment each further line starts with `*`, which isn't part of the type.
+  const text = body.replace(/\r?\n\s*\*?/g, " ");
+  return text.split(",").map((f) => f.trim()).filter(Boolean).map((f) => f.split(/\s*:\s*/));
+}
+
 /** A JSDoc field type in machin's spelling: `boolean` -> `bool`, `string[]` -> `[]string`. */
 export function machinType(t: string): string {
   if (t.endsWith("[]")) return `[]${machinType(t.slice(0, -2))}`;
@@ -91,7 +98,7 @@ export class Types {
       //why: the same two spellings the build emits structs from: JSDoc typedefs and our .d.ts.
       const jsdoc = new RegExp(`@typedef\\s+\\{\\{([^{}]*)\\}\\}\\s*${name}\\b`).exec(sf.text);
       if (jsdoc && !sf.isDeclarationFile) {
-        return jsdoc[1].split(",").map((f) => f.trim().split(/\s*:\s*/)).map(([n, t]) => [n, machinType(t)]);
+        return typedefPairs(jsdoc[1]).map(([n, t]) => [n, machinType(t)]);
       }
       for (const s of sf.statements) {
         if (ts.isTypeAliasDeclaration(s) && s.name.text === name && ts.isTypeLiteralNode(s.type))

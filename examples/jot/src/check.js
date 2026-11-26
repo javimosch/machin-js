@@ -1,6 +1,5 @@
 import { len, substr, index, parse_int, url_encode, contains } from "machin";
 import { die, usage } from "./errors.js";
-import { includes } from "./args.js";
 
 /** @typedef {import("./model.js").Line} Line */
 
@@ -15,7 +14,7 @@ export function expect(line, count, allowed) {
   //why: a mistyped flag must fail loudly; silently ignoring it would mislead an agent.
   const global = ["--json", "--text", "--yes", "-y", "--no-interactive", "--help-json"];
   for (const flag of line.flags) {
-    if (!includes(global, flag) && !includes(allowed, flag)) {
+    if (!global.includes(flag) && !allowed.includes(flag)) {
       usage(`unknown flag for ${line.command}: ${flag}`);
     }
   }

@@ -15,6 +15,8 @@ function useOf(n: any, parent: any, grand: any, inArrow: boolean): Ref["use"] {
   if (parent.computed) return "own"; // xs[i] reads or writes one element
   if (parent.property.name === "length") return "own";
   const called = grand?.type === "CallExpression" && grand.callee === parent;
+  //why: these only read the list and keep no reference to it.
+  if (called && (parent.property.name === "join" || parent.property.name === "includes")) return "own";
   return parent.property.name === "push" && called ? "push" : "share";
 }
 

@@ -1,5 +1,5 @@
 import { json } from "machin";
-import { includes } from "./args.js";
+import { CONTRACT } from "./model.js";
 
 /** @typedef {import("./model.js").Row} Row */
 /** @typedef {import("./model.js").Task} Task */
@@ -36,11 +36,11 @@ function textLine(t) {
  */
 export function printOne(line, row) {
   //why: JSON unless --text, because the main reader is an agent.
-  if (includes(line.flags, "--text")) {
+  if (line.flags.includes("--text")) {
     console.log(textLine(toTask(row)));
   } else {
     /** @type {One} */
-    const reply = { ok: true, version: "1.0", task: toTask(row) };
+    const reply = { ok: true, version: CONTRACT, task: toTask(row) };
     console.log(json(reply));
   }
 }
@@ -58,13 +58,13 @@ export function printMany(line, rows) {
   for (const row of rows) {
     tasks.push(toTask(row));
   }
-  if (includes(line.flags, "--text")) {
+  if (line.flags.includes("--text")) {
     for (const t of tasks) {
       console.log(textLine(t));
     }
   } else {
     /** @type {Many} */
-    const reply = { ok: true, version: "1.0", count: tasks.length, tasks };
+    const reply = { ok: true, version: CONTRACT, count: tasks.length, tasks };
     console.log(json(reply));
   }
 }

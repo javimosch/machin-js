@@ -3,22 +3,6 @@ import { len, has_prefix } from "machin";
 /** @typedef {import("./model.js").Line} Line */
 
 /**
- * Is `list` holding `item`?
- * @param {string[]} list
- * @param {string} item
- * @returns {boolean}
- */
-export function includes(list, item) {
-  //why: there is no .includes() in the subset.
-  for (const x of list) {
-    if (x == item) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
  * What one argument is: "word", "flag", "end" (--), "tag" (--tag) or "tagvalue".
  * @param {string} arg
  * @param {string} before what the argument before it was.
@@ -122,7 +106,7 @@ function shape(words, flags, tag, problem) {
   for (let i = 1; i < words.length; i++) {
     operands.push(words[i]);
   }
-  if (includes(flags, "--help-json")) {
+  if (flags.includes("--help-json")) {
     command = "help-json";
   }
   return { command, operands, flags, tag, problem };

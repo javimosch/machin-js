@@ -23,6 +23,15 @@ export const GUARDS: Record<string, string> = {
     }
 }
 `,
+  js_includes: `func js_includes(xs, v) (r) {
+    r = false
+    for _, x := range xs {
+        if x == v {
+            r = true
+        }
+    }
+}
+`,
   js_divisor: `func js_divisor(d, at) (r) {
     if d == 0 {
         eprintln(at + ": division by zero")

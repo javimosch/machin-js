@@ -209,6 +209,17 @@ export const SNIPPETS: Snippet[] = [
   ["use strict directive", "console.log(1);", "", '"use strict";\n'],
   ["class declaration", "console.log(1);", "class C {}"],
   ["top level var", "console.log(1);", "var K = 1;"],
+  ["top level const of a list", "console.log(K.length);", "const K = [1];"],
+  ["top level computed const", "console.log(K);", "const K = 1 + 1;"],
+  ["top level const reassigned", "K = 2; console.log(K);", "const K = 1;"],
+  ["top level let", "console.log(K);", "let K = 1;"],
+  ["join text", 'console.log(["a", "b"].join("-"));'],
+  ["join numbers", 'console.log([1, 2].join("-"));'],
+  ["join default separator", 'console.log(["a", "b"].join());'],
+  ["includes in list", "console.log([1, 2].includes(2));"],
+  ["includes in text", 'console.log("abc".includes("b"));'],
+  ["includes with start", 'console.log("abc".includes("a", 1));'],
+  ["typedef over lines", "console.log(mk().n);", "/**\n * @typedef {{\n *   n: int,\n * }} T\n */\n" + fn("mk()", "return { n: 4 };", "@returns {T}")],
   ["syntax error", "const = 1;"],
 ];
 

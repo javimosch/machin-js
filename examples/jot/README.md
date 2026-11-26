@@ -41,8 +41,10 @@ Understanding the command line: `src/args.js` and `src/check.js`. About jot itse
   `errors.js` assembles that JSON by hand, with `json()` doing the escaping.
 - **Keys such as `help-json` or `80`** can't be struct fields, so `catalog.js` builds those objects
   by hand too.
-- **A `@typedef` must be on one line**, which makes the guide's type in `guidetypes.js` long.
-- **No top-level constants, `.includes()` or `.join()`**: each is a small function.
+
+jot also met three limits that have since been lifted, and now uses what replaced them: multi-line
+`@typedef` (`guidetypes.js`), top-level constants (`model.js`), `.includes()` and `.join()`. These
+need machin-js from `main`; 0.9.1 can't build this version of jot.
 
 ## Verify it
 

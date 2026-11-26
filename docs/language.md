@@ -40,7 +40,7 @@ The transpiler also uses these types to decide what is safe to translate. Where 
 /** @typedef {{id: int, title: string, done: int}} Todo */
 ```
 
-The whole `@typedef {{...}} Name` must be **on one line**.
+A `@typedef` may be on one line or spread over several. In 0.9.1 it must be on one line.
 
 To use the type from another file:
 
@@ -122,6 +122,39 @@ An audit of edge cases, with the exact result for each, is in
 - template literals: `` `${n} items` `` with numbers, strings and booleans
 - object literals that match a named `@typedef`: `{ id, title: "x", done: 0 }`
 - `list.push(value)`, while the function is the list's only owner (below)
+- [top-level constants, `.join()` and `.includes()`](#constants-join-and-includes)
+
+### Constants, `join` and `includes`
+
+**On `main`, not in the 0.9.1 download.**
+
+<!-- check: ok -->
+```js
+export const LIMIT = 3;
+const DAYS = "mon tue wed";
+
+/**
+ * The first few tags, in one line.
+ * @param {string[]} tags
+ * @param {string} day
+ * @returns {string}
+ */
+export function summary(tags, day) {
+  //why: only the days we know get a summary.
+  if (!DAYS.includes(day) || tags.length > LIMIT || tags.includes("hidden")) {
+    return "";
+  }
+  return `${day}: ${tags.join(", ")}`;
+}
+```
+
+- A top-level `const` holds **fixed text, a whole number, `true` or `false`**. It can be exported and
+  imported. Lists, objects, calls and sums such as `60 * 60` are refused: make those in a function.
+  Its name can't be reused for a local or a parameter in a module that sees it, and, like functions,
+  two modules can't both define it.
+- `list.join(separator)` works on a list of text, and needs the separator. Turn numbers into text first.
+- `.includes(x)` works on text, and on a list of numbers, text or booleans, with no start position.
+  Lists of objects or lists are refused, because JavaScript compares those by identity.
 
 ### Building a list with `push`
 
@@ -229,8 +262,8 @@ export function chop(s) {
 
 Plain division (`/`), decimals, `null`, non-ASCII string literals,
 `typeof`, `var`, destructuring, default and rest parameters, assigning to an object field,
-shadowing a name, looping over a `Map`, classes, `async`, `??`, `switch`, method calls other than `push` (such as `.map`),
-object spread and computed keys, tagged templates, `continue`, block-bodied arrows, top-level `const`, and
+shadowing a name, looping over a `Map`, classes, `async`, `??`, `switch`, method calls other than `push`, `join` and `includes` (such as `.map`),
+object spread and computed keys, tagged templates, `continue`, block-bodied arrows, top-level `let` and `var`, and
 ternaries in any other position.
 
 A function that returns a value must return one on every path. The transpiler accepts only a final
