@@ -123,7 +123,7 @@ The name is not exported by that module. For `"machin"` the list comes from `mac
 
 ## JS-IMPORT002: unknown module
 
-Only `"machin"`, `"machin/web"`, `"machin/json"`, `"machin/desktop"` and relative paths exist.
+Only `"machin"`, `"machin/web"`, `"machin/json"`, `"machin/text"`, `"machin/desktop"` and relative paths exist.
 
 ## JS-DUP001: function defined in two modules
 
@@ -426,12 +426,15 @@ function f(a, pick) {
 }
 ```
 
-Native code writes `a[i] += x` as `a[i] = a[i] + x`, so it would call `pick` twice. And in
-`a[i] = value`, it runs `value` before `i`, the reverse of JavaScript. So:
+Native code writes `a[i] += x` as `a[i] = a[i] + x`, so it would call `pick` twice. In a plain store,
+`a[i] = value` or `m.set(key, value)`, machin doesn't promise to run the index before the value, as
+JavaScript does. So:
 
 - for `+=`, `-=`, `*=`, `%=`, `++` and `--` on an element, the index (and the list) must be simple:
   variables, constants and arithmetic, with no calls and no list reads;
-- for a plain `=`, a non-simple index is fine only if the value calls nothing.
+- a plain store is fine if the index or the value is simple, or if neither one calls anything that
+  could change something. `String`, `len`, `substr`, map reads and the other built-ins that only
+  compute don't count. Your own functions always do.
 
 Fixed:
 
@@ -448,6 +451,23 @@ function f(a, pick) {
   a[i] += 5;
 }
 ```
+
+## JS-MAP001: unsupported use of a Map
+
+<!-- check: JS-MAP001 -->
+```js
+/**
+ * Example.
+ * @param {Map<string, int>} counts
+ */
+function f(counts) {
+  //why: example.
+  console.log(counts.get("a"));
+}
+```
+
+Say what a missing key means: `counts.get("a") ?? 0`. Also reported for looping over a map, a map
+with no declared types, and other methods. See [key-value lookups](language.md#key-value-lookups-with-map).
 
 ## JS-INTERNAL001: transpiler bug
 

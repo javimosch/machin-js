@@ -66,6 +66,16 @@ key written with escapes (`"\u0061"`) doesn't match `a`. A string holding half a
 doesn't count as a string. The Deno stand-in behaves the same way, and the two are compared on
 thousands of random documents.
 
+## `"machin/text"`: padding
+
+| Function | Gives |
+|---|---|
+| `text_length(s)` | the number of characters (Unicode code points), where `len(s)` counts bytes |
+| `pad_end(s, width)`, `pad_start(s, width)` | `s` padded with spaces to `width` characters |
+
+It counts characters the same way in both runtimes, so accented text lines up. It doesn't know
+display widths: East Asian wide characters and emoji take more room in a terminal than one column.
+
 ## `"machin/desktop"`: window and drawing
 
 A small immediate-mode API over raylib that uses only numbers and strings:

@@ -1,4 +1,5 @@
-import { sort_by, len } from "machin";
+import { sort_by } from "machin";
+import { pad_end } from "machin/text";
 import { formatCents } from "./money.js";
 
 /** @typedef {import("./model.js").Entry} Entry */
@@ -10,36 +11,20 @@ import { formatCents } from "./money.js";
  * @returns {Total[]}
  */
 export function totalsByCategory(entries) {
-  //why: a plain search is fine for a handful of categories, and there are no maps in the subset.
+  //why: the list keeps first-seen order; the map only remembers each category's place in it.
+  /** @type {Map<string, int>} */
+  const places = new Map();
   /** @type {Total[]} */
   const totals = [];
   for (const e of entries) {
-    let at = -1;
-    for (let i = 0; i < totals.length; i++) {
-      if (totals[i].category == e.category) { at = i; }
+    if (!places.has(e.category)) {
+      places.set(e.category, totals.length);
+      totals.push({ category: e.category, cents: 0, count: 0 });
     }
-    if (at < 0) {
-      totals.push({ category: e.category, cents: e.cents, count: 1 });
-    } else {
-      totals[at] = { category: e.category, cents: totals[at].cents + e.cents, count: totals[at].count + 1 };
-    }
+    const at = places.get(e.category) ?? 0;
+    totals[at] = { category: e.category, cents: totals[at].cents + e.cents, count: totals[at].count + 1 };
   }
   return sort_by(totals, (a, b) => a.cents > b.cents);
-}
-
-/**
- * Pad `s` with spaces on the right up to `width`.
- * @param {string} s
- * @param {int} width
- * @returns {string}
- */
-function pad(s, width) {
-  //why: there is no padEnd in the subset; a short loop is clear enough.
-  let out = s;
-  while (len(out) < width) {
-    out += " ";
-  }
-  return out;
 }
 
 /**
@@ -51,8 +36,8 @@ export function printReport(totals) {
   //why: the grand total is summed from the rows shown, so the two can't disagree.
   let sum = 0;
   for (const t of totals) {
-    console.log(`${pad(t.category, 14)}${pad(formatCents(t.cents), 10)}(${t.count})`);
+    console.log(`${pad_end(t.category, 14)}${pad_end(formatCents(t.cents), 10)}(${t.count})`);
     sum += t.cents;
   }
-  console.log(`${pad("total", 14)}${formatCents(sum)}`);
+  console.log(`${pad_end("total", 14)}${formatCents(sum)}`);
 }

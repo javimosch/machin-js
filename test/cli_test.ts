@@ -91,7 +91,7 @@ Deno.test("the bundled machweb.src is the one from the pinned machin version", a
   assertEquals((await Deno.readTextFile(`${root}bindings/machweb.version`)).trim(), pinned);
   const framework = Deno.env.get("MACHIN_FRAMEWORK");
   //why: in CI MACHIN_FRAMEWORK is the pinned tag's checkout, so the copy can be compared exactly.
-  if (framework && Deno.env.get("CI")) {
+  if (framework && Deno.env.get("CI") && !Deno.env.get("MACHIN_LATEST")) {
     assertEquals(await Deno.readTextFile(`${root}bindings/machweb.src`), await Deno.readTextFile(`${framework}/machweb.src`));
   }
 });

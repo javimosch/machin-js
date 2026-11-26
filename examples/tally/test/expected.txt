@@ -20,7 +20,7 @@ exit 1
 stderr: tally: cannot read test/fixtures/empty.csv (missing or empty)
 exit 2
 == utf8-crlf
-café         2.50      (1)
+café          2.50      (1)
 food          1.00      (1)
 total         3.50
 exit 0

@@ -102,6 +102,7 @@ export function listTodos(db) {
 - `String(x)` and `console.log(...)` of numbers, strings and booleans
 - `parse(json, [])` into a struct or a list, typed by where the result is used
 - `for (const x of list)`
+- `new Map()` as a key-value store (below)
 - template literals: `` `${n} items` `` with numbers, strings and booleans
 - object literals that match a named `@typedef`: `{ id, title: "x", done: 0 }`
 - `list.push(value)`, while the function is the list's only owner (below)
@@ -134,6 +135,41 @@ The list must be created in the same function with `const name = [...]`. Reading
 elements and reading `.length` don't share it. Passing it to a function, assigning it, capturing it
 in an arrow or looping over it with `for…of` does, and no `push` may come after that, including on a
 loop's next pass. `return name` is always fine.
+
+### Key-value lookups with `Map`
+
+Use JavaScript's own `Map`. Declare its types on their own line, with `string` or `int` keys, and
+text, number, boolean or named-struct values:
+
+<!-- check: ok -->
+```js
+/**
+ * How often each word appears; the count for `wanted`.
+ * @param {string[]} words
+ * @param {string} wanted
+ * @returns {int}
+ */
+export function countOf(words, wanted) {
+  //why: a Map avoids searching the list again for every word.
+  /** @type {Map<string, int>} */
+  const counts = new Map();
+  for (const w of words) {
+    counts.set(w, (counts.get(w) ?? 0) + 1);
+  }
+  return counts.get(wanted) ?? 0;
+}
+```
+
+You can use `m.get(key) ?? fallback`, `m.has(key)`, `m.size`, and `m.set(key, value)` or
+`m.delete(key)` on their own line. A map is shared, as in JavaScript: a function you pass it to
+changes the same map.
+
+- A bare `m.get(key)` isn't allowed: a missing key is `undefined` in JavaScript but `0` or `""`
+  natively. The fallback must be a constant or a variable, or a call that changes nothing, because
+  it is always evaluated.
+- **You can't loop over a map:** machin lists keys in a different order. If order matters, keep your
+  own list of keys, as [tally](https://github.com/javimosch/machin-js/tree/main/examples/tally) does.
+- Maps inside a `@typedef`, and lists or maps as values, aren't supported.
 
 ### Arrows and captured variables
 
@@ -170,7 +206,7 @@ export function chop(s) {
 
 Plain division (`/`), decimals, nested array literals ([machin#718](https://github.com/javimosch/machin/issues/718)), `null`, non-ASCII string literals,
 `typeof`, `var`, destructuring, default and rest parameters, assigning to an object field,
-shadowing a name, classes, `async`, `??`, `switch`, method calls other than `push` (such as `.map`),
+shadowing a name, looping over a `Map`, classes, `async`, `??`, `switch`, method calls other than `push` (such as `.map`),
 object spread and computed keys, tagged templates, `continue`, block-bodied arrows, top-level `const`, and
 ternaries in any other position.
 

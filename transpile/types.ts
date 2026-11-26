@@ -3,7 +3,7 @@
 //     machin element types. Both parsers read the same text, so offsets line up.
 import ts from "npm:typescript@5.7.3";
 
-export type Kind = "int" | "string" | "bool" | "array" | "object" | "any" | "other";
+export type Kind = "int" | "string" | "bool" | "array" | "map" | "object" | "any" | "other";
 type At = { start: number; end: number };
 
 export class Types {
@@ -55,6 +55,8 @@ export class Types {
     if (t.flags & ts.TypeFlags.NumberLike) return "int";
     if (t.flags & ts.TypeFlags.StringLike) return "string";
     if (this.#ck.isArrayType(t)) return "array";
+    //why: only the standard library's Map — a user typedef that happens to be named Map stays an object.
+    if (t.symbol?.name === "Map" && !t.aliasSymbol) return "map";
     return t.flags & ts.TypeFlags.Object ? "object" : "other";
   }
 
@@ -65,6 +67,11 @@ export class Types {
     if (kind === "array") {
       const element = this.#spell(this.#ck.getTypeArguments(t as ts.TypeReference)[0]);
       return element ? `[]${element}` : null;
+    }
+    if (kind === "map") {
+      const [key, value] = this.#ck.getTypeArguments(t as ts.TypeReference).map((a) => this.#spell(a));
+      //why: keys are text or whole numbers; lists and maps as values are not covered yet.
+      return (key === "string" || key === "int") && value && !/^(\[\]|map\[)/.test(value) ? `map[${key}]${value}` : null;
     }
     //why: only named typedefs become machin structs.
     return kind === "object" ? t.aliasSymbol?.name ?? null : null;

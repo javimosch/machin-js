@@ -99,7 +99,18 @@ export function generate(seed: number): string {
   const clamp = (name: string) => `${name} %= 1009;`;
   const statement = (depth: number, v: string[]): string => {
     const target = r.pick(ints);
-    switch (r.int(depth > 0 ? 19 : 7)) {
+    switch (r.int(depth > 0 ? 22 : 7)) {
+      //why: a map read, written, deleted and shared through an alias, with colliding and odd keys.
+      case 19: {
+        const m = `map${fresh++}`, n = `alias${fresh++}`, i = `i${fresh++}`;
+        const key = () => r.pick(['"a"', '"b"', '""', '"__proto__"', `String(${num(1, v)} % 5)`, text(1, v)]);
+        return `\n    /** @type {Map<string, int>} */\n    const ${m} = new Map(); const ${n} = ${m}; for (let ${i} = 0; ${i} < ${r.int(6)}; ${i}++) { ${m}.set(String(${i} % 3), (${m}.get(String(${i} % 3)) ?? 0) + ${num(1, v)} % 1009); } ${n}.set(${key()}, ${r.int(99)}); ${m}.delete(${key()}); ${target} = (${n}.get(${key()}) ?? ${r.int(9)}) % 1009; console.log(String(${m}.size), String(${m}.has(${key()})), ${n}.get(${key()}) ?? ${r.int(9)});`;
+      }
+      case 20: {
+        const rows = `byId${fresh++}`, none = `none${fresh++}`, got = `got${fresh++}`;
+        return `\n    /** @type {Map<int, Row>} */\n    const ${rows} = new Map(); ${rows}.set(${r.int(3)}, { n: ${num(1, v)} % 1009, ok: ${cond(1, v)} }); ${rows}.set(${r.int(3)}, makeRow(${r.int(9)}, true));\n    /** @type {Row} */\n    const ${none} = { n: 0, ok: false }; const ${got} = ${rows}.get(${r.int(3)}) ?? ${none}; console.log(String(${got}.n), ${got}.ok, ${rows}.size);`;
+      }
+      case 21: return `console.log(pad_end(${text(1, v)}, ${r.int(12)}) + "|" + pad_start(${text(1, v)}, ${r.int(12)}) + "|" + String(text_length(${text(1, v)})));`;
       //why: a list built with push, then shared, read by for…of and changed through an alias.
       case 14: {
         const l = `list${fresh++}`, i = `i${fresh++}`, x = `x${fresh++}`, y = `y${fresh++}`;
@@ -161,7 +172,7 @@ export function generate(seed: number): string {
   const funcs = Array.from({ length: 4 }, (_, n) =>
     `/**\n * Step ${n}.\n * @param {int} a\n * @param {int} b\n * @param {int[]} xs\n * @returns {int}\n */\nfunction step${n}(a, b, xs) {\n  //why: random.\n  let s = "${word()}"; let p = ${r.chance(0.5)};\n  ${statement(2, ["a", "b"])}\n  ${statement(2, ["a", "b"])}\n  console.log(String(a), s, p);\n  return (a + b) % 1009;\n}`);
   const calls = funcs.map((_, n) => `  console.log(String(step${n}(${r.int(100)}, ${r.int(100)}, xs)));`).join("\n");
-  return `import { len, substr, parse, sort_by } from "machin";\n${HELPERS}\n${funcs.join("\n")}\n/** Run the steps. */\nexport function main() {\n  //why: random.\n  const xs = [${r.int(9)}, ${r.int(9)}, ${r.int(9)}];\n${calls}\n  console.log(String(xs[0]), String(xs[1]), String(xs[2]));\n}\n`;
+  return `import { len, substr, parse, sort_by } from "machin";\nimport { pad_end, pad_start, text_length } from "machin/text";\n${HELPERS}\n${funcs.join("\n")}\n/** Run the steps. */\nexport function main() {\n  //why: random.\n  const xs = [${r.int(9)}, ${r.int(9)}, ${r.int(9)}];\n${calls}\n  console.log(String(xs[0]), String(xs[1]), String(xs[2]));\n}\n`;
 }
 
 /** Run a command, returning exit code and output. */
@@ -186,10 +197,11 @@ export async function check(seed: number): Promise<Result> {
   const diags = built.diags.filter((x) => x.code !== "JS-SIZE001");
   if (diags.length) return done("rejected", diags.map((x) => `${x.line}: ${x.code} ${x.msg}`).join("\n"));
   await Deno.writeTextFile(`${d}/run.mjs`, 'import { main } from "./m.js";\nmain();\n');
-  await Deno.writeTextFile(`${d}/map.json`, JSON.stringify({ imports: { machin: `${root}shim/machin.js` } }));
+  await Deno.writeTextFile(`${d}/map.json`, JSON.stringify({ imports: { machin: `${root}shim/machin.js`, "machin/text": `${root}shim/text.js` } }));
   const js = await run("deno", ["run", "--no-config", `--import-map=${d}/map.json`, `${d}/run.mjs`]);
   if (js.code !== 0) return done("rejected", `generator made invalid JavaScript: ${js.err.slice(0, 300)}`);
-  await Deno.writeTextFile(`${d}/m.src`, built.order.map((o) => o.out).join("\n"));
+  const sources = [...await Promise.all(built.native.map((f) => Deno.readTextFile(f))), ...built.order.map((o) => o.out)];
+  await Deno.writeTextFile(`${d}/m.src`, sources.join("\n"));
   const enc = await run("machin", ["encode", `${d}/m.src`]);
   if (enc.code !== 0) return done("different", `machin rejects the output: ${enc.err.slice(0, 300)}`);
   await Deno.writeTextFile(`${d}/m.mfl`, enc.out);

@@ -82,6 +82,9 @@ written. `.github/workflows/release.yml` publishes on a `v*` tag: **ask the owne
 
 ## After upgrading machin
 
+`.github/workflows/latest-machin.yml` (weekly, or `gh workflow run "latest machin"`) says whether
+the newest release still passes. Check its last run when you start work.
+
 ```sh
 deno run -A tools/gen-dts.ts     # machin.d.ts + machweb.d.ts from `machin guide`
 ```

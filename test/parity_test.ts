@@ -104,6 +104,30 @@ const CASES: Case[] = [
   { name: "store with a computed index and a plain value", body: "const a = [1, 0]; a[a[0]] = 9; console.log(a[0] + a[1]);", expect: "same" },
   { name: "element add where the value changes the element", body: "const a = [5]; a[0] += bump(a) + 1; const b = [5]; console.log(`${a[0]} ${b[0] + bump(b)} ${b[0]}`);", extra: fn("bump(xs)", "xs[0] = 100; return 0;", "@param {int[]} xs"), expect: "same" },
   { name: "name reserved for generated checks", body: "const js_at = 1; console.log(js_at);", expect: "JS-NAME001" },
+  { name: "store whose index call changes what the value reads", body: "const log = [0]; const a = [10, 20, 30]; a[next(log)] = log[0]; console.log(a[1]);", extra: fn("next(log)", "log[0] += 1; return log[0];", "@param {int[]} log"), expect: "JS-ORDER001" },
+  { name: "map basics", body: "/** @type {Map<string, int>} */\n  const m = new Map(); m.set(\"a\", 1); m.set(\"b\", 2); m.set(\"a\", 7); console.log(m.get(\"a\") ?? 0); console.log(m.get(\"zz\") ?? 99); console.log(m.has(\"b\")); console.log(m.size); m.delete(\"b\"); m.delete(\"never\"); console.log(m.has(\"b\")); console.log(m.size);", expect: "same" },
+  { name: "map is shared by aliases and callees", body: "/** @type {Map<string, int>} */\n  const m = new Map(); const n = m; grow(n, 3000); console.log(m.size); console.log(m.get(\"k2999\") ?? 0);", extra: fn("grow(t, count)", "for (let i = 0; i < count; i++) { t.set(`k${i}`, i); }", "@param {Map<string, int>} t @param {int} count"), expect: "same" },
+  { name: "odd map keys", body: "/** @type {Map<string, int>} */\n  const m = new Map(); console.log(m.has(\"__proto__\")); console.log(m.has(\"constructor\")); m.set(\"__proto__\", 1); m.set(\"\", 2); console.log(m.size + (m.get(\"__proto__\") ?? 0) * 10 + (m.get(\"\") ?? 0) * 100);", expect: "same" },
+  { name: "maps with int keys and struct, string and bool values", body: "/** @type {Map<int, P>} */\n  const a = new Map(); a.set(0 - 5, { s: \"x\", n: 1 });\n  /** @type {P} */\n  const none = { s: \"-\", n: 0 };\n  /** @type {Map<string, boolean>} */\n  const b = new Map(); b.set(\"t\", true); const p = a.get(0 - 5) ?? none; console.log(`${p.s}${p.n} ${(a.get(9) ?? none).s} ${b.get(\"t\") ?? false} ${b.get(\"f\") ?? false}`);", extra: "/** @typedef {{s: string, n: int}} P */", expect: "same" },
+  { name: "map returned from a function", body: "const m = make2(); console.log((m.get(\"z\") ?? \"?\") + String(m.size));", extra: fn("make2()", "/** @type {Map<string, string>} */\n  const r = new Map(); r.set(\"z\", \"ok\"); return r;", ""), expect: "same" },
+  { name: "map get without a default", body: "/** @type {Map<string, int>} */\n  const m = new Map(); const v = m.get(\"a\"); console.log(v);", expect: "JS-MAP001" },
+  { name: "map default that does something", body: "/** @type {Map<string, int>} */\n  const m = new Map(); const log = [0]; console.log(m.get(\"a\") ?? next(log)); console.log(log[0]);", extra: fn("next(log)", "log[0] += 1; return log[0];", "@param {int[]} log"), expect: "JS-MAP001" },
+  { name: "?? on something that isn't a map get", body: "const a = [1]; console.log(a[0] ?? 2);", expect: "JS-UNSUP001" },
+  { name: "iterating a map", body: "/** @type {Map<string, int>} */\n  const m = new Map(); for (const e of m) { console.log(1); }", expect: "JS-MAP001" },
+  { name: "listing map keys", body: "/** @type {Map<string, int>} */\n  const m = new Map(); for (const k of m.keys()) { console.log(k); }", expect: "JS-MAP001" },
+  { name: "chained ??", body: "/** @type {Map<string, int>} */\n  const m = new Map(); console.log(m.get(\"a\") ?? m.get(\"b\") ?? 0);", expect: "JS-UNSUP001" },
+  { name: "map without a declared type", body: "const m = new Map(); console.log(m.size);", expect: "JS-MAP001" },
+  { name: "map filled at construction", body: "const m = new Map([[\"a\", 1]]); console.log(m.size);", expect: "JS-UNSUP001" },
+  { name: "map index syntax", body: "/** @type {Map<string, int>} */\n  const m = new Map(); console.log(m[\"a\"]);", expect: "JS-MAP001" },
+  { name: "map set result used", body: "/** @type {Map<string, int>} */\n  const m = new Map(); console.log(m.set(\"a\", 1).size);", expect: "JS-MAP001" },
+  { name: "map store: key and value both call", body: "/** @type {Map<string, int>} */\n  const m = new Map(); const log = [0]; m.set(String(next(log)), next(log)); console.log(m.size);", extra: fn("next(log)", "log[0] += 1; return log[0];", "@param {int[]} log"), expect: "JS-ORDER001" },
+  { name: "map store: simple key, calling value", body: "/** @type {Map<string, int>} */\n  const m = new Map(); const log = [0]; const key = \"k\"; m.set(key, next(log)); console.log((m.get(key) ?? 0) + log[0]);", extra: fn("next(log)", "log[0] += 1; return log[0];", "@param {int[]} log"), expect: "same" },
+  { name: "character-counting padding", body: "const s = url_decode(\"h%C3%A9%E2%98%83%F0%9F%98%80\"); console.log(text_length(s)); console.log(pad_end(s, 6) + \"|\"); console.log(pad_start(s, 6) + \"|\"); console.log(pad_end(\"abc\", 2) + \"|\"); console.log(pad_start(\"\", 3) + \"|\");", imports: "url_decode", extra: 'import { text_length, pad_end, pad_start } from "machin/text";', expect: "same" },
+  { name: "counting with computed keys and pure calls", body: "/** @type {Map<string, int>} */\n  const m = new Map(); for (let i = 0; i < 7; i++) { m.set(String(i % 3), (m.get(String(i % 3)) ?? 0) + len(String(i * 100))); } console.log(`${m.get(\"0\") ?? 0} ${m.get(\"1\") ?? 0} ${m.size}`);", imports: "len", expect: "same" },
+  { name: "store: pure key call but an effectful value that changes what it reads", body: "/** @type {Map<string, int>} */\n  const m = new Map(); const log = [0]; m.set(String(log[0]), next(log)); console.log(m.has(\"0\"));", extra: fn("next(log)", "log[0] += 1; return log[0];", "@param {int[]} log"), expect: "JS-ORDER001" },
+  { name: "store: effectful key through a callback", body: "const log = [0]; const g = next; const a = [1, 2, 3]; a[g(log)] = log[0]; console.log(a[1]);", extra: fn("next(log)", "log[0] += 1; return log[0];", "@param {int[]} log"), expect: "JS-ORDER001" },
+  { name: "store: a function of yours that only looks pure", body: "/** @type {Map<string, int>} */\n  const m = new Map(); const log = [0]; m.set(String(next(log)), log[0]); console.log(m.has(\"1\"));", extra: fn("next(log)", "log[0] += 1; return log[0];", "@param {int[]} log"), expect: "JS-ORDER001" },
+  { name: "text widths over many non-ASCII strings", body: "for (const e of [\"\", \"a\", \"caf%C3%A9\", \"%E6%97%A5%E6%9C%AC%E8%AA%9E\", \"%F0%9F%98%80%F0%9F%98%80\", \"%C3%A9%CC%82\", \"a%C2%A0b\", \"%25\", \"%2580\", \"100%25%20%C3%A9\", \"%09%0A\", \"%7F%C2%80%DF%BF%E0%A0%80%EF%BF%BF\", \"xxxxxxxxxxxxxxxxxxxx\"]) { const s = url_decode(e); console.log(`${text_length(s)} [${pad_end(s, 5)}] [${pad_start(s, 5)}]`); }", imports: "url_decode", extra: 'import { text_length, pad_end, pad_start } from "machin/text";', expect: "same" },
   { name: "ternary", body: 'const a = 1; const m = a == 1 ? "y" : "n"; console.log(m);', expect: "same" },
 ];
 
@@ -130,8 +154,9 @@ for (const k of CASES) {
     assertEquals(built.diags, []);
     await Deno.writeTextFile(`${d}/run.mjs`, 'import { main } from "./m.js";\nmain();\n');
     //why: under Deno, "machin" is the shim — the same stand-ins a user debugs with.
-    await Deno.writeTextFile(`${d}/map.json`, JSON.stringify({ imports: { machin: `${root}shim/machin.js` } }));
-    await Deno.writeTextFile(`${d}/m.src`, built.order.map((o) => o.out).join("\n"));
+    await Deno.writeTextFile(`${d}/map.json`, JSON.stringify({ imports: { machin: `${root}shim/machin.js`, "machin/text": `${root}shim/text.js` } }));
+    const sources = [...await Promise.all(built.native.map((f) => Deno.readTextFile(f))), ...built.order.map((o) => o.out)];
+    await Deno.writeTextFile(`${d}/m.src`, sources.join("\n"));
     const js = await run("deno", ["run", "--no-config", `--import-map=${d}/map.json`, `${d}/run.mjs`]);
     assertEquals(js.code, 0, js.err);
     const enc = await run("machin", ["encode", `${d}/m.src`]);

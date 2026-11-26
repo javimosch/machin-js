@@ -73,6 +73,7 @@ The JSDoc is both the documentation and the types the build checks.
 | `JS-RET001` / `JS-SCOPE001` | every path of a valued function returns; no shadowed names |
 | `JS-NUM001/002` / `JS-STR001` | no decimals, plain `/` or non-ASCII literals yet (they would behave differently) |
 | `JS-ADD001` `CMP001` `VAL001` `STR002` `ARR001` `ANY001` `LOG001` | type-based rules: reject what would behave differently natively |
+| `JS-MAP001` | a `Map` is read with `m.get(k) ?? fallback` and never looped over |
 | `JS-ORDER001` | element updates whose index would be evaluated twice, or out of order |
 | `JS-TYPE001` | your JSDoc types are checked (by the TypeScript checker, on plain `.js`) |
 | `JS-UNSUP001` | anything outside the supported allow-list is rejected |
@@ -85,7 +86,7 @@ can't produce code a human can't read.
 - **Transpiler** (`transpile/`) — Deno + [acorn](https://github.com/acornjs/acorn); resolves ES modules, orders them by dependency, emits machin `.src`.
 - **Typed builtins** (`types/machin.d.ts`) — generated from `machin guide`, so they never drift from the compiler.
 - **Run it as plain JS** (`shim/`) — Deno twins of the builtins, so the same modules run under a normal debugger and can be diffed against the native build.
-- **Bridges** — `machin/web` (machweb HTTP server), `machin/json` (typed reading of outside JSON) and `machin/desktop` (a raylib UI behind a scalar-only API, since JS can't express FFI).
+- **Bridges** — `machin/web` (machweb HTTP server), `machin/json` (typed reading of outside JSON), `machin/text` (padding) and `machin/desktop` (a raylib UI behind a scalar-only API, since JS can't express FFI).
 - **[`examples/linkbox`](examples/linkbox)** — a bookmarks API: token auth, validation, SQLite, JSON responses.
 - **[`examples/tally`](examples/tally)** — a command-line expense summarizer: arguments, files, errors on stderr and exit codes.
 - **[`examples/todo`](examples/todo)** — a todo app with a **web** shell (SSR + JSON API) and a **desktop** shell (raylib window) over one shared core, and a gate that checks both.
@@ -122,8 +123,8 @@ examples/todo/test/gate.sh                 # also: examples/tally and examples/l
 
 This is an **alpha**. It has three worked examples, and the language is a deliberately small subset:
 
-- **Supported:** functions (also as values), `const`/`let`, `if`/`while`/`for`/`for…of`, integer and string operations, template literals, `Math.trunc` division, arrays (with `push` while unshared), object literals as `@typedef` structs, ES modules.
-- **Not yet:** decimals, classes, `async`, `??`, `switch`, `.map`/`.filter`, maps, `continue`, block-bodied arrows.
+- **Supported:** `Map` lookups, functions (also as values), `const`/`let`, `if`/`while`/`for`/`for…of`, integer and string operations, template literals, `Math.trunc` division, arrays (with `push` while unshared), object literals as `@typedef` structs, ES modules.
+- **Not yet:** decimals, classes, `async`, `??`, `switch`, `.map`/`.filter`, looping over a `Map`, `continue`, block-bodied arrows.
 - **Never (by design):** prototypes, `this`, `eval`, dynamic keys, `==` coercion, npm.
 - **Numbers and strings:** numbers are integers (no decimals yet), and strings are counted in bytes (`len`, `substr`).
 - **JSON input:** read field by field with `machin/json` (top-level fields only); `parse` is for database rows and JSON your code builds.

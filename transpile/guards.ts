@@ -16,6 +16,13 @@ export const GUARDS: Record<string, string> = {
     return xs[js_idx(xs, i, at)]
 }
 `,
+  js_get: `func js_get(m, k, fallback) (r) {
+    r = fallback
+    if has(m, k) {
+        r = m[k]
+    }
+}
+`,
   js_divisor: `func js_divisor(d, at) (r) {
     if d == 0 {
         eprintln(at + ": division by zero")

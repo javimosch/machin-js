@@ -53,7 +53,7 @@ export default function () {
 </div></section>
 <section class="wrap honest">
   <h2>It is alpha, and says so</h2>
-  <p>There are three worked examples: a todo app, a command-line tool and a small API. No classes, <code>async</code>, decimals, <code>.map</code> or nested JSON input yet. <a href="/language/">See exactly what works</a>, and <a href="/NORTH-STAR/">where it is going</a>.</p>
+  <p>There are three worked examples: a todo app, a command-line tool and a small API. No classes, <code>async</code>, decimals, <code>.map()</code> or nested JSON input yet. <a href="/language/">See exactly what works</a>, and <a href="/NORTH-STAR/">where it is going</a>.</p>
   <p class="actions"><a class="btn primary" href="/getting-started/">Get started</a><a class="btn" href="${REPO}">View on GitHub</a></p>
 </section>
 <footer class="wrap">MIT licensed · <a href="${REPO}">source</a> · built with Lume</footer>

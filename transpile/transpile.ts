@@ -37,6 +37,7 @@ function str(v: string): string {
 
 /** A JSDoc field type in machin's spelling: `boolean` -> `bool`, `string[]` -> `[]string`. */
 function fieldType(t: string): string {
+  //why: a map inside a struct isn't covered; leave it to be reported by the type spelling.
   if (t.endsWith("[]")) return `[]${fieldType(t.slice(0, -2))}`;
   return t === "boolean" ? "bool" : t === "number" ? "int" : t;
 }
@@ -131,21 +132,42 @@ function steady(x: any): boolean {
   return x.type === "BinaryExpression" && steady(x.left) && steady(x.right);
 }
 
-/** Does evaluating this call anything? */
-function calls(x: any): boolean {
+//why: builtins that only compute a value from their arguments. Everything else that is called —
+//     your functions, callbacks, other builtins — is assumed to change things.
+const PURE = new Set(["len", "substr", "index", "contains", "has_prefix", "parse_int", "trim", "split", "replace",
+  "url_decode", "url_encode", "json_valid", "json_has", "json_is_string", "json_string", "json_is_int", "json_int",
+  "json_is_bool", "json_bool", "text_length", "pad_end", "pad_start"]);
+
+/** Could evaluating this change anything? */
+function calls(c: Ctx, x: any): boolean {
   if (!x || typeof x !== "object") return false;
-  if (x.type === "CallExpression") return true;
-  return Object.values(x).some((v) => Array.isArray(v) ? v.some(calls) : calls(v));
+  if (x.type === "CallExpression" && !isPure(c, x)) return true;
+  return Object.values(x).some((v) => Array.isArray(v) ? v.some((y) => calls(c, y)) : calls(c, v));
+}
+
+/** String(x), Math.trunc(a / b), reading a Map, or an imported builtin from the list above. */
+function isPure(c: Ctx, x: any): boolean {
+  const f = x.callee;
+  //why: a name counts only if it is the import itself; a local variable of that name is not.
+  if (f.type === "Identifier") return (f.name === "String" && !c.scope.has("String")) || (PURE.has(f.name) && c.imported.has(f.name));
+  return f.object?.name === "Math" || ["get", "has"].includes(mapMethod(c, x));
+}
+
+/** A store `a[key] = value` or `m.set(key, value)`: neither side may be able to affect the other. */
+function checkStoreOrder(c: Ctx, key: any, value: any, n: any) {
+  //why: machin doesn't promise JavaScript's order (key, then value). It can't matter if one side
+  //     is made of plain variables, or if neither side calls anything.
+  if (steady(key) || steady(value) || (!calls(c, key) && !calls(c, value))) return;
+  diag(c, "JS-ORDER001", "put the key or index in a variable first, then use it in the store", n);
 }
 
 /** Element updates: refuse the shapes where the two runtimes evaluate in a different way. */
 function checkElementOrder(c: Ctx, target: any, value: any, twice: boolean) {
   if (target.type !== "MemberExpression" || !target.computed) return;
   if (steady(target.object) && steady(target.property)) return;
-  //why: `a[i] += x` and `a[i]++` are written as `a[i] = a[i] + x`, which evaluates i twice; and
-  //     in `a[i] = v` machin runs v before i, where JavaScript runs i first.
-  if (twice || calls(value))
-    diag(c, "JS-ORDER001", "put the index in a variable first: const i = ...; then use a[i]", target);
+  //why: `a[i] += x` and `a[i]++` are written as `a[i] = a[i] + x`, which evaluates i twice.
+  if (twice) diag(c, "JS-ORDER001", "put the index in a variable first: const i = ...; then use a[i]", target);
+  else checkStoreOrder(c, target.property, value, target);
 }
 
 /** With two or more arguments, console.log reads a string first argument as a format string. */
@@ -217,6 +239,51 @@ function push(c: Ctx, e: any): string | null {
   return `${list} = append(${list}, ${expr(c, e.arguments[0])})`;
 }
 
+/** The method name when `e` is a call on a Map, else "". */
+function mapMethod(c: Ctx, e: any): string {
+  const f = e?.type === "CallExpression" ? e.callee : null;
+  if (!f || f.type !== "MemberExpression" || f.computed || c.types.kind(f.object) !== "map") return "";
+  return f.property.name;
+}
+
+const MAP_RULE = "a Map supports m.get(k) ?? fallback, m.has(k), m.size, and m.set(k, v) / m.delete(k) on their own line";
+
+/** `new Map()`: an empty map whose key and value types come from its annotation or context. */
+function newMap(c: Ctx, e: any, declared?: any): string {
+  if (e.callee.name !== "Map" || e.arguments.length) return diag(c, "JS-UNSUP001", "only `new Map()` with no arguments is supported", e);
+  const type = (declared && c.types.spell(declared)) || c.types.spell(e);
+  if (!type?.startsWith("map["))
+    return typeDiag(c, "JS-MAP001", "declare the Map's types, e.g. /** @type {Map<string, int>} */ on its own line", e);
+  return `make(${type})`;
+}
+
+/** `m.get(k) ?? fallback`: the one way to read a map that means the same in both. */
+function mapGet(c: Ctx, e: any): string {
+  if (mapMethod(c, e.left) !== "get" || e.left.arguments.length !== 1)
+    return diag(c, "JS-UNSUP001", "?? is only supported as m.get(key) ?? fallback", e);
+  const key = e.left.arguments[0];
+  //why: JS runs the fallback only when the key is missing; ours is always evaluated, so it
+  //     must be something that can't do anything.
+  if (!steady(e.right) && calls(c, e.right)) typeDiag(c, "JS-MAP001", "the fallback must be a constant or a variable, not a call", e.right);
+  c.guards.add("js_get");
+  return `js_get(${expr(c, e.left.callee.object)}, ${expr(c, key)}, ${expr(c, e.right)})`;
+}
+
+/** `m.set(k, v)` and `m.delete(k)` as statements. */
+function mapStatement(c: Ctx, e: any): string | null {
+  const method = mapMethod(c, e);
+  if (method !== "set" && method !== "delete") return null;
+  const map = expr(c, e.callee.object);
+  const [key, value] = e.arguments;
+  if (e.arguments.length !== (method === "set" ? 2 : 1)) return typeDiag(c, "JS-MAP001", MAP_RULE, e);
+  if (method === "delete") return `delete(${map}, ${expr(c, key)})`;
+  checkStoreOrder(c, key, value, e);
+  //why: an object literal stored in a map takes its struct name from the map's value type.
+  const type = c.types.spell(e.callee.object)?.replace(/^map\[\w+\]/, "");
+  const stored = value.type === "ObjectExpression" ? object(c, value, type) : expr(c, value);
+  return `${map}[${expr(c, key)}] = ${stored}`;
+}
+
 /** `for (const x of list)`. */
 function forOf(c: Ctx, s: any): string[] {
   const d = s.left.type === "VariableDeclaration" && (s.left.kind === "const" || s.left.kind === "let") ? s.left.declarations[0] : null;
@@ -224,7 +291,7 @@ function forOf(c: Ctx, s: any): string[] {
   return scoped(c, () => {
     const over = expr(c, s.right);
     const k = c.types.kind(s.right);
-    if (k !== "array") typeDiag(c, k === "string" ? "JS-STR002" : k === "any" ? "JS-ANY001" : "JS-UNSUP001", "for…of is only supported on a list", s);
+    if (k !== "array") typeDiag(c, k === "string" ? "JS-STR002" : k === "any" ? "JS-ANY001" : k === "map" ? "JS-MAP001" : "JS-UNSUP001", "for…of is only supported on a list", s);
     const name = declare(c, d.id);
     return [`for _, ${name} := range ${over} {`, ...block(c, s.body), "}"];
   });
@@ -233,6 +300,10 @@ function forOf(c: Ctx, s: any): string[] {
 /** `.length` and `a[i]` on arrays; strings are refused (UTF-16 units natively become bytes). */
 function member(c: Ctx, e: any): string {
   const k = c.types.kind(e.object);
+  if (k === "map") {
+    if (!e.computed && e.property.name === "size") return `len(${expr(c, e.object)})`;
+    return typeDiag(c, "JS-MAP001", MAP_RULE, e);
+  }
   const length = !e.computed && e.property.name === "length";
   if (e.computed || length) {
     if (k === "string") return typeDiag(c, "JS-STR002", `use len(s) or substr(s, a, b) from "machin" on strings: they count bytes in both`, e);
@@ -325,6 +396,7 @@ function expr(c: Ctx, e: any, p = 0): string {
       if (e.operator !== "!" && e.operator !== "-") return diag(c, "JS-UNSUP001", `operator ${e.operator} unsupported`, e);
       return `${e.operator}${expr(c, e.argument, 9)}`;
     case "BinaryExpression": case "LogicalExpression": {
+      if (e.operator === "??") return mapGet(c, e);
       const q = PREC[e.operator];
       if (e.operator === "/") return diag(c, "JS-NUM002", "/ is not supported yet: machin integer division drops the fraction", e);
       if (!q) return diag(c, "JS-UNSUP001", `operator ${e.operator} unsupported`, e);
@@ -338,6 +410,7 @@ function expr(c: Ctx, e: any, p = 0): string {
     case "ArrayExpression": return array(c, e);
     case "CallExpression": return call(c, e, p);
     case "TemplateLiteral": return template(c, e, p);
+    case "NewExpression": return newMap(c, e);
     case "ObjectExpression": return object(c, e);
     default: return diag(c, "JS-UNSUP001", `${e.type} unsupported`, e);
   }
@@ -346,6 +419,9 @@ function expr(c: Ctx, e: any, p = 0): string {
 /** Emit a call, mapping JS builtins to machin ones. */
 function call(c: Ctx, e: any, p = 0): string {
   const f = e.callee;
+  const method = mapMethod(c, e);
+  if (method === "has" && e.arguments.length === 1) return `has(${expr(c, f.object)}, ${expr(c, e.arguments[0])})`;
+  if (method) return typeDiag(c, "JS-MAP001", MAP_RULE, e);
   const dotted = f.type === "MemberExpression" && !f.computed ? `${f.object.name}.${f.property.name}` : "";
   if (dotted === "Math.trunc") return truncDiv(c, e, p);
   const name = dotted === "console.log" ? "println" : f.type === "Identifier" ? f.name : "";
@@ -376,7 +452,7 @@ function stmt(c: Ctx, s: any): string[] {
         return [diag(c, "JS-UNSUP001", `use const or let, not ${s.kind}`, s)];
       }
       return s.declarations.flatMap((d: any) => decl(c, d));
-    case "ExpressionStatement": return [push(c, s.expression) ?? assignOrExpr(c, s.expression)];
+    case "ExpressionStatement": return [push(c, s.expression) ?? mapStatement(c, s.expression) ?? assignOrExpr(c, s.expression)];
     case "ReturnStatement": return [s.argument ? `return ${expr(c, s.argument)}` : "return"];
     case "IfStatement": return ifs(c, s);
     case "WhileStatement": return [`while ${expr(c, s.test)} {`, ...block(c, s.body), "}"];
@@ -409,7 +485,7 @@ function names(n: any): string[] {
 //     builtins, so a variable with one of these names would break or hijack the output.
 const KEYWORDS = new Set(["func", "range", "chan", "make", "map", "struct", "type", "go", "select", "arena", "extern",
   "export", "nil", "fn", "cstruct", "header", "link", "cflags", "defer", "var"]);
-const EMITTED = new Set(["len", "str", "println", "append", "parse"]);
+const EMITTED = new Set(["len", "str", "println", "append", "parse", "has"]);
 
 /** Refuse a declared name that means something to machin. */
 function checkName(c: Ctx, name: string, n: any, taken: Set<string>) {
@@ -445,6 +521,7 @@ function decl(c: Ctx, d: any): string[] {
 /** The lines that give `name` its initial value (emitted before the name becomes visible). */
 function declValue(c: Ctx, d: any, name: string): string[] {
   if (d.init.type === "ArrayExpression") return [`${name} := ${array(c, d.init, d.id)}`];
+  if (d.init.type === "NewExpression") return [`${name} := ${newMap(c, d.init, d.id)}`];
   if (d.init?.type !== "ConditionalExpression") return [`${name} := ${expr(c, d.init)}`];
   const k = d.init;
   //why: else-branch is evaluated eagerly, so it must be a literal or identifier.
@@ -591,7 +668,10 @@ export function transpile(file: string, src: string, types?: Types): Mod {
   //why: `@typedef {import("./model.js").Todo} Todo` is the JS way to name a type from another file;
   //     it also tells us the dependency, so type-only modules (model.js) still get emitted.
   const deps = cmts.filter((x) => x.block).flatMap((x) => [...x.text.matchAll(/import\(["'](\.[^"']+)["']\)/g)].map((m) => m[1]));
-  const diags = c.diags.length ? c.diags : c.typed;
+  //why: once a Map operation is refused, other complaints about the same line are just its echo.
+  const mapLines = new Set(c.typed.filter((d) => d.code === "JS-MAP001").map((d) => d.line));
+  const typed = c.typed.filter((d) => d.code === "JS-MAP001" || !mapLines.has(d.line));
+  const diags = c.diags.length ? c.diags.filter((d) => !mapLines.has(d.line)).concat(typed.filter((d) => mapLines.has(d.line))) : typed;
   //why: every function and struct this module adds to the one namespace, with its line.
   const line = (at: number) => src.slice(0, at).split("\n").length;
   const defines = new Map<string, number>(decls.filter((n) => n.type === "FunctionDeclaration").map((n) => [n.id.name, n.loc.start.line]));
@@ -616,6 +696,7 @@ function bridges(): Record<string, { dts: string; src: string }> {
   return {
     "machin/web": { dts: "machweb.d.ts", src: `${fw}/machweb.src` },
     "machin/json": { dts: "json.d.ts", src: new URL("../bindings/json.src", import.meta.url).pathname },
+    "machin/text": { dts: "text.d.ts", src: new URL("../bindings/text.src", import.meta.url).pathname },
     "machin/desktop": { dts: "desktop.d.ts", src: new URL("../bindings/desktop.src", import.meta.url).pathname },
   };
 }

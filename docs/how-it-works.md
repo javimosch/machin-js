@@ -29,6 +29,7 @@ added. `"machin/desktop"` has none.
 | crash cases (in `test/parity_test.ts`) | each kind of crash names the right JavaScript line, with and without `--safe` |
 | `test/cli_test.ts` | the `machin-js` command: new, check, run, debug, exit codes, and the editor setup |
 | `tools/smoke-release.sh` | the compiled binary works with no checkout of machin-js or machin and an empty home |
+| `.github/workflows/latest-machin.yml` | weekly: the tests and app gates against the newest machin release |
 | `test/json_test.ts` | `json_valid` and `machin/json` agree on hand-picked and random documents, many of them broken |
 | parity cases (`test/parity_test.ts`) | each tricky program behaves natively as under Deno, or is rejected with the expected code |
 | random programs (`test/fuzz_test.ts`, `tools/fuzz.ts`) | generated well-typed programs behave the same under Deno and natively; 30 fixed seeds run in the tests, and `deno run -A tools/fuzz.ts 600 1234` searches further |

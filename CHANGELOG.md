@@ -13,5 +13,6 @@ Newest first. Nothing has been released yet.
 - Many programs that behaved differently natively are now rejected with a `JS-` code instead
   (see the diagnostics page).
 - Example apps: todo (web and desktop), tally (command line), linkbox (API).
+- `Map` for key-value lookups (`m.get(k) ?? fallback`), and `machin/text` padding.
 - `machin/json`: read outside JSON field by field, with type checks.
 - Requires machin 0.144.0 or newer.

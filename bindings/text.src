@@ -1,0 +1,20 @@
+// bindings/text.src — "machin/text": padding that counts characters, not bytes.
+// text_length counts UTF-8 characters: every byte that is not a continuation byte (0x80-0xBF),
+// which percent-encoding shows as %8_, %9_, %A_ or %B_.
+func text_length(s) (r) {
+    e := url_encode(s)
+    r = len(s) - (len(split(e, "%8")) - 1) - (len(split(e, "%9")) - 1) - (len(split(e, "%A")) - 1) - (len(split(e, "%B")) - 1)
+}
+
+func text_spaces_(n) (r) {
+    r = ""
+    i := 0
+    while i < n {
+        r = r + " "
+        i = i + 1
+    }
+}
+
+func pad_end(s, width) (r) { r = s + text_spaces_(width - text_length(s)) }
+
+func pad_start(s, width) (r) { r = text_spaces_(width - text_length(s)) + s }

@@ -18,9 +18,9 @@ needs them.
 |---|---|---|---|
 | **0. Honest** (0.2) | correct the claims; allow-list; reject known divergences; parity tests; CI | every parity case matches or gets a `JS-` error, and none crashes | done |
 | **1. Typed** (0.3) | type-check JSDoc (TypeScript's checker on plain `.js`); define division, numbers, strings | wrong types fail with a JS line number; generated random programs show no differences | done |
-| **2. Useful** (0.4–0.6) | typed arrays, object literals, `for…of`, template literals, `push`/`map`/`filter`, error handling; a CLI tool and an API service | all three apps pass their checks without workarounds | **open:** all three apps pass, but not without workarounds (see notes) |
+| **2. Useful** (0.4–0.6) | typed arrays, object literals, `for…of`, template literals, `push`/`map`/`filter`, error handling; a CLI tool and an API service | all three apps pass their checks without workarounds | done (`.map`/`.filter` left out: no app needed them) |
 | **3. Debuggable** (0.7) | errors at `file.js:line`; shims for every supported builtin; debugging guide | the agent-off test: a planted bug is found and fixed by a human alone | in progress: line-accurate crashes and the guide done; the agent-off test needs the owner |
-| **4. Shippable** (0.8–0.9) | a `machin-js` command (`new`, `build`, `run`, `check`, `debug`) via `deno compile`; bundled bridges; tested machin versions; releases and changelog | a clean machine goes from install to a running app using only the docs | in progress: command, bundling and changelog done; releases and testing the newest machin still to do |
+| **4. Shippable** (0.8–0.9) | a `machin-js` command (`new`, `build`, `run`, `check`, `debug`) via `deno compile`; bundled bridges; tested machin versions; releases and changelog | a clean machine goes from install to a running app using only the docs | in progress: only the first release is left |
 | **5. Stable** (1.0) | freeze the subset; compatibility policy; a period of real use with no new features | all five criteria hold, with no open silent-difference bugs | |
 
 **Outside 1.0:** the desktop shell stays experimental. A terminal shell, client-side UI,
@@ -30,7 +30,7 @@ needs them.
 
 - **machin dependencies:** open: [#718](https://github.com/javimosch/machin/issues/718) (nested list literals) and [#719](https://github.com/javimosch/machin/issues/719) (silent
   stack overflow). #715 and #716 were cleared in 0.144.0.
-- **machin changes often:** CI pins a version; testing the latest one too is still to do.
+- **machin changes often:** CI pins a version, and a weekly job tests the newest release.
 - **Numbers never match completely:** document the limits, and reject or check what we can.
 
 ## Phase 1 notes
@@ -48,16 +48,15 @@ needs them.
 - **Done:** `for…of`, template and object literals, `push` under an ownership rule, and the second
   app, [tally](https://github.com/javimosch/machin-js/tree/main/examples/tally).
 - **Error handling** is a result struct with an `ok` field; machin has no exceptions.
-- **What tally had to work around:** no `padEnd` (a loop), no maps (a linear search), and column
-  padding counts bytes, so non-ASCII names misalign. `map` and `filter` wait for an app that needs them.
+- **Workarounds removed:** tally looks categories up in a `Map` and pads with `machin/text`.
+  `.map` and `.filter` wait for an app that needs them.
 - **Found on the way:** arrows capturing loop variables silently differed (now rejected), and four
   Deno stand-ins disagreed with machin (fixed, and now compared by a test).
 - **Third app:** [linkbox](https://github.com/javimosch/machin-js/tree/main/examples/linkbox), a
   bookmarks API.
 - **JSON input arrived** with machin 0.144.0's `json_valid`: linkbox now accepts JSON request bodies,
   through `machin/json`. It reads top-level fields only.
-- **Why the phase stays open:** tally still works around missing `padEnd` and maps, so "without
-  workarounds" isn't met. Nested JSON isn't readable either, though no example needs it.
+- **Remaining limits no example needs yet:** nested JSON, nested array literals, looping over a map.
 
 ## Phase 3 notes
 
@@ -76,5 +75,6 @@ needs them.
 - **The command** is one binary of about 99 MB (mostly Deno and TypeScript). CI compiles it and runs
   it with an empty home and no checkout. Only Linux x86-64 is tested.
 - **machweb** is bundled as an exact copy from the pinned machin version, checked in CI.
-- **Still open:** a published release (so installing doesn't need Deno), and CI testing the newest
-  machin as well as the pinned one. The exit test counts once a release exists.
+- **Newest machin:** a weekly job runs the tests and app gates against it.
+- **Still open:** a published release (so installing doesn't need Deno). The exit test counts once
+  a release exists.

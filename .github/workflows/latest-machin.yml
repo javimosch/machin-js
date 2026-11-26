@@ -1,0 +1,49 @@
+# Does machin-js still work with the newest machin release? Runs weekly and on demand.
+# Separate from `test`, which uses the pinned version, so a new machin can't block our own changes:
+# a failure here means "adapt before bumping the pin".
+name: latest machin
+on:
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/workflows/latest-machin.yml"]
+permissions:
+  contents: read
+jobs:
+  latest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: "2.2.8"
+      - name: Find the newest machin release
+        run: echo "MACHIN_VERSION=$(gh release view --repo javimosch/machin --json tagName -q .tagName)" >> "$GITHUB_ENV"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Fetch its framework
+        uses: actions/checkout@v4
+        with:
+          repository: javimosch/machin
+          ref: ${{ env.MACHIN_VERSION }}
+          path: .machin
+      - name: Install SQLite headers and that machin (checksum verified)
+        run: |
+          echo "testing machin $MACHIN_VERSION"
+          sudo apt-get update -q && sudo apt-get install -y -q libsqlite3-dev
+          mkdir -p "$RUNNER_TEMP/m" && cd "$RUNNER_TEMP/m"
+          gh release download "$MACHIN_VERSION" --repo javimosch/machin --pattern "machin-$MACHIN_VERSION-linux-amd64" --pattern SHA256SUMS.txt
+          sha256sum --check --ignore-missing SHA256SUMS.txt
+          install -m755 "machin-$MACHIN_VERSION-linux-amd64" machin && echo "$PWD" >> "$GITHUB_PATH"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Tests and app gates with its machweb
+        run: |
+          deno test -A test/
+          for app in tally linkbox todo; do examples/$app/test/gate.sh; done
+        env:
+          MACHIN_FRAMEWORK: ${{ github.workspace }}/.machin/framework
+          # the bundled machweb.src is pinned on purpose; don't require it to equal the newest
+          MACHIN_LATEST: "1"

@@ -7,13 +7,12 @@ A command-line expense summarizer, written as readable JS and compiled to a nati
 
 Input is one `category,amount[,note]` per line; blank lines and `#` comments are skipped. Amounts
 look like `12`, `12.5` or `12.50` and are kept as whole cents. Exit codes: `0` ok, `1` bad lines
-(each listed on stderr), `2` wrong usage or an unreadable or empty file. Column padding counts bytes,
-so non-ASCII category names misalign slightly.
+(each listed on stderr), `2` wrong usage or an unreadable or empty file.
 
 ## Read it
 
 `src/main.js` (arguments, errors, exit codes) → `src/expense.js` (parsing lines) → `src/money.js`
-(amounts without decimals) → `src/report.js` (totals, built with `push`).
+(amounts without decimals) → `src/report.js` (totals, with a `Map` and `machin/text` padding).
 
 ## Debug it as plain JavaScript
 
