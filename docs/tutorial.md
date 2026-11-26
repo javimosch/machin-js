@@ -13,7 +13,8 @@ one core with two shells.
 | `src/desktop.js` | a raylib window | desktop shell |
 | `src/main.js` | a console demo | test fixture |
 
-> There are two smaller examples too:
+> There are three smaller examples too:
+> [jot](https://github.com/javimosch/machin-js/tree/main/examples/jot), a CLI that AI agents can drive,
 > [tally](https://github.com/javimosch/machin-js/tree/main/examples/tally), a command-line tool, and
 > [linkbox](https://github.com/javimosch/machin-js/tree/main/examples/linkbox), a bookmarks API. Each
 > has its own README with a reading order.

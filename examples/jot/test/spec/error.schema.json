@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/javimosch/cli-output-spec/error.schema.json",
+  "title": "Typed CLI error",
+  "description": "Error body emitted to stderr (or stdout with --json) on failure. See PROTOCOL.md §3.",
+  "type": "object",
+  "required": ["ok", "error"],
+  "additionalProperties": false,
+  "properties": {
+    "ok": {
+      "type": "boolean",
+      "const": false,
+      "description": "Always false on error."
+    },
+    "error": {
+      "type": "object",
+      "required": ["code", "type", "message", "recoverable"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "integer",
+          "minimum": 80,
+          "maximum": 119,
+          "description": "The exit code. Matches the process exit status. 80-89 input, 90-99 precondition, 100-109 external, 110-119 internal."
+        },
+        "type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z_]*$",
+          "description": "Machine-readable error category (snake_case). Stable across versions; agents branch on this."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable explanation. May change between versions."
+        },
+        "recoverable": {
+          "type": "boolean",
+          "description": "Should the agent retry? true for transient (100-109), false for input/bug (80-99, 110-119)."
+        },
+        "suggestions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Next actions the agent can take. Should include the exact command that fixes the problem."
+        }
+      }
+    }
+  }
+}

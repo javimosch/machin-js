@@ -57,6 +57,7 @@ deno test -A test/                       # diagnostics, parity, typings, docs ex
 examples/todo/test/gate.sh               # gold, Deno vs native, HTTP smoke, desktop input
 examples/tally/test/gate.sh              # CLI app: Deno vs native, and expected output
 examples/linkbox/test/gate.sh            # API: Deno vs native request transcript
+examples/jot/test/gate.sh                # agent-first CLI: Deno vs native, spec conformance
 cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.ts
 ```
 

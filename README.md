@@ -92,6 +92,7 @@ can't produce code a human can't read.
 - **Typed builtins** (`types/machin.d.ts`) — generated from `machin guide`, so they never drift from the compiler.
 - **Run it as plain JS** (`shim/`) — Deno twins of the builtins, so the same modules run under a normal debugger and can be diffed against the native build.
 - **Bridges** — `machin/web` (machweb HTTP server), `machin/json` (typed reading of outside JSON), `machin/text` (padding) and `machin/desktop` (a raylib UI behind a scalar-only API, since JS can't express FFI).
+- **[`examples/jot`](examples/jot)** — an agent-first CLI following the [agent-first CLI specs](https://cli-specs.intrane.fr/) for output and guide, checked by a conformance test.
 - **[`examples/linkbox`](examples/linkbox)** — a bookmarks API: token auth, validation, SQLite, JSON responses.
 - **[`examples/tally`](examples/tally)** — a command-line expense summarizer: arguments, files, errors on stderr and exit codes.
 - **[`examples/todo`](examples/todo)** — a todo app with a **web** shell (SSR + JSON API) and a **desktop** shell (raylib window) over one shared core, and a gate that checks both.
@@ -125,7 +126,7 @@ examples/todo/test/gate.sh                 # also: examples/tally and examples/l
 
 ## Honest limits
 
-This is an **alpha**. It has three worked examples, and the language is a deliberately small subset:
+This is an **alpha**. It has four worked examples, and the language is a deliberately small subset:
 
 - **Supported:** `Map` lookups, functions (also as values), `const`/`let`, `if`/`while`/`for`/`for…of`, integer and string operations, template literals, `Math.trunc` division, arrays, including nested ones (with `push` while unshared), object literals as `@typedef` structs, ES modules.
 - **Not yet:** decimals, classes, `async`, `??`, `switch`, `.map`/`.filter`, looping over a `Map`, `continue`, block-bodied arrows.

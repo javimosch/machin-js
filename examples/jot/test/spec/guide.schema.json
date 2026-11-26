@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/javimosch/cli-guide-spec/guide.schema.json",
+  "title": "Guide output (JSON agent-skill flavor)",
+  "description": "The body of `<tool> guide` and GET /guide for the cli-guide-spec convention. See PROTOCOL.md §1. The markdown flavor wraps a string under 'guide' instead.",
+  "type": "object",
+  "required": ["<tool>", "one_liner", "model", "loop", "concepts", "commands", "examples", "gotchas"],
+  "additionalProperties": true,
+  "properties": {
+    "<tool>": {
+      "type": "string",
+      "description": "A one-line description of what the tool is. The key is the tool's short name."
+    },
+    "one_liner": {
+      "type": "string",
+      "description": "The elevator pitch — what the tool does and how, in 1-3 sentences."
+    },
+    "model": {
+      "type": "object",
+      "description": "The mental model: key/value pairs explaining the architecture, the split, the moving parts.",
+      "additionalProperties": true
+    },
+    "loop": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "The canonical end-to-end workflow, one step per element, in order."
+    },
+    "concepts": {
+      "type": "object",
+      "description": "Key/value (or nested) definitions of the tool's vocabulary a reader must grasp.",
+      "additionalProperties": true
+    },
+    "commands": {
+      "type": "object",
+      "description": "Grouped command lists (e.g. {\"local\": [...], \"cloud\": [...]}); each entry is a usage string.",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "examples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["goal", "do"],
+        "properties": {
+          "goal": { "type": "string", "description": "What this example accomplishes." },
+          "do": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "The exact commands to run, in order."
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "gotchas": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "The things that bite — footguns, surprising defaults, security notes."
+    },
+    "version": {
+      "type": "string",
+      "description": "The tool's version at build time, so an agent can detect staleness across updates."
+    },
+    "see_also": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Related commands (typically help-json, version)."
+    }
+  }
+}

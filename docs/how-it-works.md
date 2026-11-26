@@ -37,6 +37,7 @@ added. `"machin/desktop"` has none.
 | random programs (`test/fuzz_test.ts`, `tools/fuzz.ts`) | generated well-typed programs behave the same under Deno and natively; 30 fixed seeds run in the tests, and `deno run -A tools/fuzz.ts 600 1234` searches further |
 | `test/shim_test.ts` | the Deno stand-ins for string and list builtins give the same results as the real ones |
 | `examples/tally/test/gate.sh` | the CLI app's output, errors and exit codes are identical under Deno and natively |
+| `examples/jot/test/gate.sh` | the CLI behaves the same under Deno and natively, and conforms to the output and guide specs (their own JSON schemas, every guide example run) |
 | `examples/linkbox/test/gate.sh` | a full transcript of API requests and responses is identical under Deno and natively |
 | gold comparison | transpiler output has not changed unexpectedly |
 | demo, Deno and native | both produce the same output |

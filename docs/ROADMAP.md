@@ -126,4 +126,7 @@ Started **2026-11-26** (at v0.9.0).
 - **2026-11-26, during the freeze:** preparing a CLI example turned up six silent differences around
   `json()`, `parse` shapes and `Map` arguments, all present in v0.9.0. Random testing had never
   compared `json()` output. Fixed (unreleased).
+- **jot** was added during the freeze: an example in the existing subset, not a language feature.
+  It doesn't count as the owner's own app. Limits it met: no field named `type`, no keys such as
+  `help-json`, one-line `@typedef` only, no top-level constants.
 

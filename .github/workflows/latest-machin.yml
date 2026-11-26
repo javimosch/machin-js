@@ -42,7 +42,7 @@ jobs:
       - name: Tests and app gates with its machweb
         run: |
           deno test -A test/
-          for app in tally linkbox todo; do examples/$app/test/gate.sh; done
+          for app in tally jot linkbox todo; do examples/$app/test/gate.sh; done
         env:
           MACHIN_FRAMEWORK: ${{ github.workspace }}/.machin/framework
           # the bundled machweb.src is pinned on purpose; don't require it to equal the newest

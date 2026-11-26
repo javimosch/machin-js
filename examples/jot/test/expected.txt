@@ -1,0 +1,148 @@
+== jot add write the report --tag work
+{"ok":true,"version":"1.0","task":{"id":1,"title":"write the report","tag":"work","done":false}}
+exit 0
+== jot add buy milk
+{"ok":true,"version":"1.0","task":{"id":2,"title":"buy milk","tag":"","done":false}}
+exit 0
+== jot add -- -v is broken
+{"ok":true,"version":"1.0","task":{"id":3,"title":"-v is broken","tag":"","done":false}}
+exit 0
+== jot list
+{"ok":true,"version":"1.0","count":3,"tasks":[{"id":1,"title":"write the report","tag":"work","done":false},{"id":2,"title":"buy milk","tag":"","done":false},{"id":3,"title":"-v is broken","tag":"","done":false}]}
+exit 0
+== jot list --text
+1	open	work	write the report
+2	open		buy milk
+3	open		-v is broken
+exit 0
+== jot done 1
+{"ok":true,"version":"1.0","task":{"id":1,"title":"write the report","tag":"work","done":true}}
+exit 0
+== jot done 1
+stderr: {"ok":false,"error":{"code":95,"type":"already_done","message":"task 1 is already done","recoverable":false,"suggestions":["jot show 1"]}}
+exit 95
+== jot done 42
+stderr: {"ok":false,"error":{"code":92,"type":"not_found","message":"no task with id 42","recoverable":false,"suggestions":["jot list --all"]}}
+exit 92
+== jot list
+{"ok":true,"version":"1.0","count":2,"tasks":[{"id":2,"title":"buy milk","tag":"","done":false},{"id":3,"title":"-v is broken","tag":"","done":false}]}
+exit 0
+== jot list --all --text
+1	done	work	write the report
+2	open		buy milk
+3	open		-v is broken
+exit 0
+== jot show 2
+{"ok":true,"version":"1.0","task":{"id":2,"title":"buy milk","tag":"","done":false}}
+exit 0
+== jot rm 2
+{"ok":true,"version":"1.0","task":{"id":2,"title":"buy milk","tag":"","done":false}}
+exit 0
+== jot rm 2
+stderr: {"ok":false,"error":{"code":92,"type":"not_found","message":"no task with id 2","recoverable":false,"suggestions":["jot list --all"]}}
+exit 92
+== jot list --tag work --all
+{"ok":true,"version":"1.0","count":1,"tasks":[{"id":1,"title":"write the report","tag":"work","done":true}]}
+exit 0
+== jot 
+stderr: {"ok":false,"error":{"code":80,"type":"invalid_arguments","message":"no command given","recoverable":false,"suggestions":["jot help-json","jot guide"]}}
+exit 80
+== jot nope
+stderr: {"ok":false,"error":{"code":80,"type":"invalid_arguments","message":"unknown command: nope","recoverable":false,"suggestions":["jot help-json","jot guide"]}}
+exit 80
+== jot list --bogus
+stderr: {"ok":false,"error":{"code":80,"type":"invalid_arguments","message":"unknown flag for list: --bogus","recoverable":false,"suggestions":["jot help-json","jot guide"]}}
+exit 80
+== jot add
+stderr: {"ok":false,"error":{"code":82,"type":"missing_argument","message":"add needs 1 argument(s)","recoverable":false,"suggestions":["jot help-json"]}}
+exit 82
+== jot show x1
+stderr: {"ok":false,"error":{"code":85,"type":"invalid_value","message":"the id must be a whole number: x1","recoverable":false,"suggestions":["jot list --all"]}}
+exit 85
+== jot add x --tag
+stderr: {"ok":false,"error":{"code":82,"type":"missing_argument","message":"--tag needs a value","recoverable":false,"suggestions":["jot help-json"]}}
+exit 82
+== jot version
+{"ok":true,"version":"1.0","tool":"jot","build":"0.1.0"}
+exit 0
+== jot help-json
+{"version":"0.1.0","output":"json","commands":{"add":{"args":["title"],"flags":["--tag <name>"],"auth":false},"list":{"args":[],"flags":["--all","--tag <name>"],"auth":false},"show":{"args":["id"],"flags":[],"auth":false},"done":{"args":["id"],"flags":[],"auth":false},"rm":{"args":["id"],"flags":[],"auth":false},"guide":{"args":[],"flags":["--human"],"auth":false},"help-json":{"args":[],"flags":[],"auth":false},"version":{"args":[],"flags":[],"auth":false}},"global_flags":["--json","--text","--yes","-y","--no-interactive"],"exit_codes":{"0":"success","80":"invalid arguments","82":"missing argument","85":"invalid value","92":"task not found","94":"database unavailable","95":"task already done","110":"internal error"},"env":["JOT_DB"],"see_also":["jot guide"]}
+exit 0
+== jot guide
+{"ok":true,"version":"1.0","guide":{"jot":"A task list that an AI agent or a script can drive.","one_liner":"jot keeps tasks in a local SQLite file. Every command is non-interactive and answers with JSON.","model":{"storage":"One local SQLite file: $JOT_DB, default jot.db in the current directory. No server, no network.","output":"Data goes to stdout as one JSON object with ok and version. --text gives one tab-separated task per line.","errors":"On failure stdout is empty, stderr holds one JSON error object, and the exit code equals error.code."},"loop":["jot list to see what is open","jot add <title> for new work","work on a task","jot done <id> when it is finished","jot list again"],"concepts":{"task":"id, title, tag and done.","id":"A whole number jot assigns. It is never reused, even after rm.","tag":"An optional label. list --tag shows one tag.","done":"A finished task. list hides done tasks unless --all is given."},"commands":{"tasks":["jot add <title> [--tag <name>]","jot list [--all] [--tag <name>]","jot show <id>","jot done <id>","jot rm <id>"],"about":["jot guide [--human]","jot help-json","jot version"]},"examples":[{"goal":"Add a task and read its id","do":["jot add \"write the report\" --tag work","jot show 1"]},{"goal":"See what is open for one tag","do":["jot list --tag work","jot list --tag work --text"]},{"goal":"Finish a task, then see everything","do":["jot done 1","jot list --all"]},{"goal":"Add a title that starts with a dash","do":["jot add -- \"-v flag is broken\""]}],"gotchas":["The database is jot.db in the current directory unless JOT_DB is set, so another directory shows another list.","done on a finished task fails with 95 already_done; a missing id is 92 not_found.","Titles and tags are one line. Newlines, tabs and other control characters are refused with 85.","Flags jot does not know are errors (80), not ignored. Put -- before a title that starts with a dash.","jot never retries. An error with recoverable true may be retried by the caller."],"version":"0.1.0","see_also":["jot help-json","jot version"]}}
+exit 0
+== jot guide --human
+# jot 0.1.0
+
+A task list that an AI agent or a script can drive. jot keeps tasks in a local SQLite file. Every command is non-interactive and answers with JSON.
+
+## Model
+
+- One local SQLite file: $JOT_DB, default jot.db in the current directory. No server, no network.
+- Data goes to stdout as one JSON object with ok and version. --text gives one tab-separated task per line.
+- On failure stdout is empty, stderr holds one JSON error object, and the exit code equals error.code.
+
+## Loop
+
+- jot list to see what is open
+- jot add <title> for new work
+- work on a task
+- jot done <id> when it is finished
+- jot list again
+
+## Concepts
+
+- task: id, title, tag and done.
+- id: A whole number jot assigns. It is never reused, even after rm.
+- tag: An optional label. list --tag shows one tag.
+- done: A finished task. list hides done tasks unless --all is given.
+
+## Commands
+
+- jot add <title> [--tag <name>]
+- jot list [--all] [--tag <name>]
+- jot show <id>
+- jot done <id>
+- jot rm <id>
+
+## About jot
+
+- jot guide [--human]
+- jot help-json
+- jot version
+
+## Examples
+
+Add a task and read its id:
+
+    jot add "write the report" --tag work
+    jot show 1
+
+See what is open for one tag:
+
+    jot list --tag work
+    jot list --tag work --text
+
+Finish a task, then see everything:
+
+    jot done 1
+    jot list --all
+
+Add a title that starts with a dash:
+
+    jot add -- "-v flag is broken"
+
+## Gotchas
+
+- The database is jot.db in the current directory unless JOT_DB is set, so another directory shows another list.
+- done on a finished task fails with 95 already_done; a missing id is 92 not_found.
+- Titles and tags are one line. Newlines, tabs and other control characters are refused with 85.
+- Flags jot does not know are errors (80), not ignored. Put -- before a title that starts with a dash.
+- jot never retries. An error with recoverable true may be retried by the caller.
+
+## See also
+
+- jot help-json
+- jot version
+
+exit 0

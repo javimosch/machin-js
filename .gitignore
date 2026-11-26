@@ -16,3 +16,5 @@ examples/tally/tally
 examples/linkbox/linkbox
 examples/linkbox/links.db
 dist/
+examples/jot/jot
+examples/jot/jot.db

@@ -4,6 +4,11 @@ Newest first.
 
 ## Unreleased
 
+- **New example, [jot](examples/jot):** an agent-first CLI following cli-output-spec and
+  cli-guide-spec.
+- A `@typedef` spread over several lines is now reported as such (`JS-UNSUP001`) instead of as a
+  bad field name.
+
 ### Soundness fixes: **v0.9.0 and earlier have all of these**
 
 Each behaves differently from its JavaScript and is now rejected. All involve data that reaches

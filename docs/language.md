@@ -40,6 +40,8 @@ The transpiler also uses these types to decide what is safe to translate. Where 
 /** @typedef {{id: int, title: string, done: int}} Todo */
 ```
 
+The whole `@typedef {{...}} Name` must be **on one line**.
+
 To use the type from another file:
 
 ```js

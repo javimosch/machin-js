@@ -41,6 +41,11 @@ function typedefs(c: Ctx): string[] {
   for (const m of c.cmts.filter((x) => x.block)) {
     const t = /@typedef\s+\{\{(.*?)\}\}\s*(\w+)/s.exec(m.text);
     if (!t) continue;
+    if (t[1].includes("\n")) {
+      //why: the field reader would take the comment's `*` as part of a name and say something baffling.
+      diag(c, "JS-UNSUP001", `write @typedef {{...}} ${t[2]} on one line`, { loc: { start: { line: c.src.slice(0, m.start).split("\n").length } } });
+      continue;
+    }
     const pairs = t[1].split(",").map((f) => f.trim().split(/\s*:\s*/));
     pairs.forEach(([n]) => checkField(c, n, { loc: { start: { line: c.src.slice(0, m.start).split("\n").length } } }));
     const fields = pairs.map(([n, ty]) => `${n} ${machinType(ty)}`);
