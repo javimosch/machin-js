@@ -92,17 +92,23 @@ can't produce code a human can't read.
 
 ## Quick start
 
-Needs [`deno`](https://deno.com), [`machin`](https://github.com/javimosch/machin) 0.143.0 or newer and a C compiler.
+Needs [`machin`](https://github.com/javimosch/machin) 0.143.0 or newer, a C compiler, and [`deno`](https://deno.com).
+There is no published release yet, so build the command from source:
 
 ```sh
 git clone https://github.com/javimosch/machin-js && cd machin-js
+tools/build-release.sh && cp dist/machin-js ~/.local/bin/
 
-deno test -A test/diag_test.ts            # transpiler unit tests
+machin-js new ~/hello && cd ~/hello
+machin-js run main.js                      # prints: hello world
+machin-js debug main.js --inspect-brk      # the same file, as plain JavaScript with a debugger
+```
 
-cd examples/todo
-./build.sh && ./todo                      # web app on http://localhost:8080
-./build-desktop.sh && ./todo-desktop      # desktop window (needs raylib + a display)
-test/gate.sh                              # everything: gold files, Deno-vs-native, HTTP smoke, desktop input
+Working on machin-js itself:
+
+```sh
+deno test -A test/                         # transpiler, parity, typings, docs and command tests
+examples/todo/test/gate.sh                 # also: examples/tally and examples/linkbox
 ```
 
 ## How it is verified
@@ -134,7 +140,8 @@ types/         machin.d.ts (generated), machweb.d.ts, desktop.d.ts
 bindings/      machin code a JS import needs (desktop.src: raylib FFI)
 shim/          Deno twins of the builtins
 tools/         gen-dts.ts — regenerate types/machin.d.ts after upgrading machin
-test/          diagnostics, parity, typings, docs examples and random-program tests
+cli/           the machin-js command
+test/          diagnostics, parity, typings, docs examples, command and random-program tests
 examples/todo/ the example app (start reading here)
 docs/          human documentation (start at index.md), vision, north star
 ```

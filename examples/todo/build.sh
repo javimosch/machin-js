@@ -2,7 +2,7 @@
 # Build the todo server: JS modules -> .src (dependency order) -> machin -> native binary ./todo
 set -e
 cd "$(dirname "$0")"
-# machweb.src lives in the machin repo (MACHIN_FRAMEWORK); other bindings live in bindings/
+# machweb.src and other bindings ship in bindings/ (MACHIN_FRAMEWORK overrides machweb)
 rm -rf build && deno run -A ../../transpile/transpile.ts build src/server.js
 SRCS=$(for f in $(cat build/order.txt); do echo "build/$f.src"; done)
 machin encode $(cat build/native.txt) $SRCS > build/todo.mfl

@@ -31,6 +31,7 @@ export default function () {
   <h1>Native apps in JavaScript you can <mark>still read</mark> when the agent is off.</h1>
   <p class="lede">machin-js compiles a strict, documented subset of JavaScript to <a href="https://github.com/javimosch/machin">machin</a>, and from there to a single native binary.</p>
   <p class="actions"><a class="btn primary" href="/getting-started/">Get started</a><a class="btn" href="/tutorial/">Read the todo app</a></p>
+  <p class="lede"><code>machin-js new hello && cd hello && machin-js run main.js</code></p>
 </section>
 <section class="flow wrap" aria-label="From JavaScript to a native binary">
   ${panel("source", "store.js — you read and edit this", "javascript", JS)}

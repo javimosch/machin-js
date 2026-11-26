@@ -42,3 +42,8 @@ jobs:
         run: examples/linkbox/test/gate.sh
       - name: Todo gate (gold, Deno vs native, HTTP smoke; desktop is skipped without raylib)
         run: examples/todo/test/gate.sh
+      - name: The getting-started page works as written (needs the commit history to clone)
+        run: tools/check-getting-started.sh
+      - name: Compile the machin-js command and check it in a clean environment
+        run: tools/build-release.sh && tools/smoke-release.sh dist/machin-js
+

@@ -9,7 +9,7 @@ expense summarizer and a bookmarks API.
 
 | Start here | |
 |---|---|
-| [Getting started](getting-started.md) | install, and run your first program |
+| [Getting started](getting-started.md) | install the `machin-js` command and run your first program |
 | [Reading the todo app](tutorial.md) | a guided tour of real code |
 | [Debugging](debugging.md) | find and fix a bug in JavaScript terms |
 | [The JavaScript you can write](language.md) | what works and what doesn't |

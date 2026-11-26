@@ -72,13 +72,21 @@ cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.t
 - Pushing to `main` deploys the docs site and runs CI (pinned machin: `.github/workflows/test.yml`).
   Check both runs afterwards.
 
+## The machin-js command
+
+`cli/machin-js.ts`; `tools/build-release.sh` compiles it, `tools/smoke-release.sh dist/machin-js`
+checks it in a clean environment, `tools/check-getting-started.sh` runs the docs' install steps as
+written. `.github/workflows/release.yml` publishes on a `v*` tag: **ask the owner before tagging.**
+
 ## After upgrading machin
 
 ```sh
 deno run -A tools/gen-dts.ts     # machin.d.ts + machweb.d.ts from `machin guide`
 ```
 
-It fails on a type word it doesn't know: map it deliberately; never default to `any`. Then bump
+It fails on a type word it doesn't know: map it deliberately; never default to `any`. Also refresh
+the bundled framework (`git -C <machin> show vX.Y.Z:framework/machweb.src > bindings/machweb.src`,
+and `bindings/machweb.version`). Then bump
 `MACHIN_VERSION` in CI and the minimum version in the README and getting-started page.
 
 ## Gotchas that cost real time

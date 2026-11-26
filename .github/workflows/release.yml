@@ -1,0 +1,41 @@
+# Publishes the machin-js command when a v* tag is pushed. Tagging is a deliberate, owner-approved act.
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+env:
+  MACHIN_VERSION: v0.143.0
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: "2.2.8"
+      - name: Only release a commit that is on main and passed CI
+        run: |
+          git fetch -q origin main && git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          test "$(gh run list --workflow=test.yml --commit "$GITHUB_SHA" --json conclusion -q '.[0].conclusion')" = success
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Install SQLite headers and the pinned machin (checksum verified)
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q libsqlite3-dev
+          mkdir -p "$RUNNER_TEMP/m" && cd "$RUNNER_TEMP/m"
+          gh release download "$MACHIN_VERSION" --repo javimosch/machin --pattern "machin-$MACHIN_VERSION-linux-amd64" --pattern SHA256SUMS.txt
+          sha256sum --check --ignore-missing SHA256SUMS.txt
+          install -m755 "machin-$MACHIN_VERSION-linux-amd64" machin && echo "$PWD" >> "$GITHUB_PATH"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Build, and smoke-test the one platform we can run here
+        run: |
+          tools/build-release.sh x86_64-unknown-linux-gnu
+          tools/smoke-release.sh dist/machin-js-x86_64-unknown-linux-gnu
+          cd dist && sha256sum machin-js-* > SHA256SUMS.txt
+      - name: Publish
+        run: gh release create "$GITHUB_REF_NAME" dist/machin-js-x86_64-unknown-linux-gnu dist/SHA256SUMS.txt --title "machin-js $GITHUB_REF_NAME" --notes-file CHANGELOG.md --prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}

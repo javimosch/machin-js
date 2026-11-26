@@ -610,7 +610,9 @@ async function dtsNames(file: string): Promise<Set<string>> {
 
 /** Bridge modules: JS import name -> its typings and the machin .src it needs in the build. */
 function bridges(): Record<string, { dts: string; src: string }> {
-  const fw = Deno.env.get("MACHIN_FRAMEWORK") ?? `${Deno.env.get("HOME")}/ai/machin/framework`;
+  //why: a copy of machweb ships with machin-js, so no machin checkout is needed;
+  //     MACHIN_FRAMEWORK overrides it, e.g. to try a newer one.
+  const fw = Deno.env.get("MACHIN_FRAMEWORK") ?? new URL("../bindings", import.meta.url).pathname;
   return {
     "machin/web": { dts: "machweb.d.ts", src: `${fw}/machweb.src` },
     "machin/desktop": { dts: "desktop.d.ts", src: new URL("../bindings/desktop.src", import.meta.url).pathname },
@@ -618,7 +620,7 @@ function bridges(): Record<string, { dts: string; src: string }> {
 }
 
 /** Follow imports from `entry`; return modules in dependency order, plus every diagnostic. */
-export async function buildGraph(entry: string): Promise<{ order: { path: string; out: string }[]; native: string[]; diags: Diag[] }> {
+export async function buildGraph(entry: string): Promise<{ order: { path: string; out: string }[]; native: string[]; diags: Diag[]; where: Map<string, string> }> {
   const builtins = new Set<string>(JSON.parse(await Deno.readTextFile(new URL("../types/machin-builtins.json", import.meta.url))));
   const br = bridges();
   const bnames = new Map<string, Set<string>>();
@@ -675,7 +677,9 @@ export async function buildGraph(entry: string): Promise<{ order: { path: string
   //why: one module for the checks the whole program uses, ahead of the modules that call them.
   const used = new Set<string>([...mods.values()].flatMap((m) => [...m.guards]));
   if (used.size) order.unshift({ path: `${GUARD_MODULE}.js`, out: guardModule(used) });
-  return { order, native: [...native], diags };
+  //why: lets a caller turn a machin error naming a function into a JavaScript location.
+  const where = new Map([...mods].flatMap(([p, m]) => [...m.defines].map(([n, line]) => [n, `${p}:${line}`] as const)));
+  return { order, native: [...native], diags, where };
 }
 
 if (import.meta.main) {

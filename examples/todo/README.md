@@ -7,8 +7,7 @@ transpiler's main regression fixture (`gold/`).
 
     ./build.sh && ./todo        # then open http://localhost:8080  (PORT=9000 ./todo to change)
 
-Needs `deno`, `machin`, and a C compiler (`cc`). `machweb.src` is read from the machin repo
-(`MACHIN_FRAMEWORK`, default `~/ai/machin/framework`).
+Needs `deno`, `machin`, and a C compiler (`cc`).
 
 ## Desktop (spike)
 

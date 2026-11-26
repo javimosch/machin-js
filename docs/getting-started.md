@@ -4,52 +4,52 @@
 
 | Tool | Why |
 |---|---|
-| [`deno`](https://deno.com) 2.x | runs the transpiler, and runs your app as plain JS |
-| [`machin`](https://github.com/javimosch/machin) | compiles the output to native (0.143.0 or newer) |
-| a C compiler (`cc`) | machin builds through C |
+| [`machin`](https://github.com/javimosch/machin) 0.143.0 or newer | compiles the output to native |
+| a C compiler (`cc`), and SQLite headers if you use SQLite (`libsqlite3-dev`) | machin builds through C |
+| [`deno`](https://deno.com) 2.2 or newer | to build the `machin-js` command, and for `machin-js debug` |
 
+You don't need a machin source checkout.
+
+## Install
+
+There is no published release yet, so build the command from the source. It becomes a single
+self-contained binary of about 100 MB.
+
+<!-- run: install -->
 ```sh
 git clone https://github.com/javimosch/machin-js && cd machin-js
-deno test -A test/diag_test.ts
+tools/build-release.sh
+mkdir -p ~/.local/bin && cp dist/machin-js ~/.local/bin/
+cd ..
 ```
+
+Make sure `~/.local/bin` is on your `PATH`.
 
 ## Your first program
 
-Create `hello/main.js` inside the clone:
-
-<!-- check: ok -->
-```js
-/**
- * Greet someone.
- * @param {string} name
- * @returns {string}
- */
-function greet(name) {
-  //why: kept apart from main so it can be reused and read on its own.
-  return "hello " + name;
-}
-
-/**
- * Print a greeting.
- * @returns {void}
- */
-export function main() {
-  //why: machin programs start at main().
-  console.log(greet("world"));
-}
+<!-- run: first -->
+```sh
+machin-js new hello
+cd hello
+machin-js run main.js
 ```
 
-Transpile it, then run the result with machin:
+It prints `hello world`. `new` created:
+
+| File | What it is |
+|---|---|
+| `main.js` | your program; every program exports `main()` |
+| `jsconfig.json` | tells your editor the types of machin's modules |
+| `.machin-js/types/` | those typings |
+
+## Everyday commands
 
 ```sh
-deno run -A transpile/transpile.ts hello/out hello/main.js
-machin encode $(for f in $(cat hello/out/order.txt); do echo hello/out/$f.src; done) > hello/app.mfl
-machin run hello/app.mfl --safe
+machin-js check main.js                 # every problem, with file and line
+machin-js build main.js -o hello        # a native program
+machin-js run main.js -- one two        # build and run, with arguments
+machin-js debug main.js --inspect-brk   # run as plain JavaScript, with a debugger
 ```
-
-`order.txt` lists your modules in dependency order. If your program imports `machin/web` or
-`machin/desktop`, the transpiler also writes `native.txt`: pass those files to `machin encode` first.
-The [todo build script](https://github.com/javimosch/machin-js/blob/main/examples/todo/build.sh) shows it.
 
 ## Next
 

@@ -29,20 +29,22 @@ Your own `eprintln` messages and `exit` codes behave as you wrote them.
 
 ## 3. Reproduce it under Deno
 
-Run these from the example's folder.
+`machin-js debug` runs your files as plain JavaScript, with stand-ins for machin's modules. Pass your
+program's arguments after `--`:
 
 ```sh
 cd examples/tally
-deno run -A test/run.js test/fixtures/good.csv
+machin-js debug src/main.js -- test/fixtures/good.csv
 ```
 
-For a server (todo: `test/serve.ts`, linkbox: `test/run.js`), start it the same way and send it the
-request that fails:
+For a server, start it the same way and send it the request that fails:
 
 ```sh
 cd examples/linkbox
-LINKBOX_TOKEN=secret LINKBOX_DB=/tmp/debug.db deno run -A test/run.js
+LINKBOX_TOKEN=secret LINKBOX_DB=/tmp/debug.db machin-js debug src/server.js
 ```
+
+[No command yet?](getting-started.md#install)
 
 Use a throwaway database, not your real one.
 
@@ -52,7 +54,7 @@ gives `Infinity` or `NaN`, and the program carries on. So look for where the bad
 ## 4. Step through it
 
 ```sh
-deno run --inspect-brk -A test/run.js test/fixtures/good.csv
+machin-js debug src/main.js --inspect-brk -- test/fixtures/good.csv
 ```
 
 Deno waits for a debugger. Open `chrome://inspect` in Chrome, click **inspect**, then set

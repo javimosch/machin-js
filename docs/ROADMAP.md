@@ -20,7 +20,7 @@ needs them.
 | **1. Typed** (0.3) | type-check JSDoc (TypeScript's checker on plain `.js`); define division, numbers, strings | wrong types fail with a JS line number; generated random programs show no differences | done |
 | **2. Useful** (0.4–0.6) | typed arrays, object literals, `for…of`, template literals, `push`/`map`/`filter`, error handling; a CLI tool and an API service | all three apps pass their checks without workarounds | **open:** all three apps pass, but not without workarounds (see notes) |
 | **3. Debuggable** (0.7) | errors at `file.js:line`; shims for every supported builtin; debugging guide | the agent-off test: a planted bug is found and fixed by a human alone | in progress: line-accurate crashes and the guide done; the agent-off test needs the owner |
-| **4. Shippable** (0.8–0.9) | a `machin-js` command (`new`, `build`, `run`, `check`) via `deno compile`; bundled bridges; tested machin versions; releases and changelog | a clean machine goes from install to a running app using only the docs | |
+| **4. Shippable** (0.8–0.9) | a `machin-js` command (`new`, `build`, `run`, `check`, `debug`) via `deno compile`; bundled bridges; tested machin versions; releases and changelog | a clean machine goes from install to a running app using only the docs | in progress: command, bundling and changelog done; releases and testing the newest machin still to do |
 | **5. Stable** (1.0) | freeze the subset; compatibility policy; a period of real use with no new features | all five criteria hold, with no open silent-difference bugs | |
 
 **Outside 1.0:** the desktop shell stays experimental. A terminal shell, client-side UI,
@@ -30,7 +30,7 @@ needs them.
 
 - **machin dependencies:** [#716](https://github.com/javimosch/machin/issues/716) (no way to detect invalid JSON) blocks closing Phase 2;
   [#715](https://github.com/javimosch/machin/issues/715) (`json()` can emit invalid JSON) is worked around. #710–#713 were cleared in 0.143.0. Bundling bridges
-  (Phase 4) still needs a way to ship `machweb.src` without a machin checkout.
+
 - **machin changes often:** CI pins a version; testing the latest one too is still to do.
 - **Numbers never match completely:** document the limits, and reject or check what we can.
 
@@ -71,3 +71,11 @@ needs them.
 - **Shims:** the string, list and JSON-output stand-ins are compared with machin. Most of machin's
   builtins have no stand-in at all.
 - **Found on the way:** `a[f()] += 1` called `f` twice natively (now `JS-ORDER001`).
+
+## Phase 4 notes
+
+- **The command** is one binary of about 99 MB (mostly Deno and TypeScript). CI compiles it and runs
+  it with an empty home and no checkout. Only Linux x86-64 is tested.
+- **machweb** is bundled as an exact copy from the pinned machin version, checked in CI.
+- **Still open:** a published release (so installing doesn't need Deno), and CI testing the newest
+  machin as well as the pinned one. The exit test counts once a release exists.

@@ -23,8 +23,8 @@ including the query string, `body`) and returns a response. The typings in `type
 are generated from `machin guide --framework machweb`, by the same command as above. The Deno
 stand-in covers only what the example apps use.
 
-The framework's source is read at build time from `MACHIN_FRAMEWORK`
-(default `~/ai/machin/framework`), so you need a machin source checkout.
+A copy of the framework's source ships with machin-js, so you don't need a machin checkout.
+Set `MACHIN_FRAMEWORK` to a framework directory to use another one.
 
 ## `"machin/desktop"`: window and drawing
 
