@@ -26,6 +26,46 @@ stand-in covers only what the example apps use.
 A copy of the framework's source ships with machin-js, so you don't need a machin checkout.
 Set `MACHIN_FRAMEWORK` to a framework directory to use another one.
 
+## `"machin/json"`: outside JSON
+
+Read a request body or other outside JSON **one top-level field at a time**. Invalid JSON, a missing
+field and a wrong type all make `json_is_…` false, so you can answer with a clear error.
+
+<!-- check: ok -->
+```js
+import { json_valid } from "machin";
+import { json_is_string, json_string } from "machin/json";
+
+/**
+ * The name in a request body, or what is wrong with it.
+ * @param {string} body
+ * @returns {string}
+ */
+export function nameFrom(body) {
+  //why: say which of the two problems it is.
+  if (!json_valid(body)) {
+    return "invalid JSON";
+  }
+  if (!json_is_string(body, "name")) {
+    return "name must be a string";
+  }
+  return json_string(body, "name");
+}
+```
+
+| Function | Gives |
+|---|---|
+| `json_has(body, name)` | the field is there, with any type |
+| `json_is_string`, `json_string` | text (`""` if it isn't) |
+| `json_is_int`, `json_int` | a whole number of at most 15 digits; decimals and exponents don't count (`0` if it isn't) |
+| `json_is_bool`, `json_bool` | `true` or `false` |
+
+Limits: top-level fields of an object only (no nested objects or arrays yet), and names can't contain
+`.` or `[`. If a key appears twice, the **first** one counts, which is not what `JSON.parse` does. A
+key written with escapes (`"\u0061"`) doesn't match `a`. A string holding half a surrogate pair
+doesn't count as a string. The Deno stand-in behaves the same way, and the two are compared on
+thousands of random documents.
+
 ## `"machin/desktop"`: window and drawing
 
 A small immediate-mode API over raylib that uses only numbers and strings:

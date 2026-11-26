@@ -43,9 +43,48 @@
 == too long tag
 400 application/json
 {"error":"title is required; limits are url 2000, title 200, tag 50 bytes"}
+== json create
+201 application/json
+{"id":5,"url":"https://example.org/j","title":"from JSON é 😀 \"q\"","tag":"json"}
+== json with charset, no tag
+201 application/json
+{"id":6,"url":"https://example.org/k","title":"no tag","tag":""}
+== json truncated
+400 application/json
+{"error":"invalid JSON"}
+== json trailing data
+400 application/json
+{"error":"invalid JSON"}
+== json not an object
+400 application/json
+{"error":"url and title must be strings"}
+== json empty
+400 application/json
+{"error":"invalid JSON"}
+== json wrong type for url
+400 application/json
+{"error":"url and title must be strings"}
+== json null title
+400 application/json
+{"error":"url and title must be strings"}
+== json wrong type for optional tag
+400 application/json
+{"error":"tag must be a string"}
+== json newline in title
+400 application/json
+{"error":"control characters are not allowed"}
+== json half surrogate
+400 application/json
+{"error":"url and title must be strings"}
+== json duplicate key: first wins
+201 application/json
+{"id":7,"url":"https://example.org/first","title":"dup","tag":"json"}
+== json invalid utf-8
+400 application/json
+{"error":"invalid JSON"}
 == list all
 200 application/json
-[{"id":1,"url":"https://machin.dev/a?x=1&y=2","title":"Quotes \" and <tags> & co","tag":"lang"},{"id":2,"url":"http://example.org/é","title":"café ☃ 100%","tag":"food"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"},{"id":4,"url":"https://example.org/%0A%1F","title":"%00 is just text","tag":"pct"}]
+[{"id":1,"url":"https://machin.dev/a?x=1&y=2","title":"Quotes \" and <tags> & co","tag":"lang"},{"id":2,"url":"http://example.org/é","title":"café ☃ 100%","tag":"food"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"},{"id":4,"url":"https://example.org/%0A%1F","title":"%00 is just text","tag":"pct"},{"id":5,"url":"https://example.org/j","title":"from JSON é 😀 \"q\"","tag":"json"},{"id":6,"url":"https://example.org/k","title":"no tag","tag":""},{"id":7,"url":"https://example.org/first","title":"dup","tag":"json"}]
 == list by tag
 200 application/json
 [{"id":1,"url":"https://machin.dev/a?x=1&y=2","title":"Quotes \" and <tags> & co","tag":"lang"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"}]
@@ -54,7 +93,7 @@
 []
 == tags
 200 application/json
-[{"tag":"lang","count":2},{"tag":"food","count":1},{"tag":"pct","count":1}]
+[{"tag":"json","count":2},{"tag":"lang","count":2},{"tag":"","count":1},{"tag":"food","count":1},{"tag":"pct","count":1}]
 == delete
 200 application/json
 {"id":1,"url":"https://machin.dev/a?x=1&y=2","title":"Quotes \" and <tags> & co","tag":"lang"}
@@ -75,4 +114,4 @@
 {"error":"no such route"}
 == after delete
 200 application/json
-[{"id":2,"url":"http://example.org/é","title":"café ☃ 100%","tag":"food"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"},{"id":4,"url":"https://example.org/%0A%1F","title":"%00 is just text","tag":"pct"}]
+[{"id":2,"url":"http://example.org/é","title":"café ☃ 100%","tag":"food"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"},{"id":4,"url":"https://example.org/%0A%1F","title":"%00 is just text","tag":"pct"},{"id":5,"url":"https://example.org/j","title":"from JSON é 😀 \"q\"","tag":"json"},{"id":6,"url":"https://example.org/k","title":"no tag","tag":""},{"id":7,"url":"https://example.org/first","title":"dup","tag":"json"}]

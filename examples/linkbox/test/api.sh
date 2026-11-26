@@ -24,6 +24,20 @@ add "control byte in tag" "https://example.org/" "x" "$(printf 'a\001b')"
 add "delete byte in url" "$(printf 'https://example.org/\177')" "x" lang
 add "literal percent codes are fine" "https://example.org/%0A%1F" "%00 is just text" pct
 add "too long tag" "https://example.org/" "x" "$(printf 'x%.0s' $(seq 51))"
+post() { req "$1" -H "$AUTH" -H "Content-Type: ${3:-application/json}" --data-binary "$2" "$B/api/links"; }
+post "json create" '{"url":"https://example.org/j","title":"from JSON \u00e9 \ud83d\ude00 \"q\"","tag":"json","extra":{"a":[1]}}'
+post "json with charset, no tag" '{"url":"https://example.org/k","title":"no tag"}' "application/json; charset=utf-8"
+post "json truncated" '{"url":"https://example.org/","title":"cut'
+post "json trailing data" '{"url":"https://example.org/","title":"x"} x'
+post "json not an object" '["https://example.org/","x"]'
+post "json empty" ''
+post "json wrong type for url" '{"url":5,"title":"x"}'
+post "json null title" '{"url":"https://example.org/","title":null}'
+post "json wrong type for optional tag" '{"url":"https://example.org/","title":"x","tag":7}'
+post "json newline in title" '{"url":"https://example.org/","title":"two\nlines"}'
+post "json half surrogate" '{"url":"https://example.org/","title":"\ud800"}'
+post "json duplicate key: first wins" '{"url":"https://example.org/first","url":"https://example.org/second","title":"dup","tag":"json"}'
+post "json invalid utf-8" "$(printf '{"url":"https://example.org/","title":"\377"}')"
 req "list all" "$B/api/links"
 req "list by tag" "$B/api/links?tag=lang"
 req "tag with injection attempt" "$B/api/links?tag=x%27%20OR%20%271%27%3D%271"

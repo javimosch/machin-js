@@ -123,7 +123,7 @@ The name is not exported by that module. For `"machin"` the list comes from `mac
 
 ## JS-IMPORT002: unknown module
 
-Only `"machin"`, `"machin/web"`, `"machin/desktop"` and relative paths exist.
+Only `"machin"`, `"machin/web"`, `"machin/json"`, `"machin/desktop"` and relative paths exist.
 
 ## JS-DUP001: function defined in two modules
 
@@ -409,7 +409,7 @@ function f(body) {
 
 machin's `parse` never fails: bad input silently becomes empty values, and JavaScript's `JSON.parse`
 behaves differently ([machin#716](https://github.com/javimosch/machin/issues/716)). Use `parse` only on `sqlite_query(...)` results or JSON your code builds. Read
-outside input as [form fields or query parameters](language.md#decoding-rows).
+outside JSON with [`"machin/json"`](modules.md#machinjson-outside-json).
 
 ## JS-ORDER001: element update with an index that isn't simple
 

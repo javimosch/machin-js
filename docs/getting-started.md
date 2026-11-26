@@ -4,7 +4,7 @@
 
 | Tool | Why |
 |---|---|
-| [`machin`](https://github.com/javimosch/machin) 0.143.0 or newer | compiles the output to native |
+| [`machin`](https://github.com/javimosch/machin) 0.144.0 or newer | compiles the output to native |
 | a C compiler (`cc`), and SQLite headers if you use SQLite (`libsqlite3-dev`) | machin builds through C |
 | [`deno`](https://deno.com) 2.2 or newer | to build the `machin-js` command, and for `machin-js debug` |
 

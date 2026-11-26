@@ -120,7 +120,7 @@ function checkParseInput(c: Ctx, x: any) {
   //why: machin's parse never fails (bad or mistyped input silently becomes empty values), while
   //     JSON.parse throws or keeps the wrong types — so outside input is refused.
   if (!rows && !authored(c, x))
-    typeDiag(c, "JS-JSON001", "parse only accepts sqlite_query(...) or JSON your code builds; read outside input as form fields or query parameters", x);
+    typeDiag(c, "JS-JSON001", `parse only accepts sqlite_query(...) or JSON your code builds; read outside JSON field by field with "machin/json"`, x);
 }
 
 /** Reading it twice, or at another moment, can't change anything: no calls, no list reads. */
@@ -615,6 +615,7 @@ function bridges(): Record<string, { dts: string; src: string }> {
   const fw = Deno.env.get("MACHIN_FRAMEWORK") ?? new URL("../bindings", import.meta.url).pathname;
   return {
     "machin/web": { dts: "machweb.d.ts", src: `${fw}/machweb.src` },
+    "machin/json": { dts: "json.d.ts", src: new URL("../bindings/json.src", import.meta.url).pathname },
     "machin/desktop": { dts: "desktop.d.ts", src: new URL("../bindings/desktop.src", import.meta.url).pathname },
   };
 }

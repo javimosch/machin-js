@@ -28,9 +28,8 @@ needs them.
 
 ## Risks
 
-- **machin dependencies:** [#715](https://github.com/javimosch/machin/issues/715) and [#716](https://github.com/javimosch/machin/issues/716) are fixed in machin but not yet released;
-  #716 is what blocks closing Phase 2. Open: [#718](https://github.com/javimosch/machin/issues/718) (nested list literals) and
-  [#719](https://github.com/javimosch/machin/issues/719) (silent stack overflow).
+- **machin dependencies:** open: [#718](https://github.com/javimosch/machin/issues/718) (nested list literals) and [#719](https://github.com/javimosch/machin/issues/719) (silent
+  stack overflow). #715 and #716 were cleared in 0.144.0.
 - **machin changes often:** CI pins a version; testing the latest one too is still to do.
 - **Numbers never match completely:** document the limits, and reject or check what we can.
 
@@ -54,11 +53,11 @@ needs them.
 - **Found on the way:** arrows capturing loop variables silently differed (now rejected), and four
   Deno stand-ins disagreed with machin (fixed, and now compared by a test).
 - **Third app:** [linkbox](https://github.com/javimosch/machin-js/tree/main/examples/linkbox), a
-  bookmarks API. Its main workaround: it **can't read JSON request bodies**, because machin's `parse`
-  never reports bad input, so it takes form fields.
-- **Why the phase stays open:** that limit, and tally's (no `padEnd`, no maps), mean "without
-  workarounds" isn't met. The JSON one needs a way to validate JSON in machin ([#716](https://github.com/javimosch/machin/issues/716)). Phase 3 doesn't
-  depend on it, so it goes ahead.
+  bookmarks API.
+- **JSON input arrived** with machin 0.144.0's `json_valid`: linkbox now accepts JSON request bodies,
+  through `machin/json`. It reads top-level fields only.
+- **Why the phase stays open:** tally still works around missing `padEnd` and maps, so "without
+  workarounds" isn't met. Nested JSON isn't readable either, though no example needs it.
 
 ## Phase 3 notes
 

@@ -17,6 +17,7 @@ export function program(files: string[], source?: { path: string; text: string }
     paths: {
       machin: [`${types}machin.d.ts`],
       "machin/web": [`${types}machweb.d.ts`],
+      "machin/json": [`${types}json.d.ts`],
       "machin/desktop": [`${types}desktop.d.ts`],
     },
   };

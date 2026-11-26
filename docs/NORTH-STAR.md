@@ -55,11 +55,10 @@ verified with real X input on a private display.
 | [machin#718](https://github.com/javimosch/machin/issues/718) | a nested list literal doesn't parse, so nested array literals are rejected |
 | [machin#719](https://github.com/javimosch/machin/issues/719) | endless recursion crashes with no message, and earlier output is lost |
 
-**Fixed in machin, waiting for a release:** [#715](https://github.com/javimosch/machin/issues/715) (`json()` could emit invalid JSON) and
-[#716](https://github.com/javimosch/machin/issues/716) (nothing could tell that JSON was invalid; blocks closing Phase 2). Both were closed
-by a change planned for machin 0.144.0. machin-js will adopt it once released.
+**Cleared** in machin 0.144.0, now the minimum version: [#715](https://github.com/javimosch/machin/issues/715) (`json()` could emit invalid
+JSON) and [#716](https://github.com/javimosch/machin/issues/716) (nothing could tell that JSON was invalid; `json_valid` now can).
 
-**Cleared** in machin 0.143.0, now the minimum version:
+**Cleared** in machin 0.143.0:
 
 | Issue | Was | machin-js now |
 |---|---|---|

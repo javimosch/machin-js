@@ -59,6 +59,8 @@ cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.t
 - **If the emitter writes an expression twice, it must be free of side effects** (see `steady()`).
 - **Allow-list, never block-list.** A construct is translated only when it is proven equivalent.
 - **Docs examples marked `<!-- check: ok|CODE -->` are executed.** Mark new examples.
+- **JSON stand-ins** are checked by `test/json_test.ts`; for a wider search after touching
+  `bindings/json.src` or `shim/json.js`: `deno run -A test/json_test.ts 15 <new seed>`.
 - **A new Deno stand-in needs a `test/shim_test.ts` case.** Four hand-written ones were wrong.
 - **Probe machin's behavior before mapping a feature** (`push`/`append` aliasing and closure capture
   both differed).

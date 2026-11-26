@@ -25,10 +25,7 @@ export const has_prefix = (s, p) => s.startsWith(p);
 export const split = (s, sep) => s.split(sep);
 //why: a machin string ends at the first NUL byte, so %00 cuts off the rest.
 export const url_decode = (s) => { try { return decodeURIComponent(s.replace(/\+/g, " ")).split("\0")[0]; } catch { return s; } };
-//why: machin leaves control characters other than \n \r \t unescaped (invalid JSON — a machin bug).
-//     The stand-in does the same, so the bug is visible while debugging instead of only natively.
-export const json = (v) => JSON.stringify(v).replace(/\\(\\|u00[01][0-9a-f]|f|b)/g, (all, x) =>
-  x === "\\" ? all : x === "f" ? "\f" : x === "b" ? "\b" : String.fromCharCode(parseInt(x.slice(1), 16)));
+export const json = (v) => JSON.stringify(v);
 export const env = (name) => Deno.env.get(name) ?? "";
 //why: machin strings are bytes, so these count UTF-8 bytes here too (not UTF-16 units).
 const utf8 = new TextEncoder(), text = new TextDecoder();
@@ -62,3 +59,14 @@ export const exit = (code) => Deno.exit(code);
 export const contains = (s, sub) => s.includes(sub);
 //why: RFC 3986 like machin: only A-Z a-z 0-9 - . _ ~ stay as they are (encodeURIComponent keeps more).
 export const url_encode = (s) => encodeURIComponent(s).replace(/[!'()*]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase());
+//why: machin's check is strict RFC 8259 with at most 512 nested levels; JSON.parse has no limit.
+export const json_valid = (s) => {
+  if (!s.isWellFormed()) return false;
+  try { JSON.parse(s); } catch { return false; }
+  let depth = 0;
+  for (const c of s.replace(/"(?:[^"\\]+|\\.)*"/g, "")) {
+    depth += c === "{" || c === "[" ? 1 : c === "}" || c === "]" ? -1 : 0;
+    if (depth > 512) return false;
+  }
+  return true;
+};

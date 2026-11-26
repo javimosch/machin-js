@@ -1,0 +1,67 @@
+// bindings/json.src — "machin/json": read one top-level field of outside JSON, with its type.
+// Every function validates the whole text first, so bad input reads as "not there" rather than
+// being half-accepted (parse and json_get alone never report bad input).
+type JsonText_ struct { v string }
+
+// json_token_: the raw value of top-level field `name`, or "" if the JSON is invalid or lacks it.
+func json_token_(body, name) (token) {
+    token = ""
+    if name != "" && !contains(name, ".") && !contains(name, "[") && json_valid(body) {
+        v, e := json_get(body, "." + name)
+        if e == "" { token = v }
+    }
+}
+
+// json_has: is the field there at all, whatever its type?
+func json_has(body, name) (r) { r = json_token_(body, name) != "" }
+
+// json_text_: the decoded text of a string token. An escape for half a surrogate pair ("\ud800")
+// is valid JSON syntax but not text: it decodes to bytes that aren't UTF-8, so it counts as no string.
+func json_text_(token) (ok, r) {
+    ok = false
+    r = ""
+    if has_prefix(token, "\"") {
+        text := parse("{\"v\":" + token + "}", JsonText_{})
+        if json_valid(json(text.v)) {
+            ok = true
+            r = text.v
+        }
+    }
+}
+
+func json_is_string(body, name) (r) {
+    ok, _ := json_text_(json_token_(body, name))
+    r = ok
+}
+
+func json_string(body, name) (r) {
+    _, text := json_text_(json_token_(body, name))
+    r = text
+}
+
+// json_whole_: a whole number of at most 15 digits (always exact in JavaScript too).
+func json_whole_(token) (r) {
+    digits := token
+    if has_prefix(token, "-") { digits = substr(token, 1, len(token)) }
+    r = len(digits) > 0 && len(digits) <= 15
+    i := 0
+    while i < len(digits) {
+        if index("0123456789", substr(digits, i, i + 1)) < 0 { r = false }
+        i = i + 1
+    }
+}
+
+func json_is_int(body, name) (r) { r = json_whole_(json_token_(body, name)) }
+
+func json_int(body, name) (r) {
+    r = 0
+    token := json_token_(body, name)
+    if json_whole_(token) { r = parse_int(token) }
+}
+
+func json_is_bool(body, name) (r) {
+    token := json_token_(body, name)
+    r = token == "true" || token == "false"
+}
+
+func json_bool(body, name) (r) { r = json_token_(body, name) == "true" }

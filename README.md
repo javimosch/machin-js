@@ -85,14 +85,14 @@ can't produce code a human can't read.
 - **Transpiler** (`transpile/`) — Deno + [acorn](https://github.com/acornjs/acorn); resolves ES modules, orders them by dependency, emits machin `.src`.
 - **Typed builtins** (`types/machin.d.ts`) — generated from `machin guide`, so they never drift from the compiler.
 - **Run it as plain JS** (`shim/`) — Deno twins of the builtins, so the same modules run under a normal debugger and can be diffed against the native build.
-- **Bridges** — `machin/web` (machweb HTTP server) and `machin/desktop` (a raylib UI behind a scalar-only API, since JS can't express FFI).
+- **Bridges** — `machin/web` (machweb HTTP server), `machin/json` (typed reading of outside JSON) and `machin/desktop` (a raylib UI behind a scalar-only API, since JS can't express FFI).
 - **[`examples/linkbox`](examples/linkbox)** — a bookmarks API: token auth, validation, SQLite, JSON responses.
 - **[`examples/tally`](examples/tally)** — a command-line expense summarizer: arguments, files, errors on stderr and exit codes.
 - **[`examples/todo`](examples/todo)** — a todo app with a **web** shell (SSR + JSON API) and a **desktop** shell (raylib window) over one shared core, and a gate that checks both.
 
 ## Quick start
 
-Needs [`machin`](https://github.com/javimosch/machin) 0.143.0 or newer, a C compiler, and [`deno`](https://deno.com).
+Needs [`machin`](https://github.com/javimosch/machin) 0.144.0 or newer, a C compiler, and [`deno`](https://deno.com).
 There is no published release yet, so build the command from source:
 
 ```sh
@@ -126,7 +126,7 @@ This is an **alpha**. It has three worked examples, and the language is a delibe
 - **Not yet:** decimals, classes, `async`, `??`, `switch`, `.map`/`.filter`, maps, `continue`, block-bodied arrows.
 - **Never (by design):** prototypes, `this`, `eval`, dynamic keys, `==` coercion, npm.
 - **Numbers and strings:** numbers are integers (no decimals yet), and strings are counted in bytes (`len`, `substr`).
-- **No JSON input:** `parse` works only on database rows and JSON your code builds, so APIs take form fields.
+- **JSON input:** read field by field with `machin/json` (top-level fields only); `parse` is for database rows and JSON your code builds.
 - **Known differences:** some behavior can still differ from plain JavaScript; they are [listed](docs/language.md#known-differences).
 - **Debugging:** out-of-range list access and division by zero stop with your `file.js:line`; endless recursion still crashes with no message. See [Debugging](docs/debugging.md).
 

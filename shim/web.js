@@ -21,11 +21,16 @@ export const query = (req, name) => {
   return value;
 };
 const decode = (s) => { try { return decodeURIComponent(s.replace(/\+/g, " ")).split("\0")[0]; } catch { return s; } };
+//why: a native string ends at the first NUL byte, and keeps invalid UTF-8 (which json_valid then
+//     rejects). JavaScript can't hold those bytes, so such a body becomes a marker that is also invalid.
+const text = (bytes) => {
+  try { return new TextDecoder("utf-8", { fatal: true }).decode(bytes).split("\0")[0]; } catch { return "\udfff"; }
+};
 // serve(port, handler): the same handler(req) -> res contract as machweb.
 export function serve(port, handler) {
   Deno.serve({ port, onListen() {} }, async (r) => {
     const u = new URL(r.url);
-    const req = { method: r.method, path: u.pathname + u.search, body: await r.text(), headers: Object.fromEntries(r.headers) };
+    const req = { method: r.method, path: u.pathname + u.search, body: text(await r.arrayBuffer()), headers: Object.fromEntries(r.headers) };
     const res = handler(req);
     const h = new Headers({ "content-type": res.ctype });
     if (res.location) h.set("location", res.location);

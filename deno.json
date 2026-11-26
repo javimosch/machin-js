@@ -1,4 +1,4 @@
 {
   "nodeModulesDir": "auto",
-  "imports": { "machin": "./shim/machin.js", "machin/web": "./shim/web.js" }
+  "imports": { "machin": "./shim/machin.js", "machin/web": "./shim/web.js", "machin/json": "./shim/json.js" }
 }

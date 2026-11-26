@@ -6,7 +6,7 @@ on:
 permissions:
   contents: write
 env:
-  MACHIN_VERSION: v0.143.0
+  MACHIN_VERSION: v0.144.0
 jobs:
   release:
     runs-on: ubuntu-latest

@@ -9,15 +9,16 @@ A small bookmarks API, written as readable JS and compiled to a native binary.
 |---|---|---|
 | `GET /api/links?tag=x` | list links, all if no tag | no |
 | `GET /api/tags` | link counts per tag | no |
-| `POST /api/links` (form fields `url`, `title`, `tag`) | create: `201` | yes |
+| `POST /api/links` (JSON or form: `url`, `title`, optional `tag`) | create: `201` | yes |
 | `DELETE /api/links/<id>` | delete: `200`, or `404` | yes |
 
     curl -H "Authorization: Bearer secret" --data-urlencode url=https://machin.dev \
       --data-urlencode title=machin --data-urlencode tag=lang http://localhost:8090/api/links
 
-Input is form-encoded, not JSON: machin's JSON parser never reports bad input ([machin#716](https://github.com/javimosch/machin/issues/716)), so machin-js doesn't
-allow it on outside data. Control characters are rejected, because machin's JSON output would send
-most of them unescaped ([machin#715](https://github.com/javimosch/machin/issues/715)). The token comparison is a plain string comparison, not constant-time: treat
+The body can be JSON (`Content-Type: application/json`) or form fields. JSON is read with
+`machin/json`, field by field, so bad JSON and wrong types get a `400` instead of turning into empty
+values. Control characters are rejected, because a URL, title and tag are each one line.
+The token comparison is a plain string comparison, not constant-time: treat
 this as an example, not a hardened service.
 
 ## Read it

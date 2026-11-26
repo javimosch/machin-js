@@ -5,7 +5,7 @@
 /** Run `machin guide` (JSON) with extra flags. */
 async function guide(...flags: string[]) {
   const r = await new Deno.Command("machin", { args: ["guide", ...flags] }).output();
-  if (!r.success) throw new Error(`machin guide ${flags.join(" ")} failed — machin 0.143.0 or newer is required`);
+  if (!r.success) throw new Error(`machin guide ${flags.join(" ")} failed — machin 0.144.0 or newer is required`);
   return JSON.parse(new TextDecoder().decode(r.stdout));
 }
 

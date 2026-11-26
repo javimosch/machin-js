@@ -1,28 +1,32 @@
 import { env, index, substr, len, parse_int, has_prefix, json, sqlite_close } from "machin";
 import { header, query, ok_json } from "machin/web";
 import { openStore, addLink, listLinks, removeLink, countByTag } from "./store.js";
-import { formField, problemWith } from "./input.js";
+import { fromForm, fromJson, problemWith } from "./input.js";
 import { fail, one } from "./reply.js";
 
 /** @typedef {import("machin/web").Request} Request */
 /** @typedef {import("machin/web").Response} Response */
 
 /**
- * Create a link from the form fields url, title and tag.
+ * Create a link from a JSON body, or from form fields.
  * @param {Request} req
  * @param {int} db
  * @returns {Response}
  */
 function create(req, db) {
   //why: validate before touching the database, so nothing invalid is ever stored.
-  const url = formField(req.body, "url");
-  const title = formField(req.body, "title");
-  const tag = formField(req.body, "tag");
-  const problem = problemWith(url, title, tag);
+  let input = fromForm(req.body);
+  if (has_prefix(header(req, "content-type"), "application/json")) {
+    input = fromJson(req.body);
+  }
+  if (input.problem != "") {
+    return fail("400 Bad Request", input.problem);
+  }
+  const problem = problemWith(input.url, input.title, input.tag);
   if (problem != "") {
     return fail("400 Bad Request", problem);
   }
-  return one(addLink(db, url, title, tag), "201 Created");
+  return one(addLink(db, input.url, input.title, input.tag), "201 Created");
 }
 
 /**
