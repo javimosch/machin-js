@@ -89,5 +89,7 @@ needs them.
   it with an empty home and no checkout. Only Linux x86-64 is tested.
 - **machweb** is bundled as an exact copy from the pinned machin version, checked in CI.
 - **Newest machin:** a weekly job runs the tests and app gates against it.
-- **Still open:** a published release (so installing doesn't need Deno). The exit test counts once
-  a release exists.
+- **First release:** [v0.8.0](https://github.com/javimosch/machin-js/releases/tag/v0.8.0), an alpha
+  prerelease. CI runs the getting-started page as written, downloading the real releases, on a path
+  with neither machin nor Deno. The C compiler and SQLite headers are assumed to be installed.
+- **Still open:** other platforms (only Linux x86-64 is built or tested).

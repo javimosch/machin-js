@@ -86,7 +86,10 @@ never report it as a human having done it.
 
 `cli/machin-js.ts`; `tools/build-release.sh` compiles it, `tools/smoke-release.sh dist/machin-js`
 checks it in a clean environment, `tools/check-getting-started.sh` runs the docs' install steps as
-written. `.github/workflows/release.yml` publishes on a `v*` tag: **ask the owner before tagging.**
+written. `.github/workflows/release.yml` publishes on a `v*` tag: **ask the owner before tagging.** To
+release: bump `VERSION` in `cli/machin-js.ts`, add a `## X.Y.Z (date)` section to `CHANGELOG.md`,
+push, wait for `test` to pass on that commit, tag `vX.Y.Z`. Then download the published asset and
+run `tools/smoke-release.sh` on it, and only after that point the getting-started page at it.
 
 ## After upgrading machin
 
