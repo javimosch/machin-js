@@ -1,7 +1,7 @@
 func printAll(todos) {
     i := 0
     while i < len(todos) {
-        println(renderLine(todos[i]))
+        println(renderLine(js_at(todos, i, "main.js:15")))
         i = i + 1
     }
 }

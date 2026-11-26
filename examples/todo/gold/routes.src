@@ -2,11 +2,11 @@ func formField(body, name) (r) {
     parts := split(body, "&")
     i := 0
     while i < len(parts) {
-        eq := index(parts[i], "=")
-        if eq > 0 && substr(parts[i], 0, eq) == name {
-            return url_decode(substr(parts[i], eq + 1, len(parts[i])))
+        eq := index(js_at(parts, i, "routes.js:19"), "=")
+        if eq > 0 && substr(js_at(parts, i, "routes.js:20"), 0, eq) == name {
+            return url_decode(substr(js_at(parts, i, "routes.js:21"), eq + 1, len(js_at(parts, i, "routes.js:21"))))
         }
-    i = i + 1
+        i = i + 1
     }
     return ""
 }

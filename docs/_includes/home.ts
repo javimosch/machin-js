@@ -40,7 +40,7 @@ export default function () {
 </section>
 <section class="wrap three">
   <div><h2>The compiler keeps it readable</h2><p>A function without JSDoc or a <code>//why:</code> line, or longer than 20 lines, does not compile. That holds for agent-written code too.</p><a href="/diagnostics/">Every rule →</a></div>
-  <div><h2>Debug it as plain JavaScript</h2><p>The web app's modules also run under Deno against small stand-ins, and one smoke test checks that both builds behave alike.</p><a href="/how-it-works/">How it is tested →</a></div>
+  <div><h2>Debug it as plain JavaScript</h2><p>The same modules run under Deno, with a real debugger. A native crash on a bad list index or a division by zero names your <code>.js</code> line.</p><a href="/debugging/">How to debug →</a></div>
   <div><h2>One core, thin shells</h2><p>The todo app's SQLite store is shared unchanged by its web server and its desktop window.</p><a href="/tutorial/">Take the tour →</a></div>
 </section>
 <section class="shots"><div class="wrap">
@@ -52,7 +52,7 @@ export default function () {
 </div></section>
 <section class="wrap honest">
   <h2>It is alpha, and says so</h2>
-  <p>There are three worked examples: a todo app, a command-line tool and a small API. No classes, <code>async</code>, decimals, <code>.map</code> or JSON request bodies yet, and no source maps. <a href="/language/">See exactly what works</a>, and <a href="/NORTH-STAR/">where it is going</a>.</p>
+  <p>There are three worked examples: a todo app, a command-line tool and a small API. No classes, <code>async</code>, decimals, <code>.map</code> or JSON request bodies yet. <a href="/language/">See exactly what works</a>, and <a href="/NORTH-STAR/">where it is going</a>.</p>
   <p class="actions"><a class="btn primary" href="/getting-started/">Get started</a><a class="btn" href="${REPO}">View on GitHub</a></p>
 </section>
 <footer class="wrap">MIT licensed · <a href="${REPO}">source</a> · built with Lume</footer>

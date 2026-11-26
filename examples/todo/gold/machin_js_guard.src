@@ -1,0 +1,11 @@
+func js_idx(xs, i, at) (r) {
+    if i < 0 || i >= len(xs) {
+        eprintln(at + ": index " + str(i) + " is outside the list (length " + str(len(xs)) + ")")
+        exit(1)
+    }
+    return i
+}
+
+func js_at(xs, i, at) (r) {
+    return xs[js_idx(xs, i, at)]
+}

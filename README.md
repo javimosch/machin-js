@@ -20,6 +20,7 @@
   <a href="docs/VISION.md">Vision</a> ·
   <a href="docs/NORTH-STAR.md">North star</a> ·
   <a href="docs/ROADMAP.md">Roadmap</a> ·
+  <a href="docs/debugging.md">Debugging</a> ·
   <a href="examples/todo">Example: todo app</a>
 </p>
 
@@ -121,7 +122,7 @@ This is an **alpha**. It has three worked examples, and the language is a delibe
 - **Numbers and strings:** numbers are integers (no decimals yet), and strings are counted in bytes (`len`, `substr`).
 - **No JSON input:** `parse` works only on database rows and JSON your code builds, so APIs take form fields.
 - **Known differences:** some behavior can still differ from plain JavaScript; they are [listed](docs/language.md#known-differences).
-- **No source maps yet:** a native panic reports machin lines, not `file.js:line`.
+- **Debugging:** out-of-range list access and division by zero stop with your `file.js:line`; endless recursion still crashes with no message. See [Debugging](docs/debugging.md).
 
 Where this is going, in measurable steps: [docs/NORTH-STAR.md](docs/NORTH-STAR.md).
 

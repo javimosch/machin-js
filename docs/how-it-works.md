@@ -6,7 +6,8 @@ your .js modules
    │  transpile/typecheck.ts   (TypeScript checker): checks your JSDoc types
    │  transpile/types.ts       tells the code generator each expression's type
    ▼
-.src files  (+ order.txt, native.txt)
+.src files  (+ order.txt, native.txt, and machin_js_guard.src: the checks that
+   │                       make a crash name your .js line)
    │  machin encode            canonical MFL
    ▼
 .mfl
@@ -25,6 +26,7 @@ added. `"machin/desktop"` has none.
 |---|---|
 | `deno test -A test/` | diagnostics fire, and the docs' marked examples behave as stated |
 | `test/types_test.ts` | the typings are valid, the todo app type-checks, and type mistakes stop a build |
+| crash cases (in `test/parity_test.ts`) | each kind of crash names the right JavaScript line, with and without `--safe` |
 | parity cases (`test/parity_test.ts`) | each tricky program behaves natively as under Deno, or is rejected with the expected code |
 | random programs (`test/fuzz_test.ts`, `tools/fuzz.ts`) | generated well-typed programs behave the same under Deno and natively; 30 fixed seeds run in the tests, and `deno run -A tools/fuzz.ts 600 1234` searches further |
 | `test/shim_test.ts` | the Deno stand-ins for string and list builtins give the same results as the real ones |

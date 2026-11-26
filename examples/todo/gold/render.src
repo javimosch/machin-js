@@ -28,8 +28,8 @@ func renderPage(todos) (r) {
     items := ""
     i := 0
     while i < len(todos) {
-        items = items + renderItem(todos[i])
-    i = i + 1
+        items = items + renderItem(js_at(todos, i, "render.js:67"))
+        i = i + 1
     }
     return "<!doctype html><title>todos</title>" + renderStyle() + "<h1>todos</h1>" + form + "<ul>" + items + "</ul>"
 }

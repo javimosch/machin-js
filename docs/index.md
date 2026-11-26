@@ -11,6 +11,7 @@ expense summarizer and a bookmarks API.
 |---|---|
 | [Getting started](getting-started.md) | install, and run your first program |
 | [Reading the todo app](tutorial.md) | a guided tour of real code |
+| [Debugging](debugging.md) | find and fix a bug in JavaScript terms |
 | [The JavaScript you can write](language.md) | what works and what doesn't |
 | [Diagnostics](diagnostics.md) | every error code, and how to fix it |
 | [Modules](modules.md) | builtins, web and desktop |

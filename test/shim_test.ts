@@ -52,7 +52,7 @@ for (const [name, k] of Object.entries(CASES)) {
     await Deno.writeTextFile(`${d}/m.js`, src);
     const built = await buildGraph(`${d}/m.js`);
     assertEquals(built.diags, [], src);
-    await Deno.writeTextFile(`${d}/m.src`, built.order[0].out);
+    await Deno.writeTextFile(`${d}/m.src`, built.order.map((o) => o.out).join("\n"));
     await Deno.writeTextFile(`${d}/run.mjs`, 'import { main } from "./m.js";\nmain();\n');
     await Deno.writeTextFile(`${d}/map.json`, JSON.stringify({ imports: { machin: `${root}shim/machin.js` } }));
     const js = await run("deno", ["run", "-A", "--no-config", `--import-map=${d}/map.json`, `${d}/run.mjs`]);

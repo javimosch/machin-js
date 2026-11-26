@@ -15,7 +15,7 @@ The order of work toward 1.0, with exit tests, is in [ROADMAP.md](ROADMAP.md).
 | Same meaning, two runtimes | example output identical under Deno and as a native binary | ✅ todo demo + HTTP smoke on both |
 | Nothing implicit | undeclared names, bad imports, name clashes, import cycles are errors | ✅ (`JS-UNDEF001`, `JS-IMPORT00x`, `JS-DUP001`, `JS-CYCLE001`) |
 | Shared core, thin shells | ≥ 3 shells over one core | 🟡 web + desktop done; terminal next |
-| Debuggable in JS terms | a native panic reports `file.js:line` | ❌ not yet (source maps) |
+| Debuggable in JS terms | a native crash reports `file.js:line` | 🟡 list and division crashes do; endless recursion doesn't; agent-off test pending |
 | Real-program coverage | ≥ 2 distinct apps compile and pass their gates | ✅ three (todo, tally, linkbox) |
 
 ## Tiers

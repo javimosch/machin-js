@@ -53,6 +53,10 @@ cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.t
 
 - **Every divergence gets a `test/parity_test.ts` case before the fix.** A program must behave
   natively as under Deno, or be rejected with a `JS-` code.
+- **Anything that can crash natively must say where:** add a check in `transpile/guards.ts` with its
+  `file.js:line`, and a case in the `CRASHES` list of `test/parity_test.ts`. Names starting `js_`
+  are reserved for these.
+- **If the emitter writes an expression twice, it must be free of side effects** (see `steady()`).
 - **Allow-list, never block-list.** A construct is translated only when it is proven equivalent.
 - **Docs examples marked `<!-- check: ok|CODE -->` are executed.** Mark new examples.
 - **A new Deno stand-in needs a `test/shim_test.ts` case.** Four hand-written ones were wrong.

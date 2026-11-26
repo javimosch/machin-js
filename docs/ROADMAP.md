@@ -19,7 +19,7 @@ needs them.
 | **0. Honest** (0.2) | correct the claims; allow-list; reject known divergences; parity tests; CI | every parity case matches or gets a `JS-` error, and none crashes | done |
 | **1. Typed** (0.3) | type-check JSDoc (TypeScript's checker on plain `.js`); define division, numbers, strings | wrong types fail with a JS line number; generated random programs show no differences | done |
 | **2. Useful** (0.4–0.6) | typed arrays, object literals, `for…of`, template literals, `push`/`map`/`filter`, error handling; a CLI tool and an API service | all three apps pass their checks without workarounds | **open:** all three apps pass, but not without workarounds (see notes) |
-| **3. Debuggable** (0.7) | source maps for compile errors and crashes; shims for every supported builtin; debugging guide | the agent-off test: a planted bug is found and fixed by a human alone | |
+| **3. Debuggable** (0.7) | errors at `file.js:line`; shims for every supported builtin; debugging guide | the agent-off test: a planted bug is found and fixed by a human alone | in progress: line-accurate crashes and the guide done; the agent-off test needs the owner |
 | **4. Shippable** (0.8–0.9) | a `machin-js` command (`new`, `build`, `run`, `check`) via `deno compile`; bundled bridges; tested machin versions; releases and changelog | a clean machine goes from install to a running app using only the docs | |
 | **5. Stable** (1.0) | freeze the subset; compatibility policy; a period of real use with no new features | all five criteria hold, with no open silent-difference bugs | |
 
@@ -59,3 +59,15 @@ needs them.
 - **Why the phase stays open:** that limit, and tally's (no `padEnd`, no maps), mean "without
   workarounds" isn't met. The JSON one needs a way to validate JSON in machin ([#716](https://github.com/javimosch/machin/issues/716)). Phase 3 doesn't
   depend on it, so it goes ahead.
+
+## Phase 3 notes
+
+- **Not source maps.** machin gives no location for a runtime crash and compiles each function onto
+  one line, so there is nothing to map. Instead the transpiler adds its own checks to list accesses
+  and divisions; each carries its `file.js:line`.
+- **Not covered:** endless recursion still crashes with no message. machin's own compile errors
+  aren't translated; they should only occur through a transpiler bug. The `falsify` and `certify`
+  tools' reports aren't mapped.
+- **Shims:** the string, list and JSON-output stand-ins are compared with machin. Most of machin's
+  builtins have no stand-in at all.
+- **Found on the way:** `a[f()] += 1` called `f` twice natively (now `JS-ORDER001`).

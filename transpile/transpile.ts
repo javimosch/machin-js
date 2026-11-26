@@ -5,11 +5,12 @@ import * as acorn from "npm:acorn@8.14.0";
 import { program, typeErrors } from "./typecheck.ts";
 import { Types } from "./types.ts";
 import { pushProblems } from "./ownership.ts";
+import { GUARD_MODULE, guardModule } from "./guards.ts";
 import { dirname, basename, resolve } from "jsr:@std/path@1";
 
 export type Diag = { code: string; msg: string; file: string; line: number };
 type Cmt = { block: boolean; text: string; start: number; end: number };
-type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; typed: Diag[]; types: Types; stable: Set<string>; arrow: Set<string> | null; fns: Set<string>; imported: Set<string>; builtins: Set<string>; scope: Set<string> };
+type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; typed: Diag[]; types: Types; guards: Set<string>; stable: Set<string>; arrow: Set<string> | null; fns: Set<string>; imported: Set<string>; builtins: Set<string>; scope: Set<string> };
 type Imp = { source: string; names: string[]; line: number };
 const GLOBALS = new Set(["String", "console"]);
 
@@ -237,8 +238,33 @@ function member(c: Ctx, e: any): string {
     if (k === "string") return typeDiag(c, "JS-STR002", `use len(s) or substr(s, a, b) from "machin" on strings: they count bytes in both`, e);
     if (k === "any") return typeDiag(c, "JS-ANY001", "the type here is unknown; add a JSDoc type", e);
   }
-  if (e.computed) return `${expr(c, e.object)}[${expr(c, e.property)}]`;
+  if (e.computed) {
+    const list = expr(c, e.object), i = expr(c, e.property);
+    if (k !== "array") return `${list}[${i}]`;
+    c.guards.add("js_at");
+    return `js_at(${list}, ${i}, ${where(c, e)})`;
+  }
   return length && k === "array" ? `len(${expr(c, e.object)})` : `${expr(c, e.object)}.${e.property.name}`;
+}
+
+/** `"file.js:12"`, as a machin string. */
+function where(c: Ctx, n: any): string {
+  return str(`${c.file.split("/").pop()}:${n.loc.start.line}`);
+}
+
+/** An assignment target: an element is checked on its index, since it isn't read here. */
+function place(c: Ctx, e: any): string {
+  if (e.type !== "MemberExpression" || !e.computed || c.types.kind(e.object) !== "array") return expr(c, e);
+  const list = expr(c, e.object), i = expr(c, e.property);
+  c.guards.add("js_idx");
+  return `${list}[js_idx(${list}, ${i}, ${where(c, e)})]`;
+}
+
+/** The right side of `/` or `%`: checked unless it is a constant that can't be zero. */
+function divisor(c: Ctx, x: any, precedence: number): string {
+  if (x.type === "Literal" && typeof x.value === "number" && x.value !== 0) return expr(c, x, precedence);
+  c.guards.add("js_divisor");
+  return `js_divisor(${expr(c, x)}, ${where(c, x)})`;
 }
 
 /** An array literal; machin needs its element type spelled out. */
@@ -261,7 +287,7 @@ function truncDiv(c: Ctx, e: any, p: number): string {
   if (e.arguments.length !== 1 || d?.type !== "BinaryExpression" || d.operator !== "/")
     return diag(c, "JS-UNSUP001", "Math.trunc is only supported as Math.trunc(a / b)", e);
   //why: machin's integer division truncates toward zero, exactly like Math.trunc.
-  const s = `${expr(c, d.left, PREC["*"])} / ${expr(c, d.right, PREC["*"] + 1)}`;
+  const s = `${expr(c, d.left, PREC["*"])} / ${divisor(c, d.right, PREC["*"] + 1)}`;
   return PREC["*"] < p ? `(${s})` : s;
 }
 
@@ -305,7 +331,8 @@ function expr(c: Ctx, e: any, p = 0): string {
       const op = e.operator === "===" ? "==" : e.operator === "!==" ? "!=" : e.operator;
       if (op === "+") checkAdd(c, e.left, e.right, e);
       if (op === "==" || op === "!=") [e.left, e.right].forEach((x) => checkScalar(c, x, "JS-CMP001", "comparing"));
-      const s = `${expr(c, e.left, q)} ${op} ${expr(c, e.right, q + 1)}`;
+      const left = expr(c, e.left, q);
+      const s = `${left} ${op} ${op === "%" ? divisor(c, e.right, q + 1) : expr(c, e.right, q + 1)}`;
       return q < p ? `(${s})` : s;
     }
     case "ArrayExpression": return array(c, e);
@@ -434,14 +461,17 @@ function assignOrExpr(c: Ctx, e: any): string {
     if (e.left.type === "MemberExpression" && !e.left.computed)
       return diag(c, "JS-UNSUP001", "assigning to an object field is not supported", e);
     checkElementOrder(c, e.left, e.right, e.operator !== "=");
-    const t = expr(c, e.left);
+    const t = place(c, e.left);
     const op = e.operator[0];
     if (op === "+") checkAdd(c, e.left, e.right, e);
     //why: `x *= a + b` must become `x = x * (a + b)`, so the right side binds tighter than op.
-    return e.operator === "=" ? `${t} = ${expr(c, e.right)}` : `${t} = ${t} ${op} ${expr(c, e.right, PREC[op] + 1)}`;
+    if (e.operator === "=") return `${t} = ${expr(c, e.right)}`;
+    const value = op === "%" ? divisor(c, e.right, PREC[op] + 1) : expr(c, e.right, PREC[op] + 1);
+    //why: the read on the right is checked too — native code may run it before the store's check.
+    return `${t} = ${expr(c, e.left)} ${op} ${value}`;
   }
   if (e.type === "UpdateExpression") checkElementOrder(c, e.argument, null, true);
-  if (e.type === "UpdateExpression") return `${expr(c, e.argument)} = ${expr(c, e.argument)} ${e.operator[0]} 1`;
+  if (e.type === "UpdateExpression") return `${place(c, e.argument)} = ${expr(c, e.argument)} ${e.operator[0]} 1`;
   return expr(c, e);
 }
 
@@ -459,7 +489,7 @@ function forLoop(c: Ctx, s: any): string[] {
   return scoped(c, () => {
     const init = s.init.type === "VariableDeclaration" ? stmt(c, s.init) : [assignOrExpr(c, s.init)];
     const test = expr(c, s.test);
-    return [...init, `while ${test} {`, ...block(c, s.body), assignOrExpr(c, s.update), "}"];
+    return [...init, `while ${test} {`, ...block(c, s.body), "    " + assignOrExpr(c, s.update), "}"];
   });
 }
 
@@ -525,7 +555,7 @@ function guarded(c: Ctx, fn: any): string[] {
   }
 }
 
-export type Mod = { out: string; diags: Diag[]; imports: Imp[]; exports: Set<string>; fns: Set<string>; deps: string[]; defines: Map<string, number> };
+export type Mod = { out: string; diags: Diag[]; imports: Imp[]; exports: Set<string>; fns: Set<string>; deps: string[]; defines: Map<string, number>; guards: Set<string> };
 
 /** Transpile one JS source file (an ES module). */
 export function transpile(file: string, src: string, types?: Types): Mod {
@@ -552,7 +582,7 @@ export function transpile(file: string, src: string, types?: Types): Mod {
     const path = "/__snippet__/snippet.js";
     types = new Types(program([path], { path, text: src }), path);
   }
-  const c: Ctx = { file, src, cmts, diags: [], typed: [], types, stable: new Set(), arrow: null, fns, imported, builtins, scope: new Set() };
+  const c: Ctx = { file, src, cmts, diags: [], typed: [], types, guards: new Set(), stable: new Set(), arrow: null, fns, imported, builtins, scope: new Set() };
   const lines = [...typedefs(c)];
   for (const n of decls) {
     if (n.type === "FunctionDeclaration") lines.push(...guarded(c, n));
@@ -569,7 +599,7 @@ export function transpile(file: string, src: string, types?: Types): Mod {
     const t = /@typedef\s+\{\{.*?\}\}\s*(\w+)/s.exec(x.text);
     if (t) defines.set(t[1], line(x.start));
   }
-  return { out: lines.join("\n").trimEnd() + "\n", diags, imports, exports, fns, deps, defines };
+  return { out: lines.join("\n").trimEnd() + "\n", diags, imports, exports, fns, deps, defines, guards: c.guards };
 }
 
 /** Names exported by a hand-kept typings file in types/. */
@@ -642,6 +672,9 @@ export async function buildGraph(entry: string): Promise<{ order: { path: string
   }
   //why: only once everything else is clean, so one mistake isn't reported twice in two ways.
   if (!diags.length) diags.push(...typeErrors(checked));
+  //why: one module for the checks the whole program uses, ahead of the modules that call them.
+  const used = new Set<string>([...mods.values()].flatMap((m) => [...m.guards]));
+  if (used.size) order.unshift({ path: `${GUARD_MODULE}.js`, out: guardModule(used) });
   return { order, native: [...native], diags };
 }
 

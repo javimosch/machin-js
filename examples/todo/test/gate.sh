@@ -16,7 +16,9 @@ deno run -A ../../transpile/transpile.ts "$T/srv" src/server.js
 # the builds below type-check the whole generated program.
 for entry in demo srv; do
   for m in $(cat "$T/$entry/order.txt"); do
-    machin encode --no-check "gold/$m.src" > "$T/g.mfl"; machin encode --no-check "$T/$entry/$m.src" > "$T/o.mfl"
+    # line numbers in generated checks ("store.js:12") move with any edit, so they are blanked
+    machin encode --no-check "gold/$m.src" > "$T/g0.mfl"; machin encode --no-check "$T/$entry/$m.src" > "$T/o0.mfl"
+    for x in g o; do sed 's/\.js:[0-9][0-9]*"/.js:N"/g' "$T/${x}0.mfl" > "$T/$x.mfl"; done
     diff "$T/g.mfl" "$T/o.mfl" >/dev/null || { echo "gold mismatch: $m.src"; exit 1; }
   done
 done

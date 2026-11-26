@@ -53,5 +53,6 @@ The [todo build script](https://github.com/javimosch/machin-js/blob/main/example
 
 ## Next
 
+- [Debugging](debugging.md)
 - [Read the todo app](tutorial.md)
 - [What JavaScript you can write](language.md)

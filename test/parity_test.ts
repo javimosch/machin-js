@@ -131,7 +131,7 @@ for (const k of CASES) {
     await Deno.writeTextFile(`${d}/run.mjs`, 'import { main } from "./m.js";\nmain();\n');
     //why: under Deno, "machin" is the shim — the same stand-ins a user debugs with.
     await Deno.writeTextFile(`${d}/map.json`, JSON.stringify({ imports: { machin: `${root}shim/machin.js` } }));
-    await Deno.writeTextFile(`${d}/m.src`, built.order[0].out);
+    await Deno.writeTextFile(`${d}/m.src`, built.order.map((o) => o.out).join("\n"));
     const js = await run("deno", ["run", "--no-config", `--import-map=${d}/map.json`, `${d}/run.mjs`]);
     assertEquals(js.code, 0, js.err);
     const enc = await run("machin", ["encode", `${d}/m.src`]);
@@ -140,4 +140,33 @@ for (const k of CASES) {
     const native = await run("machin", ["run", `${d}/m.mfl`, "--safe"]);
     assertEquals([native.code, native.out], [js.code, js.out], native.err);
   });
+}
+
+// A crash must say where in the .js it happened — with or without --safe.
+const CRASHES: [string, string, string][] = [
+  ["read past the end", "const a = [1];\n  console.log(a[5]);", "m.js:5: index 5 is outside the list (length 1)"],
+  ["negative index", "const a = [1]; const i = 0 - 1;\n  console.log(a[i]);", "m.js:5: index -1 is outside the list (length 1)"],
+  ["store past the end", "const a = [1];\n\n  a[3] = 2;", "m.js:6: index 3 is outside the list (length 1)"],
+  ["add past the end", "const a = [1];\n  a[1] += 2;", "m.js:5: index 1 is outside the list (length 1)"],
+  ["increment past the end", "const a = [1];\n  a[2]++;", "m.js:5: index 2 is outside the list (length 1)"],
+  ["divide by zero", "const z = 0;\n  console.log(Math.trunc(1 / z));", "m.js:5: division by zero"],
+  ["modulo by zero", "const z = 0;\n  console.log(1 % z);", "m.js:5: division by zero"],
+  ["modulo-assign by literal zero", "let x = 1;\n  x %= 0;\n  console.log(x);", "m.js:5: division by zero"],
+];
+
+for (const [name, body, message] of CRASHES) {
+  for (const flags of [["--safe"], []]) {
+    Deno.test(`crash names the JavaScript line: ${name} ${flags.join("")}`, async () => {
+      const d = await Deno.makeTempDir();
+      await Deno.writeTextFile(`${d}/m.js`, `/** p */\nexport function main() {\n  //why: p.\n  ${body}\n}\n`);
+      const built = await buildGraph(`${d}/m.js`);
+      assertEquals(built.diags, []);
+      await Deno.writeTextFile(`${d}/m.src`, built.order.map((o) => o.out).join("\n"));
+      const enc = await run("machin", ["encode", `${d}/m.src`]);
+      assertEquals(enc.code, 0, enc.err);
+      await Deno.writeTextFile(`${d}/m.mfl`, enc.out);
+      const native = await run("machin", ["run", `${d}/m.mfl`, ...flags]);
+      assertEquals([native.code, native.err.trim()], [1, message]);
+    });
+  }
 }

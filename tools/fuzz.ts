@@ -189,7 +189,7 @@ export async function check(seed: number): Promise<Result> {
   await Deno.writeTextFile(`${d}/map.json`, JSON.stringify({ imports: { machin: `${root}shim/machin.js` } }));
   const js = await run("deno", ["run", "--no-config", `--import-map=${d}/map.json`, `${d}/run.mjs`]);
   if (js.code !== 0) return done("rejected", `generator made invalid JavaScript: ${js.err.slice(0, 300)}`);
-  await Deno.writeTextFile(`${d}/m.src`, built.order[0].out);
+  await Deno.writeTextFile(`${d}/m.src`, built.order.map((o) => o.out).join("\n"));
   const enc = await run("machin", ["encode", `${d}/m.src`]);
   if (enc.code !== 0) return done("different", `machin rejects the output: ${enc.err.slice(0, 300)}`);
   await Deno.writeTextFile(`${d}/m.mfl`, enc.out);
