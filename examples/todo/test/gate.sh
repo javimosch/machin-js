@@ -22,8 +22,10 @@ for entry in demo srv; do
 done
 echo "canonical MFL identical to gold"
 machin encode $(list "$T/demo") > "$T/demo.mfl"
-machin run "$T/demo.mfl" --safe | diff - gold/expected.txt && echo "demo: native output matches"
-deno run -A test/oracle.ts | diff - gold/expected.txt && echo "demo: Deno oracle matches"
+machin run "$T/demo.mfl" --safe | diff - gold/expected.txt || { echo "FAILED: demo: native output matches"; exit 1; }
+echo "demo: native output matches"
+deno run -A test/oracle.ts | diff - gold/expected.txt || { echo "FAILED: demo: Deno oracle matches"; exit 1; }
+echo "demo: Deno oracle matches"
 machin encode $(cat "$T/srv/native.txt") $(list "$T/srv") > "$T/srv.mfl"
 machin build "$T/srv.mfl" -o "$T/srvbin" --safe >/dev/null
 check() { mkdir -p "$T/$1" && (cd "$T/$1"; shift; "$@" >/dev/null 2>&1 & echo $! > pid; sleep 2
@@ -33,6 +35,7 @@ check deno deno run -A "$ROOT/test/serve.ts"
 # Desktop shell: only if its prerequisites exist (raylib static lib + Xvfb), else say so.
 RL=${RAYLIB_DIR:-$HOME/ai/tinybrain/vendor/raylib-5.0_linux_amd64}
 if [ -f "$RL/lib/libraylib.a" ] && command -v Xvfb >/dev/null; then
-  ./build-desktop.sh >/dev/null && test/desktop_input.sh
+  ./build-desktop.sh >/dev/null
+  test/desktop_input.sh
 else echo "desktop: SKIPPED (needs raylib at \$RAYLIB_DIR and Xvfb)"; fi
 echo "ALL GREEN"

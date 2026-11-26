@@ -18,7 +18,9 @@ suite() { # suite <outfile> <program...>
 }
 suite "$T/native.txt" ./tally
 suite "$T/deno.txt" deno run -A test/run.js
-diff "$T/deno.txt" "$T/native.txt" && echo "tally: native == Deno"
-[ "${UPDATE:-}" = 1 ] && cp "$T/native.txt" test/expected.txt
-diff test/expected.txt "$T/native.txt" && echo "tally: output as expected"
+diff "$T/deno.txt" "$T/native.txt" || { echo "FAILED: tally: native == Deno"; exit 1; }
+echo "tally: native == Deno"
+if [ "${UPDATE:-}" = 1 ]; then cp "$T/native.txt" test/expected.txt; fi
+diff test/expected.txt "$T/native.txt" || { echo "FAILED: tally: output as expected"; exit 1; }
+echo "tally: output as expected"
 echo "ALL GREEN"
