@@ -2,28 +2,60 @@
 
 ## What you need
 
+Linux x86-64. (Other platforms aren't built or tested yet.)
+
 | Tool | Why |
 |---|---|
+| a C compiler (`cc`), and SQLite headers if you use SQLite | machin builds through C |
 | [`machin`](https://github.com/javimosch/machin) 0.144.0 or newer | compiles the output to native |
-| a C compiler (`cc`), and SQLite headers if you use SQLite (`libsqlite3-dev`) | machin builds through C |
-| [`deno`](https://deno.com) 2.2 or newer | to build the `machin-js` command, and for `machin-js debug` |
+| `machin-js` | the command, one self-contained binary of about 100 MB |
+| [`deno`](https://deno.com) 2.2 or newer, **optional** | only for `machin-js debug` |
 
-You don't need a machin source checkout.
+You don't need a source checkout of either project. On Debian or Ubuntu the first row is
+`sudo apt-get install build-essential libsqlite3-dev`.
 
 ## Install
 
-There is no published release yet, so build the command from the source. It becomes a single
-self-contained binary of about 100 MB.
+Make sure `~/.local/bin` is on your `PATH`. Then install machin, checking the download:
+
+<!-- run: install-machin -->
+```sh
+mkdir -p ~/.local/bin ~/.cache/machin-js-install && cd ~/.cache/machin-js-install
+B=https://github.com/javimosch/machin/releases/download/v0.144.0
+curl -fsSLO $B/machin-v0.144.0-linux-amd64
+curl -fsSL -o machin.SHA256SUMS $B/SHA256SUMS.txt
+sha256sum --check --ignore-missing machin.SHA256SUMS
+install -m755 machin-v0.144.0-linux-amd64 ~/.local/bin/machin
+cd ~
+```
+
+Then machin-js:
 
 <!-- run: install -->
+```sh
+mkdir -p ~/.cache/machin-js-install && cd ~/.cache/machin-js-install
+B=https://github.com/javimosch/machin-js/releases/download/v0.8.0
+curl -fsSLO $B/machin-js-x86_64-unknown-linux-gnu
+curl -fsSL -o machin-js.SHA256SUMS $B/SHA256SUMS.txt
+sha256sum --check --ignore-missing machin-js.SHA256SUMS
+install -m755 machin-js-x86_64-unknown-linux-gnu ~/.local/bin/machin-js
+cd ~
+```
+
+The release is an **alpha prerelease**. The licences of what the binary contains are in
+`THIRD_PARTY_LICENSES.txt` on the [release page](https://github.com/javimosch/machin-js/releases/tag/v0.8.0).
+
+### Or build it from source
+
+This needs `deno`.
+
+<!-- run: source -->
 ```sh
 git clone https://github.com/javimosch/machin-js && cd machin-js
 tools/build-release.sh
 mkdir -p ~/.local/bin && cp dist/machin-js ~/.local/bin/
 cd ..
 ```
-
-Make sure `~/.local/bin` is on your `PATH`.
 
 ## Your first program
 

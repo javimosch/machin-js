@@ -80,6 +80,14 @@ Deno.test("problems, bad usage and missing files have clear messages and exit co
   }
 });
 
+Deno.test("the install docs name the pinned machin, and a release that exists in the changelog", async () => {
+  const page = await Deno.readTextFile(`${root}docs/getting-started.md`);
+  const pinned = /MACHIN_VERSION: (v[\d.]+)/.exec(await Deno.readTextFile(`${root}.github/workflows/test.yml`))![1];
+  assertStringIncludes(page, `javimosch/machin/releases/download/${pinned}`);
+  const released = /javimosch\/machin-js\/releases\/download\/v([\d.]+)/.exec(page)![1];
+  assertStringIncludes(await Deno.readTextFile(`${root}CHANGELOG.md`), `## ${released} (`);
+});
+
 Deno.test("a machin error is given the JavaScript location of the function it names", () => {
   const text = explain('error: typecheck: type mismatch in "total": num vs string', new Map([["total", "/p/sum.js:12"]]));
   assertStringIncludes(text, "total is defined at /p/sum.js:12");

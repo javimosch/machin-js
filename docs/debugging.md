@@ -3,7 +3,7 @@
 You debug in JavaScript. A bad list index or a division by zero names the place in your `.js` file,
 and the same code runs as plain JavaScript under Deno.
 
-The commands below use the `machin-js` command ([install it](getting-started.md#install)). In
+The commands below use the `machin-js` command ([install it](getting-started.md#install); `debug` also needs Deno). In
 general:
 
 ```sh

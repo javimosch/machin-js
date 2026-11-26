@@ -10,6 +10,7 @@
 
 <p align="center">
   <img alt="status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
+  <a href="https://github.com/javimosch/machin-js/releases"><img alt="release: v0.8.0" src="https://img.shields.io/badge/release-v0.8.0-1f1470"></a>
   <img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-blue">
   <img alt="runtime: Deno" src="https://img.shields.io/badge/toolchain-Deno-black">
   <img alt="targets: machin" src="https://img.shields.io/badge/compiles%20to-machin%20→%20native-1f1470">
@@ -93,16 +94,15 @@ can't produce code a human can't read.
 
 ## Quick start
 
-Needs [`machin`](https://github.com/javimosch/machin) 0.144.0 or newer, a C compiler, and [`deno`](https://deno.com).
-There is no published release yet, so build the command from source:
+Linux x86-64, with [`machin`](https://github.com/javimosch/machin) 0.144.0 or newer and a C compiler.
+Download the [latest release](https://github.com/javimosch/machin-js/releases) (an alpha prerelease), or
+follow [Getting started](https://javimosch.github.io/machin-js/getting-started/), which also installs
+machin and checks both downloads.
 
 ```sh
-git clone https://github.com/javimosch/machin-js && cd machin-js
-tools/build-release.sh && cp dist/machin-js ~/.local/bin/
-
 machin-js new ~/hello && cd ~/hello
 machin-js run main.js                      # prints: hello world
-machin-js debug main.js --inspect-brk      # the same file, as plain JavaScript with a debugger
+machin-js debug main.js --inspect-brk      # as plain JavaScript with a debugger (needs deno)
 ```
 
 Working on machin-js itself:

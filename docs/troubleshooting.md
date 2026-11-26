@@ -14,3 +14,4 @@
 | a native crash with no message | usually endless recursion; see [Debugging](debugging.md) |
 | `machin rejected the generated code` | a machin-js bug; the message names your function. Please report it |
 | `machin 0.144.0 or newer is required` | upgrade machin |
+| `machin-js debug` says `deno is not installed` | install Deno; the other commands don't need it |
