@@ -76,3 +76,34 @@ Deno has a JIT and QuickJS doesn't. Memory stayed flat over these runs.
 **Idea, not tested:** also run the Deno side in QuickJS (compiled to WebAssembly). Both sides would
 then share one engine, which should remove the engine differences above, though not time-zone or
 host differences.
+
+## Ahead-of-time compilers (2026-11-26)
+
+### Porffor alpha 25 (run, from the `porffor` npm package, in a bwrap sandbox)
+JS/TS → its own IR → C → native. Same adapters, bundled with esbuild; Deno as the reference.
+The harness scripts lived in a session scratch directory and are **not committed**.
+
+- **Library cases: 29/33 identical** (QuickJS: 24/33). ms, slugify, marked, zod, yaml, date-fns and
+  nanoid all matched. lodash-es crashed (`TypeError`, 0/3). French month name silently came out
+  `January`. The matching `async` case is still the useless `{}` on both sides.
+- Five programs needed the ada URL library, downloaded from its GitHub releases during compilation.
+  It didn't compile with g++ 11.4; `CC`/`CXX` set to Zig 0.16 worked. Compile 10–55 s, binaries 2–15 MB.
+- Rough speed, per call: ms 1.3 µs, marked 1.2 ms, zod 4.6 µs; peak 6–10 MB. About 3–6× Deno here.
+  Not like-for-like with the QuickJS table, whose calls also parsed arguments at the bridge.
+- Language probes: 15/16 identical; non-ASCII `toUpperCase` silently wrong (`Hé` for `HÉ`).
+  `eval`/`new Function` passed only because their text was constant: text built at run time throws
+  "Dynamic code evaluation is not supported".
+- Values are `struct jsval { double val; uint64 type; }`; `+` tests both types at run time. It also
+  infers some types (a parameter always given numbers became a C `double`).
+- **TypeScript annotations are trusted, not checked.** With `n: number` given the string `"5"`,
+  `n + 1` printed `16657` and exited 0. Two similar cases also printed garbage. `--safe` didn't help.
+
+### Static Hermes (read only, NOT run)
+Building it was blocked by the session's permission check. From `static_h` docs and source:
+- `shermes` has a C output kind (`lib/BCGen/SH`); `+` is emitted as a call such as
+  `_sh_ljs_add_rjs`; native output links the Hermes VM library (`hermesvm`, or `hermesvmlean`).
+- Typed mode (Flow; TypeScript is converted, partially supported) is documented as unstable. It
+  restricts semantics so types hold (bounds-checked arrays, exact objects) and inserts **checked
+  casts that throw** where unknown values flow into typed ones. Fully unannotated functions are
+  not type-checked.
+- Has a C FFI (`$SHBuiltin.extern_c`; `examples/ffi`).
