@@ -2,12 +2,10 @@
 
 Newest first.
 
-## Unreleased
+## 0.9.1 (2026-11-26)
 
-- **New example, [jot](examples/jot):** an agent-first CLI following cli-output-spec and
-  cli-guide-spec.
-- A `@typedef` spread over several lines is now reported as such (`JS-UNSUP001`) instead of as a
-  bad field name.
+An **alpha** prerelease for Linux x86-64 (glibc); needs machin 0.144.3 or newer. **Upgrade from any
+earlier version:** it fixes six silent differences. It may refuse a program that built before.
 
 ### Soundness fixes: **v0.9.0 and earlier have all of these**
 
@@ -23,6 +21,13 @@ Each behaves differently from its JavaScript and is now rejected. All involve da
 
 An object that is never serialized behaved the same whatever its field order; it must be reordered
 too, because the build can't tell which objects reach `json()`.
+
+### Also
+
+- **New example, [jot](examples/jot):** an agent-first CLI following cli-output-spec and
+  cli-guide-spec.
+- A `@typedef` spread over several lines is now reported as such (`JS-UNSUP001`) instead of as a
+  bad field name.
 
 ## 0.9.0 (2026-11-26)
 
