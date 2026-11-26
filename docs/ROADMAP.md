@@ -19,7 +19,7 @@ needs them.
 | **0. Honest** (0.2) | correct the claims; allow-list; reject known divergences; parity tests; CI | every parity case matches or gets a `JS-` error, and none crashes | done |
 | **1. Typed** (0.3) | type-check JSDoc (TypeScript's checker on plain `.js`); define division, numbers, strings | wrong types fail with a JS line number; generated random programs show no differences | done |
 | **2. Useful** (0.4–0.6) | typed arrays, object literals, `for…of`, template literals, `push`/`map`/`filter`, error handling; a CLI tool and an API service | all three apps pass their checks without workarounds | done (`.map`/`.filter` left out: no app needed them) |
-| **3. Debuggable** (0.7) | errors at `file.js:line`; shims for every supported builtin; debugging guide | the agent-off test: a planted bug is found and fixed by a human alone | in progress: line-accurate crashes and the guide done; the agent-off test needs the owner |
+| **3. Debuggable** (0.7) | errors at `file.js:line`; shims for every supported builtin; debugging guide | the agent-off test: a planted bug is found and fixed by a human alone | done, with a **simulated** human (owner's choice; see notes) |
 | **4. Shippable** (0.8–0.9) | a `machin-js` command (`new`, `build`, `run`, `check`, `debug`) via `deno compile`; bundled bridges; tested machin versions; releases and changelog | a clean machine goes from install to a running app using only the docs | in progress: only the first release is left |
 | **5. Stable** (1.0) | freeze the subset; compatibility policy; a period of real use with no new features | all five criteria hold, with no open silent-difference bugs | |
 
@@ -69,6 +69,19 @@ needs them.
 - **Shims:** the string, list and JSON-output stand-ins are compared with machin. Most of machin's
   builtins have no stand-in at all.
 - **Found on the way:** `a[f()] += 1` called `f` twice natively (now `JS-ORDER001`).
+- **The agent-off test** was run on 2026-11-26 with a stand-in, because the owner couldn't take it:
+  a separate, non-interactive Claude Sonnet 5.5 session with no project instructions, memory or tool
+  servers. It was given the symptom, the compiled command, the docs and the app's source (no tests,
+  expected output or history), and asked to act as a JavaScript developer new to the project. It
+  fixed a planted off-by-one in tally; the transcript showed it stayed inside its folder, and the
+  output matched the expected output.
+- **What that does and doesn't show:** the guide was enough for one easy, crashing bug. It fixed it
+  by reading the code; it didn't use breakpoints. It is not evidence about a human: 1.0 criterion 3
+  (a human has fixed a bug with the agent off) is **still open**.
+- **Its findings, since fixed:** the crash message didn't say which of three uses of a list on one
+  line had failed (it now gives column, expression and read or write); the guide overstated that
+  Deno "carries on", didn't cover writes past the end, had no way to trace a bad value, assumed
+  Chrome and this repository's folders. The new guide has not been re-tested.
 
 ## Phase 4 notes
 

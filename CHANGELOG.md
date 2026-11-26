@@ -6,7 +6,8 @@ Newest first. Nothing has been released yet.
 
 - **The `machin-js` command:** `new`, `check`, `build`, `run`, `debug`; one self-contained binary.
   No machin source checkout needed.
-- Crashes from a list index or a division by zero name your `file.js:line`; debugging guide.
+- Crashes from a list index or a division by zero name your `file.js:line:column`, the expression,
+  and whether it was reading or writing; debugging guide.
 - Language: `for…of`, template and object literals, `push` while a list is unshared, arrays of
   numbers and structs, integer division with `Math.trunc(a / b)`, functions as values.
 - Type checking of JSDoc (TypeScript's checker on plain `.js`).

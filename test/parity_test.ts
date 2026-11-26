@@ -169,14 +169,15 @@ for (const k of CASES) {
 
 // A crash must say where in the .js it happened — with or without --safe.
 const CRASHES: [string, string, string][] = [
-  ["read past the end", "const a = [1];\n  console.log(a[5]);", "m.js:5: index 5 is outside the list (length 1)"],
-  ["negative index", "const a = [1]; const i = 0 - 1;\n  console.log(a[i]);", "m.js:5: index -1 is outside the list (length 1)"],
-  ["store past the end", "const a = [1];\n\n  a[3] = 2;", "m.js:6: index 3 is outside the list (length 1)"],
-  ["add past the end", "const a = [1];\n  a[1] += 2;", "m.js:5: index 1 is outside the list (length 1)"],
-  ["increment past the end", "const a = [1];\n  a[2]++;", "m.js:5: index 2 is outside the list (length 1)"],
-  ["divide by zero", "const z = 0;\n  console.log(Math.trunc(1 / z));", "m.js:5: division by zero"],
-  ["modulo by zero", "const z = 0;\n  console.log(1 % z);", "m.js:5: division by zero"],
-  ["modulo-assign by literal zero", "let x = 1;\n  x %= 0;\n  console.log(x);", "m.js:5: division by zero"],
+  ["read past the end", "const a = [1];\n  console.log(a[5]);", "m.js:5:15: reading a[5]: index 5 is outside the list (length 1)"],
+  ["negative index", "const a = [1]; const i = 0 - 1;\n  console.log(a[i]);", "m.js:5:15: reading a[i]: index -1 is outside the list (length 1)"],
+  ["store past the end", "const a = [1];\n\n  a[3] = 2;", "m.js:6:3: writing a[3]: index 3 is outside the list (length 1)"],
+  ["add past the end", "const a = [1];\n  a[1] += 2;", "m.js:5:3: reading a[1]: index 1 is outside the list (length 1)"],
+  ["increment past the end", "const a = [1];\n  a[2]++;", "m.js:5:3: reading a[2]: index 2 is outside the list (length 1)"],
+  ["the second of two reads on one line", "const a = [1];\n  console.log(a[0] + a[4]);", "m.js:5:22: reading a[4]: index 4 is outside the list (length 1)"],
+  ["divide by zero", "const z = 0;\n  console.log(Math.trunc(1 / z));", "m.js:5:30: division by zero"],
+  ["modulo by zero", "const z = 0;\n  console.log(1 % z);", "m.js:5:19: division by zero"],
+  ["modulo-assign by literal zero", "let x = 1;\n  x %= 0;\n  console.log(x);", "m.js:5:8: division by zero"],
 ];
 
 for (const [name, body, message] of CRASHES) {

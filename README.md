@@ -129,7 +129,7 @@ This is an **alpha**. It has three worked examples, and the language is a delibe
 - **Numbers and strings:** numbers are integers (no decimals yet), and strings are counted in bytes (`len`, `substr`).
 - **JSON input:** read field by field with `machin/json` (top-level fields only); `parse` is for database rows and JSON your code builds.
 - **Known differences:** some behavior can still differ from plain JavaScript; they are [listed](docs/language.md#known-differences).
-- **Debugging:** out-of-range list access and division by zero stop with your `file.js:line`; endless recursion still crashes with no message. See [Debugging](docs/debugging.md).
+- **Debugging:** out-of-range list access and division by zero stop with your `file.js:line:column` and the expression; endless recursion still crashes with no message. See [Debugging](docs/debugging.md).
 
 Where this is going, in measurable steps: [docs/NORTH-STAR.md](docs/NORTH-STAR.md).
 

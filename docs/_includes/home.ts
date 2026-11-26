@@ -41,7 +41,7 @@ export default function () {
 </section>
 <section class="wrap three">
   <div><h2>The compiler keeps it readable</h2><p>A function without JSDoc or a <code>//why:</code> line, or longer than 20 lines, does not compile. That holds for agent-written code too.</p><a href="/diagnostics/">Every rule →</a></div>
-  <div><h2>Debug it as plain JavaScript</h2><p>The same modules run under Deno, with a real debugger. A native crash on a bad list index or a division by zero names your <code>.js</code> line.</p><a href="/debugging/">How to debug →</a></div>
+  <div><h2>Debug it as plain JavaScript</h2><p>The same modules run under Deno, with a real debugger. A native crash on a bad list index names your <code>.js</code> line, column and expression.</p><a href="/debugging/">How to debug →</a></div>
   <div><h2>One core, thin shells</h2><p>The todo app's SQLite store is shared unchanged by its web server and its desktop window.</p><a href="/tutorial/">Take the tour →</a></div>
 </section>
 <section class="shots"><div class="wrap">

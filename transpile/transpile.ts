@@ -313,14 +313,16 @@ function member(c: Ctx, e: any): string {
     const list = expr(c, e.object), i = expr(c, e.property);
     if (k !== "array") return `${list}[${i}]`;
     c.guards.add("js_at");
-    return `js_at(${list}, ${i}, ${where(c, e)})`;
+    return `js_at(${list}, ${i}, ${where(c, e, "reading")})`;
   }
   return length && k === "array" ? `len(${expr(c, e.object)})` : `${expr(c, e.object)}.${e.property.name}`;
 }
 
-/** `"file.js:12"`, as a machin string. */
-function where(c: Ctx, n: any): string {
-  return str(`${c.file.split("/").pop()}:${n.loc.start.line}`);
+/** `"file.js:12:8: reading xs[i]"`, as a machin string: where a generated check is, and what it checks. */
+function where(c: Ctx, n: any, doing = ""): string {
+  //why: one line often touches the same list several times, so line alone doesn't say which.
+  const text = doing ? `: ${doing} ${c.src.slice(n.start, n.end).replace(/\s+/g, " ")}` : "";
+  return str(`${c.file.split("/").pop()}:${n.loc.start.line}:${n.loc.start.column + 1}${text}`);
 }
 
 /** An assignment target: an element is checked on its index, since it isn't read here. */
@@ -328,7 +330,7 @@ function place(c: Ctx, e: any): string {
   if (e.type !== "MemberExpression" || !e.computed || c.types.kind(e.object) !== "array") return expr(c, e);
   const list = expr(c, e.object), i = expr(c, e.property);
   c.guards.add("js_idx");
-  return `${list}[js_idx(${list}, ${i}, ${where(c, e)})]`;
+  return `${list}[js_idx(${list}, ${i}, ${where(c, e, "writing")})]`;
 }
 
 /** The right side of `/` or `%`: checked unless it is a constant that can't be zero. */

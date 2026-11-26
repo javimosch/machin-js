@@ -74,6 +74,14 @@ cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.t
 - Pushing to `main` deploys the docs site and runs CI (pinned machin: `.github/workflows/test.yml`).
   Check both runs afterwards.
 
+## Testing the docs with a stand-in user
+
+To check a guide, plant a bug in a copy (compiled command, docs, app source only; no tests, expected
+output or git history) and run a blind headless session:
+`claude -p --model <model> --safe-mode --strict-mcp-config --tools "Bash,Read,Edit,Grep,Glob" --allowedTools "Bash,Read,Edit,Grep,Glob" --max-budget-usd 5 --output-format stream-json --verbose`.
+**Audit the transcript** for reads outside the copy, and check the fix yourself. It is a stand-in:
+never report it as a human having done it.
+
 ## The machin-js command
 
 `cli/machin-js.ts`; `tools/build-release.sh` compiles it, `tools/smoke-release.sh dist/machin-js`

@@ -1,7 +1,15 @@
 # Debugging
 
-You debug in JavaScript. Errors name your `.js` file and line, and the same code runs under Deno,
-where you have a real debugger.
+You debug in JavaScript. A bad list index or a division by zero names the place in your `.js` file,
+and the same code runs as plain JavaScript under Deno.
+
+The commands below use the `machin-js` command ([install it](getting-started.md#install)). In
+general:
+
+```sh
+machin-js run   path/to/main.js -- your arguments    # native
+machin-js debug path/to/main.js -- your arguments    # the same files as plain JavaScript
+```
 
 ## 1. The build fails
 
@@ -14,18 +22,30 @@ file), the transpiler let through something it shouldn't have. That's a bug in m
 
 ## 2. The native program stops with a message
 
-Reading or writing outside a list, and dividing by zero, stop the program with the place in your
-code:
+Reading or writing outside a list, and dividing by zero, stop the program and say where:
 
 ```text
-report.js:41: index 3 is outside the list (length 3)
-money.js:55: division by zero
+report.js:25:49: reading totals[at]: index 1 is outside the list (length 1)
+money.js:55:30: division by zero
 ```
 
-The transpiler adds these checks itself, so they work with or without `--safe`. The line is where
-the access or the divisor is written.
+That is **file : line : column**, then whether it was reading or writing, and which expression. One
+line often uses the same list more than once, so check the column. The file name has no folder. The
+program exits with status 1 (your own program may use 1 for other things too, so read the message).
 
+These checks are added by the transpiler. They are always there: you don't need any build option.
 Your own `eprintln` messages and `exit` codes behave as you wrote them.
+
+### Finding where a bad index came from
+
+The line in the message is where the bad value was **used**. The mistake is usually where it was
+**made**:
+
+1. Just before that line, print the index and the length:
+   `console.log("at", at, "length", totals.length);`
+2. Find every place that sets the index (here: where `at` and the map it comes from are written).
+3. Print there too, until you see the first wrong value.
+4. Remove your temporary lines.
 
 ## 3. Reproduce it under Deno
 
@@ -44,22 +64,31 @@ cd examples/linkbox
 LINKBOX_TOKEN=secret LINKBOX_DB=/tmp/debug.db machin-js debug src/server.js
 ```
 
-[No command yet?](getting-started.md#install)
 
 Use a throwaway database, not your real one.
 
-Remember that under Deno, reading past the end of a list gives `undefined` and dividing by zero
-gives `Infinity` or `NaN`, and the program carries on. So look for where the bad value starts.
+Deno behaves like normal JavaScript here, which is **not** like the native program:
+
+- reading past the end of a list gives `undefined`, and writing past the end silently makes the list
+  longer, possibly with gaps;
+- dividing by zero gives `Infinity` or `NaN`.
+
+It carries on until something can't use the bad value. `undefined.cents`, for example, throws a
+`TypeError` with a stack trace and a column; adding `undefined` to a number just gives `NaN`. If
+Deno doesn't stop at all, use the native message to find the place, then trace the value.
 
 ## 4. Step through it
+
+This needs Chrome (or another Chromium browser) on the same machine:
 
 ```sh
 machin-js debug src/main.js --inspect-brk -- test/fixtures/good.csv
 ```
 
-Deno waits for a debugger. Open `chrome://inspect` in Chrome, click **inspect**, then set
-breakpoints in your `.js` files. (`debugger;` statements aren't part of the subset, so use
-breakpoints.) `console.log` works in both runtimes.
+Deno waits for a debugger before running your program. Open `chrome://inspect`, click **inspect**,
+open your `.js` file in the **Sources** panel and set breakpoints. (`debugger;` statements aren't
+part of the subset.) In a terminal only, use the `console.log` method above; it works in both
+runtimes.
 
 ## 5. It works under Deno but not natively
 
@@ -74,7 +103,3 @@ runtimes.
 | the native program dies with **no message** (exit code 139), or seems to hang, and earlier output may be missing | recursion that never ends ([machin#719](https://github.com/javimosch/machin/issues/719)). Under Deno you get a `RangeError` with a stack trace |
 | the program hangs | an endless loop; pause it in the debugger under Deno |
 | the desktop app misbehaves | it has no Deno version; debug the shared logic through the web or console build |
-
-## The agent-off test
-
-The exit test for this phase is a person fixing a planted bug alone, using only this page.
