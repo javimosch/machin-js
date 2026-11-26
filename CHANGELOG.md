@@ -2,7 +2,12 @@
 
 Newest first.
 
-## Unreleased
+## 0.8.1 (2026-11-26)
+
+An **alpha** prerelease for Linux x86-64 (glibc); needs machin 0.144.0 or newer. **Upgrade from
+0.8.0:** it fixes a silent difference. Programs that tested numbers or strings directly in
+conditions already failed to build on 0.8.0, with a machin error; they now get `JS-COND001`.
+Tested with machin 0.144.0 (pinned), and with 0.144.2 on one Linux machine before release.
 
 ### Soundness fixes
 
