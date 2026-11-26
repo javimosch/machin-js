@@ -545,7 +545,9 @@ function call(c: Ctx, e: any, p = 0): string {
   if (c.scope.has(name)) checkCapture(c, name, e);
   const converts = name === "String" && !c.scope.has(name);
   if (converts && e.arguments.length !== 1) return diag(c, "JS-UNSUP001", "String(x) takes exactly one value", e);
-  if (converts || dotted === "console.log") e.arguments.forEach((x: any) => checkScalar(c, x, "JS-VAL001", "printing or converting"));
+  //why: machin prints only plain values, so a list passed `check` and then failed to build.
+  const prints = dotted === "console.log" || (name === "eprintln" && c.builtins.has("eprintln"));
+  if (converts || prints) e.arguments.forEach((x: any) => checkScalar(c, x, "JS-VAL001", "printing or converting"));
   if (name === "parse" && c.builtins.has(name)) checkParseInput(c, e.arguments[0] ?? e, e);
   //why: `parse(x, [])` needs a typed witness: the type the surrounding code expects back.
   if (name === "parse" && c.builtins.has(name) && e.arguments[1]?.type === "ArrayExpression") {
@@ -850,12 +852,26 @@ function bridges(): Record<string, { dts: string; src: string }> {
   };
 }
 
+/** Modules whose imports must also exist under Deno, with the stand-in file for each. */
+//why: machin/desktop is left out: it is native only, and the modules page says so.
+const STANDINS: Record<string, string> = { "machin": "machin.js", "machin/web": "web.js", "machin/json": "json.js", "machin/text": "text.js" };
+
+/** The names a stand-in really exports, read from its source so the list can't drift from it. */
+async function standinNames(file: string): Promise<Set<string>> {
+  const source = await Deno.readTextFile(new URL(`../shim/${file}`, import.meta.url));
+  const ast: any = acorn.parse(source, { ecmaVersion: "latest", sourceType: "module" });
+  const declared = ast.body.filter((n: any) => n.type === "ExportNamedDeclaration").map((n: any) => n.declaration);
+  return new Set(declared.flatMap((d: any) => d.declarations ? d.declarations.map((x: any) => x.id.name) : [d.id.name]));
+}
+
 /** Follow imports from `entry`; return modules in dependency order, plus every diagnostic. */
 export async function buildGraph(entry: string): Promise<{ order: { path: string; out: string }[]; native: string[]; diags: Diag[]; where: Map<string, string> }> {
   const builtins = new Set<string>(JSON.parse(await Deno.readTextFile(new URL("../types/machin-builtins.json", import.meta.url))));
   const br = bridges();
   const bnames = new Map<string, Set<string>>();
   for (const [k, v] of Object.entries(br)) bnames.set(k, await dtsNames(v.dts));
+  const standins = new Map<string, Set<string>>();
+  for (const [k, file] of Object.entries(STANDINS)) standins.set(k, await standinNames(file));
   const native = new Set<string>();
   const mods = new Map<string, Mod>(), order: { path: string; out: string }[] = [], diags: Diag[] = [];
   const stack: string[] = [];
@@ -886,7 +902,11 @@ export async function buildGraph(entry: string): Promise<{ order: { path: string
     const known = i.source === "machin" ? builtins : bnames.get(i.source)
       ?? (i.source.startsWith(".") ? mods.get(resolve(dirname(path), i.source))?.exports : null);
     if (!known) return add(path, i.line, "JS-IMPORT002", `unknown module "${i.source}"`);
-    for (const n of i.names) if (!known.has(n)) add(path, i.line, "JS-IMPORT001", `"${i.source}" has no export ${n}`);
+    const runs = standins.get(i.source);
+    for (const n of i.names) {
+      if (!known.has(n)) add(path, i.line, "JS-IMPORT001", `"${i.source}" has no export ${n}`);
+      else if (runs && !runs.has(n)) add(path, i.line, "JS-IMPORT003", `${n} from "${i.source}" is not supported: it has no Deno stand-in, so this program couldn't run as JavaScript`);
+    }
   }
   //why: one program from the entry covers every module it imports, and is reused for errors.
   const checked = program([resolve(entry)]);

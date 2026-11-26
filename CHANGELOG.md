@@ -2,6 +2,30 @@
 
 Newest first.
 
+## Unreleased
+
+### Soundness fixes
+
+**It behaves differently from its JavaScript:** under Deno it fails to start, because the stand-in
+has no such export. Some of these imports didn't build natively either (`http_get`, for one).
+
+| Program | Now | Rewrite |
+|---|---|---|
+| imports a function from `"machin"` or `"machin/web"` that has no Deno stand-in | `JS-IMPORT003` | use only [supported functions](docs/modules.md). **A program that needs the function, and was only ever built natively, has no rewrite:** stay on 0.9.1 for it |
+
+**These behave differently from their JavaScript:**
+
+| Under Deno vs native | Now |
+|---|---|
+| `read_file` of a file with a zero byte: the whole file vs only the part before it | both give the part before it |
+| `read_file` of invalid UTF-8: bytes silently replaced vs kept | the Deno stand-in stops with an error |
+| `eprintln` with `%` codes in a first argument followed by others: read as format codes vs printed | both print them |
+| `env("")` or a name containing `=`: an error vs `""` | both give `""` |
+| `eprintln` of a list or object: ran vs didn't build, though `check` accepted it | `JS-VAL001`; print its parts |
+
+`args()[0]` differs too (`"program"` vs the program's path). It is now listed under
+[known differences](docs/language.md#known-differences).
+
 ## 0.9.1 (2026-11-26)
 
 An **alpha** prerelease for Linux x86-64 (glibc); needs machin 0.144.3 or newer. **Upgrade from any

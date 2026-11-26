@@ -127,6 +127,10 @@ Started **2026-11-26** (at v0.9.0).
   `json()`, `parse` shapes and `Map` arguments, all present in v0.9.0. Random testing had never
   compared `json()` output. Fixed in
   [v0.9.1](https://github.com/javimosch/machin-js/releases/tag/v0.9.1); 0.8.0, 0.8.1 and 0.9.0 have them.
+- **2026-11-26, later the same day:** `check` accepted any builtin or `machin/web` function, but
+  only some have a Deno stand-in. The rest are now `JS-IMPORT003`. Checking the stand-ins without a
+  direct comparison found four more differences (`read_file`, `eprintln`, `env`), fixed on `main`
+  (not yet released). The 14-day count in the freeze terms runs from this fix.
 - **jot** was added during the freeze: an example in the existing subset, not a language feature.
   It doesn't count as the owner's own app. Limits it met: no field named `type`, no keys such as
   `help-json`, one-line `@typedef` only, no top-level constants.

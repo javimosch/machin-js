@@ -70,7 +70,7 @@ The JSDoc is both the documentation and the types the build checks.
 | `JS-WHY001` | every function has a `//why:` comment saying *why*, not *what* |
 | `JS-SIZE001` | functions are at most 20 lines |
 | `JS-UNDEF001` | a name must be declared, or imported from `"machin"`, `"machin/web"`, `"machin/desktop"` or a local module |
-| `JS-IMPORT001/002` | imports must resolve and name something that is actually exported |
+| `JS-IMPORT001/002/003` | imports must resolve, name something that is actually exported, and have a Deno stand-in |
 | `JS-DUP001` / `JS-CYCLE001` | no two modules define the same function (machin has one namespace); no import cycles |
 | `JS-FNVAL001` | a machin builtin can't be passed as a value — wrap it in an arrow (your own functions can) |
 | `JS-RET001` / `JS-SCOPE001` | every path of a valued function returns; no shadowed names |
@@ -89,7 +89,7 @@ can't produce code a human can't read.
 ## What's in the box
 
 - **Transpiler** (`transpile/`) — Deno + [acorn](https://github.com/acornjs/acorn); resolves ES modules, orders them by dependency, emits machin `.src`.
-- **Typed builtins** (`types/machin.d.ts`) — generated from `machin guide`, so they never drift from the compiler.
+- **Typings** (`types/machin.d.ts`) — generated from `machin guide`. They list every machin builtin; only those with a Deno stand-in can be imported ([which ones](docs/modules.md)).
 - **Run it as plain JS** (`shim/`) — Deno twins of the builtins, so the same modules run under a normal debugger and can be diffed against the native build.
 - **Bridges** — `machin/web` (machweb HTTP server), `machin/json` (typed reading of outside JSON), `machin/text` (padding) and `machin/desktop` (a raylib UI behind a scalar-only API, since JS can't express FFI).
 - **[`examples/jot`](examples/jot)** — an agent-first CLI following the [agent-first CLI specs](https://cli-specs.intrane.fr/) for output and guide, checked by a conformance test.

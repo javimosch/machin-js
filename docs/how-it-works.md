@@ -17,8 +17,8 @@ native binary
 ```
 
 The same `.js` also runs under Deno: `deno.json` maps `"machin"` and `"machin/web"` to the
-stand-ins in `shim/`. The stand-ins cover only what the todo app uses, so a new builtin needs one
-added. `"machin/desktop"` has none.
+stand-ins in `shim/`. The stand-ins cover what the example apps use, and only names they export can be
+imported, so a new builtin needs one added. `"machin/desktop"` has none.
 
 ## Testing
 

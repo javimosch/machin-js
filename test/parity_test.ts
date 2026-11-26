@@ -151,7 +151,6 @@ const CASES: Case[] = [
   { name: "json of a Map", body: "/** @type {Map<string, int>} */\n  const m = new Map(); m.set(\"k\", 1); console.log(json(m));", imports: "json", expect: "JS-MAP001" },
   { name: "json of a list of Maps", body: "/** @type {Map<string, int>} */\n  const m = new Map(); m.set(\"k\", 1); const a = [m]; console.log(json(a));", imports: "json", expect: "JS-MAP001" },
   { name: "len of a Map", body: "/** @type {Map<string, int>} */\n  const m = new Map(); m.set(\"k\", 1); console.log(len(m));", imports: "len", expect: "JS-MAP001" },
-  { name: "builtin map functions on a Map", body: "/** @type {Map<string, int>} */\n  const m = new Map(); m.set(\"k\", 1); console.log(has(m, \"k\"));", imports: "has", expect: "JS-MAP001" },
   { name: "json of scalars and lists", body: 'console.log(json("a<b>\\n")); console.log(json(7)); console.log(json(1 > 0)); console.log(json([[1], []]));', imports: "json", expect: "same" },
   { name: "built JSON with reordered keys", body: "console.log(json(one()));", imports: "parse, json", extra: '/** @typedef {{a: int, b: int}} T */\n' + fn("one()", 'return parse(\"{\\\"b\\\":2,\\\"a\\\":1}\", []);', "@returns {T}"), expect: "JS-SHAPE001" },
   { name: "built JSON with an extra key", body: "console.log(json(one()));", imports: "parse, json", extra: '/** @typedef {{a: int, b: int}} T */\n' + fn("one()", 'return parse(\"{\\\"a\\\":1,\\\"b\\\":2,\\\"c\\\":3}\", []);', "@returns {T}"), expect: "JS-SHAPE001" },

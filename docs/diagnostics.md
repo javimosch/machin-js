@@ -121,6 +121,12 @@ Add `import { sqlite_open } from "machin";`. There are no ambient globals apart 
 
 The name is not exported by that module. For `"machin"` the list comes from `machin guide`.
 
+## JS-IMPORT003: no Deno stand-in
+
+machin has this function, but machin-js has no JavaScript version of it, so your program couldn't
+run under Deno. [Modules](modules.md) says what can be imported. There is no rewrite that gives you
+the missing function: use only supported ones.
+
 ## JS-IMPORT002: unknown module
 
 Only `"machin"`, `"machin/web"`, `"machin/json"`, `"machin/text"`, `"machin/desktop"` and relative paths exist.

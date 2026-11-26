@@ -33,6 +33,13 @@ blocks the owner's real app, put the decision to them; adding it restarts the 30
 
 1.0 criterion 3 is a **human** fixing a bug without an agent. A simulated user never satisfies it.
 
+## Examples are the dogfood
+
+The owner's direction (2026-11-26): the repo's example apps should **grow with the features**.
+When a feature is added, an example uses it, with a Deno-vs-native gate; prefer whatever puts
+machin-js under real use. This doesn't lift the feature freeze, and an example written by an agent
+is not the "owner's own app" that ends it.
+
 ## State: read it first, keep it current
 
 The repo records code; **memgraph** records where the work stands.
@@ -76,7 +83,9 @@ cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.t
 - **Docs examples marked `<!-- check: ok|CODE -->` are executed.** Mark new examples.
 - **JSON stand-ins** are checked by `test/json_test.ts`; for a wider search after touching
   `bindings/json.src` or `shim/json.js`: `deno run -A test/json_test.ts 15 <new seed>`.
-- **A new Deno stand-in needs a `test/shim_test.ts` case.** Four hand-written ones were wrong.
+- **A new Deno stand-in needs a `test/shim_test.ts` or `test/standin_test.ts` case.** Four
+  hand-written ones were wrong, then three more. Exporting it is what makes it importable, so also
+  add it to the list in `docs/modules.md` (a test compares them).
 - **Probe machin's behavior before mapping a feature** (`push`/`append` aliasing and closure capture
   both differed).
 - **Compare serialized output, not just values.** Six silent differences hid because no test compared

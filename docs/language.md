@@ -248,8 +248,9 @@ is a bug: please report it.
 | integer results beyond 2^53 | rounded | exact, and they wrap past 2^63 |
 | reading or writing past the end of an array | `undefined`, or the array grows | stops, naming the place, the expression and the index |
 | recursion that never ends, or very deep recursion | `RangeError` with a stack trace, typically after some thousands of calls | `panic: stack overflow`, exit 1, with earlier output kept. The limit is much higher: the stack's size, or 1,000,000 calls (`MFL_MAX_DEPTH` to change) |
+| `args()[0]`, the program's own name | `"program"` | the path it was started with |
+| `read_file` of a file that isn't valid UTF-8 | the stand-in stops with an error, on purpose | keeps the raw bytes |
 | `substr` cutting a non-ASCII character in half | a replacement character | the raw bytes |
-| other builtins from `"machin"` | a hand-written stand-in in `shim/`, if there is one | the real builtin |
 | `parse_int` of a number beyond 2^53 | rounded | exact, limited to 64 bits |
 | a column holding another type than its field (a number in a `string` field) | keeps the stored type | silently becomes `""` or `0` |
 | a `NULL` column reaching `parse` | the stand-in stops with an error, on purpose | silently becomes `""` or `0` |
@@ -259,8 +260,8 @@ is a bug: please report it.
 Random programs are compared on both runtimes (see [how it is tested](how-it-works.md)), but they
 only use the features the generator knows. The stand-ins for string, list and JSON-output builtins are compared
 with the real ones on awkward inputs (`test/shim_test.ts`); the SQLite and web ones are covered by
-the apps' tests. Other builtins, decimals from builtins such as
-`parse_float`, and ordering of non-ASCII strings are not covered.
+the apps' tests. Builtins without a stand-in can't be imported ([`JS-IMPORT003`](diagnostics.md#js-import003-no-deno-stand-in)).
+Decimals and ordering of non-ASCII strings are not covered.
 
 ### Behaves the same, but may surprise you
 

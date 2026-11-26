@@ -26,7 +26,8 @@ export const split = (s, sep) => s.split(sep);
 //why: a machin string ends at the first NUL byte, so %00 cuts off the rest.
 export const url_decode = (s) => { try { return decodeURIComponent(s.replace(/\+/g, " ")).split("\0")[0]; } catch { return s; } };
 export const json = (v) => JSON.stringify(v);
-export const env = (name) => Deno.env.get(name) ?? "";
+//why: Deno throws on a name no variable can have; machin just finds nothing.
+export const env = (name) => (name === "" || /[=\0]/.test(name) ? "" : Deno.env.get(name) ?? "");
 //why: machin strings are bytes, so these count UTF-8 bytes here too (not UTF-16 units).
 const utf8 = new TextEncoder(), text = new TextDecoder();
 export const len = (x) => typeof x === "string" ? utf8.encode(x).length : x.length;
@@ -53,8 +54,17 @@ export const substr = (s, a, b) => {
 // ---- command-line programs ----
 //why: machin's args()[0] is the program itself; user arguments start at 1.
 export const args = () => ["program", ...Deno.args];
-export const read_file = (path) => { try { return Deno.readTextFileSync(path); } catch { return ""; } };
-export const eprintln = (...xs) => console.error(...xs.map(String));
+export const read_file = (path) => {
+  let bytes;
+  try { bytes = Deno.readFileSync(path); } catch { return ""; }
+  //why: a machin string ends at the first zero byte.
+  const end = bytes.indexOf(0);
+  //why: natively invalid bytes are kept; JavaScript would silently replace them, so stop instead.
+  try { return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(end < 0 ? bytes : bytes.subarray(0, end)); }
+  catch { throw new Error(`read_file: ${path} is not valid UTF-8 — natively its raw bytes would be kept`); }
+};
+//why: joined first, because console.error reads % codes in a first argument that has others after it.
+export const eprintln = (...xs) => console.error(xs.map(String).join(" "));
 export const exit = (code) => Deno.exit(code);
 export const contains = (s, sub) => s.includes(sub);
 //why: RFC 3986 like machin: only A-Z a-z 0-9 - . _ ~ stay as they are (encodeURIComponent keeps more).

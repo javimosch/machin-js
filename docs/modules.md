@@ -4,9 +4,25 @@ Your own files are ordinary ES modules. Three more modules connect to machin.
 
 ## `"machin"`: builtins
 
-The machin builtins (strings, files, SQLite and more). Their typings are in
-[`types/machin.d.ts`](https://github.com/javimosch/machin-js/blob/main/types/machin.d.ts),
-generated from `machin guide`. After upgrading machin, regenerate them from the repo root:
+**Only some machin builtins can be used: the ones with a Deno stand-in**, so that your program also
+runs as JavaScript. There are 24:
+
+<!-- builtins -->
+`args`, `contains`, `env`, `eprintln`, `exit`, `has_prefix`, `index`, `json`, `json_valid`, `len`, `parse`, `parse_int`, `read_file`, `replace`, `sort_by`, `split`, `sqlite_close`, `sqlite_exec`, `sqlite_open`, `sqlite_query`, `substr`, `trim`, `url_decode`, `url_encode`
+<!-- /builtins -->
+
+Importing any other builtin is [`JS-IMPORT003`](diagnostics.md#js-import003-no-deno-stand-in).
+That includes crypto, outgoing HTTP, WebSocket and process functions: machin has them, machin-js
+doesn't support them yet.
+
+<!-- check: JS-IMPORT003 -->
+```js
+import { sha256 } from "machin";
+```
+
+[`types/machin.d.ts`](https://github.com/javimosch/machin-js/blob/main/types/machin.d.ts) is
+generated from `machin guide`, so **your editor also offers builtins that the build refuses**. After
+upgrading machin, regenerate it from the repo root:
 
 ```sh
 deno run -A tools/gen-dts.ts
@@ -20,8 +36,8 @@ Most builtin parameters have placeholder names (`a0`, `a1`), because machin does
 machin's `machweb` framework: `serve(port, handler)`, `ok_html`, `ok_json`, `ok_text`,
 `not_found`, `bad_request`, `redirect`, `response`, `header`, `query` and more. The handler takes a request (`method`, `path`
 including the query string, `body`) and returns a response. The typings in `types/machweb.d.ts`
-are generated from `machin guide --framework machweb`, by the same command as above. The Deno
-stand-in covers only what the example apps use.
+are generated from `machin guide --framework machweb`, by the same command as above. **Only the functions with a Deno stand-in can be imported**, and those cover what the example apps
+use; any other, such as the cookie, server-sent events or router functions, is `JS-IMPORT003`.
 
 A copy of the framework's source ships with machin-js, so you don't need a machin checkout.
 Set `MACHIN_FRAMEWORK` to a framework directory to use another one.
@@ -78,7 +94,8 @@ display widths: East Asian wide characters and emoji take more room in a termina
 
 ## `"machin/desktop"`: window and drawing
 
-A small immediate-mode API over raylib that uses only numbers and strings:
+It is **native only**: there is no Deno stand-in, so a module that imports it can't run as
+JavaScript. A small immediate-mode API over raylib that uses only numbers and strings:
 
 | Function | Does |
 |---|---|
