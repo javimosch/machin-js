@@ -4,11 +4,12 @@
 import * as acorn from "npm:acorn@8.14.0";
 import { program, typeErrors } from "./typecheck.ts";
 import { Types } from "./types.ts";
+import { pushProblems } from "./ownership.ts";
 import { dirname, basename, resolve } from "jsr:@std/path@1";
 
 export type Diag = { code: string; msg: string; file: string; line: number };
 type Cmt = { block: boolean; text: string; start: number; end: number };
-type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; typed: Diag[]; types: Types; fns: Set<string>; imported: Set<string>; builtins: Set<string>; scope: Set<string> };
+type Ctx = { file: string; src: string; cmts: Cmt[]; diags: Diag[]; typed: Diag[]; types: Types; stable: Set<string>; arrow: Set<string> | null; fns: Set<string>; imported: Set<string>; builtins: Set<string>; scope: Set<string> };
 type Imp = { source: string; names: string[]; line: number };
 const GLOBALS = new Set(["String", "console"]);
 
@@ -72,6 +73,7 @@ function lint(c: Ctx, fn: any, doc: string | null) {
 }
 
 const SCALARS = new Set(["int", "string", "bool"]);
+const BUILTINS = new Set<string>(JSON.parse(Deno.readTextFileSync(new URL("../types/machin-builtins.json", import.meta.url))));
 
 /** Record a diagnostic that rests on type information. */
 function typeDiag(c: Ctx, code: string, msg: string, n: any): string {
@@ -115,6 +117,75 @@ function checkLogFormat(c: Ctx, args: any[]) {
     typeDiag(c, "JS-LOG001", "console.log would read % codes in this first argument; join into one string, or start with a fixed label", first);
 }
 
+/** An arrow may capture only parameters and variables declared directly in the function body. */
+function checkCapture(c: Ctx, name: string, n: any) {
+  if (!c.arrow || c.arrow.has(name) || c.fns.has(name) || c.imported.has(name) || c.stable.has(name)) return;
+  //why: JS gives each block and loop pass its own variable; machin has one per function, so a
+  //     captured inner variable would show whatever was stored in it last.
+  diag(c, "JS-CLOSURE001", `an arrow can't capture ${name}, declared inside a block or loop; pass it to a function that returns the arrow`, n);
+}
+
+/** `(a, b) => expr`. */
+function arrow(c: Ctx, e: any): string {
+  return scoped(c, () => {
+    const ps = e.params.map((x: any) => declare(c, x));
+    const outer = c.arrow;
+    c.arrow = new Set([...(outer ?? []), ...ps]);
+    const body = expr(c, e.body);
+    c.arrow = outer;
+    return `func(${ps.join(", ")}) { return ${body} }`;
+  });
+}
+
+/** A template literal becomes string concatenation, with str() around non-strings. */
+function template(c: Ctx, e: any, p: number): string {
+  const parts: string[] = [];
+  e.quasis.forEach((q: any, i: number) => {
+    if (q.value.cooked) parts.push(literal(c, { ...q, type: "Literal", value: q.value.cooked, raw: q.value.raw }));
+    const x = e.expressions[i];
+    if (!x) return;
+    checkScalar(c, x, "JS-VAL001", "interpolating");
+    parts.push(c.types.kind(x) === "string" ? expr(c, x, PREC["+"] + 1) : `str(${expr(c, x)})`);
+  });
+  const s = parts.join(" + ") || '""';
+  return parts.length > 1 && PREC["+"] < p ? `(${s})` : s;
+}
+
+/** `{a: 1, b}` builds the named struct its context expects. */
+function object(c: Ctx, e: any, expected?: string): string {
+  const odd = e.properties.find((x: any) => x.type !== "Property" || x.computed || x.method || x.kind !== "init" || x.key.type !== "Identifier");
+  if (odd) return diag(c, "JS-UNSUP001", "only plain `name: value` properties are supported", odd);
+  const fields = e.properties.map((x: any) => `${x.key.name}: ${expr(c, x.value)}`).join(", ");
+  const type = expected ?? c.types.spell(e);
+  if (!type || type.startsWith("[]") || SCALARS.has(type))
+    return typeDiag(c, "JS-OBJ001", "an object literal needs a named @typedef type here, e.g. from @returns {Todo}", e);
+  return `${type}{${fields}}`;
+}
+
+/** `xs.push(v)` as a statement. Whether it is allowed is decided per function (ownership.ts). */
+function push(c: Ctx, e: any): string | null {
+  const f = e.callee;
+  if (e.type !== "CallExpression" || f.type !== "MemberExpression" || f.computed || f.property.name !== "push") return null;
+  if (f.object.type !== "Identifier" || e.arguments.length !== 1) return diag(c, "JS-UNSUP001", "only list.push(oneValue) is supported", e);
+  const k = c.types.kind(f.object);
+  if (k !== "array") return typeDiag(c, k === "any" ? "JS-ANY001" : "JS-UNSUP001", "push is only supported on a list with a known type", e);
+  const list = expr(c, f.object);
+  return `${list} = append(${list}, ${expr(c, e.arguments[0])})`;
+}
+
+/** `for (const x of list)`. */
+function forOf(c: Ctx, s: any): string[] {
+  const d = s.left.type === "VariableDeclaration" && (s.left.kind === "const" || s.left.kind === "let") ? s.left.declarations[0] : null;
+  if (!d || s.await) return [diag(c, "JS-UNSUP001", "use for (const x of list)", s)];
+  return scoped(c, () => {
+    const over = expr(c, s.right);
+    const k = c.types.kind(s.right);
+    if (k !== "array") typeDiag(c, k === "string" ? "JS-STR002" : k === "any" ? "JS-ANY001" : "JS-UNSUP001", "for…of is only supported on a list", s);
+    const name = declare(c, d.id);
+    return [`for _, ${name} := range ${over} {`, ...block(c, s.body), "}"];
+  });
+}
+
 /** `.length` and `a[i]` on arrays; strings are refused (UTF-16 units natively become bytes). */
 function member(c: Ctx, e: any): string {
   const k = c.types.kind(e.object);
@@ -130,8 +201,10 @@ function member(c: Ctx, e: any): string {
 /** An array literal; machin needs its element type spelled out. */
 function array(c: Ctx, e: any, declared?: any): string {
   if (e.elements.some((x: any) => !x)) return diag(c, "JS-UNSUP001", "holes in arrays are not supported", e);
-  const items = e.elements.map((x: any) => expr(c, x)).join(", ");
   const type = (declared && c.types.spell(declared)) || c.types.spell(e);
+  //why: an object literal inside a list takes its struct name from the list's element type.
+  const element = type?.startsWith("[]") ? type.slice(2) : undefined;
+  const items = e.elements.map((x: any) => x.type === "ObjectExpression" ? object(c, x, element) : expr(c, x)).join(", ");
   if (!type?.startsWith("[]"))
     return typeDiag(c, "JS-ARR001", "the element type is unclear or mixed; use one type, or annotate with /** @type {int[]} */", e);
   //why: machin cannot write a literal of arrays (`[][]string{...}` does not parse).
@@ -172,14 +245,12 @@ function expr(c: Ctx, e: any, p = 0): string {
       if (!c.scope.has(e.name)) return diag(c, "JS-UNDEF001", `${e.name} is not defined or imported`, e);
       //why: your own and bridge functions are values in machin; builtins are not.
       if (c.builtins.has(e.name)) return diag(c, "JS-FNVAL001", `${e.name} is a machin builtin; pass an arrow: (x) => ${e.name}(x)`, e);
+      checkCapture(c, e.name, e);
       return e.name;
     case "ArrowFunctionExpression":
       if (e.body.type === "BlockStatement") return diag(c, "JS-UNSUP001", "arrow with block body unsupported; use an expression body", e);
       if (e.async) return diag(c, "JS-UNSUP001", "async is not supported", e);
-      return scoped(c, () => {
-        const ps = e.params.map((x: any) => declare(c, x));
-        return `func(${ps.join(", ")}) { return ${expr(c, e.body)} }`;
-      });
+      return arrow(c, e);
     case "MemberExpression": return member(c, e);
     case "UnaryExpression":
       if (e.operator !== "!" && e.operator !== "-") return diag(c, "JS-UNSUP001", `operator ${e.operator} unsupported`, e);
@@ -196,6 +267,8 @@ function expr(c: Ctx, e: any, p = 0): string {
     }
     case "ArrayExpression": return array(c, e);
     case "CallExpression": return call(c, e, p);
+    case "TemplateLiteral": return template(c, e, p);
+    case "ObjectExpression": return object(c, e);
     default: return diag(c, "JS-UNSUP001", `${e.type} unsupported`, e);
   }
 }
@@ -209,6 +282,7 @@ function call(c: Ctx, e: any, p = 0): string {
   if (!name) return diag(c, "JS-UNSUP001", "only plain function calls are supported", e);
   if (!c.scope.has(name) && !GLOBALS.has(name) && name !== "println")
     return diag(c, "JS-UNDEF001", `${name} is not defined or imported`, e);
+  if (c.scope.has(name)) checkCapture(c, name, e);
   const converts = name === "String" && !c.scope.has(name);
   if (converts || dotted === "console.log") e.arguments.forEach((x: any) => checkScalar(c, x, "JS-VAL001", "printing or converting"));
   //why: `parse(x, [])` needs a typed witness: the type the surrounding code expects back.
@@ -231,11 +305,12 @@ function stmt(c: Ctx, s: any): string[] {
         return [diag(c, "JS-UNSUP001", `use const or let, not ${s.kind}`, s)];
       }
       return s.declarations.flatMap((d: any) => decl(c, d));
-    case "ExpressionStatement": return [assignOrExpr(c, s.expression)];
+    case "ExpressionStatement": return [push(c, s.expression) ?? assignOrExpr(c, s.expression)];
     case "ReturnStatement": return [s.argument ? `return ${expr(c, s.argument)}` : "return"];
     case "IfStatement": return ifs(c, s);
     case "WhileStatement": return [`while ${expr(c, s.test)} {`, ...block(c, s.body), "}"];
     case "ForStatement": return forLoop(c, s);
+    case "ForOfStatement": return forOf(c, s);
     case "BreakStatement": return s.label ? [diag(c, "JS-UNSUP001", "labels are not supported", s)] : ["break"];
     default: return [diag(c, "JS-UNSUP001", `${s.type} unsupported`, s)];
   }
@@ -259,6 +334,17 @@ function names(n: any): string[] {
   return Object.values(n).flatMap((v) => Array.isArray(v) ? v.flatMap(names) : names(v));
 }
 
+//why: machin parses its keywords wherever they appear, and the emitter itself calls these
+//     builtins, so a variable with one of these names would break or hijack the output.
+const KEYWORDS = new Set(["func", "range", "chan", "make", "map", "struct", "type", "go", "select", "arena", "extern",
+  "export", "nil", "fn", "cstruct", "header", "link", "cflags", "defer", "var"]);
+const EMITTED = new Set(["len", "str", "println", "append", "parse"]);
+
+/** Refuse a declared name that means something to machin. */
+function checkName(c: Ctx, name: string, n: any, taken: Set<string>) {
+  if (KEYWORDS.has(name) || taken.has(name)) diag(c, "JS-NAME001", `${name} already means something in machin; choose another name`, n);
+}
+
 /** Declare a plain name in the current scope. */
 function declare(c: Ctx, id: any): string {
   if (id.type !== "Identifier") {
@@ -266,6 +352,7 @@ function declare(c: Ctx, id: any): string {
     return diag(c, "JS-UNSUP001", "destructuring, defaults and rest are not supported", id);
   }
   //why: machin has one scope per function, so a shadowing name would overwrite the outer one.
+  checkName(c, id.name, id, EMITTED);
   if (c.scope.has(id.name)) diag(c, "JS-SCOPE001", `${id.name} is already visible here; use another name`, id);
   c.scope.add(id.name);
   return id.name;
@@ -363,13 +450,22 @@ function func(c: Ctx, fn: any): string[] {
   c.scope = new Set([...c.fns, ...c.imported]);
   if (fn.async || fn.generator) diag(c, "JS-UNSUP001", "async functions and generators are not supported", fn);
   const params = fn.params.map((p: any) => declare(c, p));
+  const direct = fn.body.body.filter((n: any) => n.type === "VariableDeclaration").flatMap((n: any) => n.declarations.flatMap((d: any) => names(d.id)));
+  c.stable = new Set([...params, ...direct]);
+  for (const p of pushProblems(fn)) diag(c, "JS-PUSH001", p.msg, p.node);
   const doc = docOf(c, fn);
   lint(c, fn, doc);
+  //why: a function with a builtin's name would clash with it.
+  checkName(c, fn.id.name, fn, BUILTINS);
   const valued = returnsValue(fn.body);
   //why: a missing return is `undefined` in JS but a silent zero value in machin.
   if (valued && (bareReturn(fn.body) || !alwaysReturns(fn.body)))
     diag(c, "JS-RET001", `${fn.id.name} returns a value, so every path must return one`, fn);
-  const res = valued ? " (r)" : "";
+  //why: the named result must not collide with any of the function's own names.
+  const used = JSON.stringify(fn, (k, v) => (k === "loc" ? undefined : v));
+  let result = "r";
+  while (used.includes(`"name":"${result}"`)) result += "_";
+  const res = valued ? ` (${result})` : "";
   return [`func ${fn.id.name}(${params.join(", ")})${res} {`, ...block(c, fn.body), "}", ""];
 }
 
@@ -409,7 +505,7 @@ export function transpile(file: string, src: string, types?: Types): Mod {
     const path = "/__snippet__/snippet.js";
     types = new Types(program([path], { path, text: src }), path);
   }
-  const c: Ctx = { file, src, cmts, diags: [], typed: [], types, fns, imported, builtins, scope: new Set() };
+  const c: Ctx = { file, src, cmts, diags: [], typed: [], types, stable: new Set(), arrow: null, fns, imported, builtins, scope: new Set() };
   const lines = [...typedefs(c)];
   for (const n of decls) {
     if (n.type === "FunctionDeclaration") lines.push(...guarded(c, n));
