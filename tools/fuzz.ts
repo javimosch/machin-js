@@ -99,7 +99,27 @@ export function generate(seed: number): string {
   const clamp = (name: string) => `${name} %= 1009;`;
   const statement = (depth: number, v: string[]): string => {
     const target = r.pick(ints);
-    switch (r.int(depth > 0 ? 15 : 7)) {
+    switch (r.int(depth > 0 ? 19 : 7)) {
+      //why: a list built with push, then shared, read by for…of and changed through an alias.
+      case 14: {
+        const l = `list${fresh++}`, i = `i${fresh++}`, x = `x${fresh++}`, y = `y${fresh++}`;
+        return `\n    /** @type {int[]} */\n    const ${l} = []; ${l}.push(${num(1, v)} % 1009); for (let ${i} = 0; ${i} < ${r.int(5)}; ${i}++) { if (${cond(1, v)}) { ${l}.push(${i} + ${num(1, v)} % 1009); } ${l}.push(${i}); } ${l}[0] = ${num(1, v)} % 1009; const ${y} = ${l}; ${y}[0] += 1; for (const ${x} of ${l}) { console.log(String(${x})); } console.log(String(${l}.length), ${l}[0]);`;
+      }
+      case 15: return `console.log(\`n=\${${num(2, v)}} s=\${${text(1, v)}} c=\${${cond(1, v)}}|\`); console.log(String(len(\`\${s}-\${${num(1, v)}}\`)));`;
+      //why: object literals, alone and inside a list next to decoded rows.
+      case 16: {
+        const o = `obj${fresh++}`, all = `all${fresh++}`, x = `x${fresh++}`;
+        return `\n    /** @type {Row} */\n    const ${o} = { ok: ${cond(1, v)}, n: ${num(1, v)} % 1009 }; const ${all} = [${o}, makeRow(${num(1, v)} % 1009, true), { n: ${r.int(9)}, ok: false }]; for (const ${x} of ${all}) { console.log(\`\${${x}.n}:\${${x}.ok}\`); }`;
+      }
+      case 17: {
+        const so = `sorted${fresh++}`;
+        return `const ${so} = sort_by([${num(1, v)}, ${num(1, v)}, ${num(1, v)}, xs[0]], (m, k) => m ${r.pick(["<", ">"])} k); console.log(\`\${${so}[0]},\${${so}[1]},\${${so}[2]},\${${so}[3]},\${xs[0]}\`);`;
+      }
+      //why: an arrow capturing a parameter, which changes after the arrow is made.
+      case 18: {
+        const g = `fn${fresh++}`;
+        return `\n    /** @type {(n: int) => int} */\n    const ${g} = (m) => m + a; a = ${num(1, v)} % 1009; console.log(String(applyTwice(${g}, ${r.int(9)})));`;
+      }
       case 9: {
         const w = `w${fresh++}`;
         return `let ${w} = 0; while (${w} < ${r.int(4)}) { ${w}++; ${body(depth - 1, [...v, w])} if (${cond(1, v)}) { break; } }`;
@@ -141,7 +161,7 @@ export function generate(seed: number): string {
   const funcs = Array.from({ length: 4 }, (_, n) =>
     `/**\n * Step ${n}.\n * @param {int} a\n * @param {int} b\n * @param {int[]} xs\n * @returns {int}\n */\nfunction step${n}(a, b, xs) {\n  //why: random.\n  let s = "${word()}"; let p = ${r.chance(0.5)};\n  ${statement(2, ["a", "b"])}\n  ${statement(2, ["a", "b"])}\n  console.log(String(a), s, p);\n  return (a + b) % 1009;\n}`);
   const calls = funcs.map((_, n) => `  console.log(String(step${n}(${r.int(100)}, ${r.int(100)}, xs)));`).join("\n");
-  return `import { len, substr, parse } from "machin";\n${HELPERS}\n${funcs.join("\n")}\n/** Run the steps. */\nexport function main() {\n  //why: random.\n  const xs = [${r.int(9)}, ${r.int(9)}, ${r.int(9)}];\n${calls}\n  console.log(String(xs[0]), String(xs[1]), String(xs[2]));\n}\n`;
+  return `import { len, substr, parse, sort_by } from "machin";\n${HELPERS}\n${funcs.join("\n")}\n/** Run the steps. */\nexport function main() {\n  //why: random.\n  const xs = [${r.int(9)}, ${r.int(9)}, ${r.int(9)}];\n${calls}\n  console.log(String(xs[0]), String(xs[1]), String(xs[2]));\n}\n`;
 }
 
 /** Run a command, returning exit code and output. */

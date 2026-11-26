@@ -84,6 +84,7 @@ can't produce code a human can't read.
 - **Typed builtins** (`types/machin.d.ts`) — generated from `machin guide`, so they never drift from the compiler.
 - **Run it as plain JS** (`shim/`) — Deno twins of the builtins, so the same modules run under a normal debugger and can be diffed against the native build.
 - **Bridges** — `machin/web` (machweb HTTP server) and `machin/desktop` (a raylib UI behind a scalar-only API, since JS can't express FFI).
+- **[`examples/tally`](examples/tally)** — a command-line expense summarizer: arguments, files, errors on stderr and exit codes.
 - **[`examples/todo`](examples/todo)** — a todo app with a **web** shell (SSR + JSON API) and a **desktop** shell (raylib window) over one shared core, and a gate that checks both.
 
 ## Quick start
@@ -110,10 +111,10 @@ test/gate.sh                              # everything: gold files, Deno-vs-nati
 
 ## Honest limits
 
-This is an **alpha**. It has one worked example, and the language is a deliberately small subset:
+This is an **alpha**. It has two worked examples, and the language is a deliberately small subset:
 
-- **Supported:** functions (also as values), `const`/`let`, `if`/`while`/`for`, integer and string operations, `Math.trunc` division, arrays of scalars and structs, `@typedef` structs, ES modules.
-- **Not yet:** decimals, classes, `async`, template literals, `??`, `switch`, method calls like `.push`, object literals, `continue`, block-bodied arrows.
+- **Supported:** functions (also as values), `const`/`let`, `if`/`while`/`for`/`for…of`, integer and string operations, template literals, `Math.trunc` division, arrays (with `push` while unshared), object literals as `@typedef` structs, ES modules.
+- **Not yet:** decimals, classes, `async`, `??`, `switch`, `.map`/`.filter`, maps, `continue`, block-bodied arrows.
 - **Never (by design):** prototypes, `this`, `eval`, dynamic keys, `==` coercion, npm.
 - **Numbers and strings:** numbers are integers (no decimals yet), and strings are counted in bytes (`len`, `substr`).
 - **Known differences:** some behavior can still differ from plain JavaScript; they are [listed](docs/language.md#known-differences).

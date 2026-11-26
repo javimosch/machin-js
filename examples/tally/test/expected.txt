@@ -1,0 +1,35 @@
+== good
+books         40.50     (1)
+travel        22.99     (2)
+food          19.55     (3)
+total         83.04
+exit 0
+== commas
+stderr: line 6: expected category,amount[,note]
+exit 1
+== bad
+stderr: line 2: expected category,amount[,note]
+stderr: line 3: expected category,amount[,note]
+stderr: line 4: expected category,amount[,note]
+stderr: line 5: expected category,amount[,note]
+stderr: line 6: expected category,amount[,note]
+stderr: line 7: expected category,amount[,note]
+stderr: line 8: expected category,amount[,note]
+exit 1
+== empty
+stderr: tally: cannot read test/fixtures/empty.csv (missing or empty)
+exit 2
+== utf8-crlf
+café         2.50      (1)
+food          1.00      (1)
+total         3.50
+exit 0
+== missing
+stderr: tally: cannot read test/fixtures/missing.csv (missing or empty)
+exit 2
+== no arguments
+stderr: usage: tally <expenses-file>
+exit 2
+== two arguments
+stderr: usage: tally <expenses-file>
+exit 2

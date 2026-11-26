@@ -12,3 +12,4 @@ examples/todo/todos.db
 !docs/assets/shots/*.png
 docs/_site/
 docs/_cache/
+examples/tally/tally

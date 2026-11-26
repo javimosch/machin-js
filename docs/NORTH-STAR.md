@@ -16,7 +16,7 @@ The order of work toward 1.0, with exit tests, is in [ROADMAP.md](ROADMAP.md).
 | Nothing implicit | undeclared names, bad imports, name clashes, import cycles are errors | ✅ (`JS-UNDEF001`, `JS-IMPORT00x`, `JS-DUP001`, `JS-CYCLE001`) |
 | Shared core, thin shells | ≥ 3 shells over one core | 🟡 web + desktop done; terminal next |
 | Debuggable in JS terms | a native panic reports `file.js:line` | ❌ not yet (source maps) |
-| Real-program coverage | ≥ 2 distinct apps compile and pass their gates | 🟡 one (todo) |
+| Real-program coverage | ≥ 2 distinct apps compile and pass their gates | ✅ two (todo, tally) |
 
 ## Tiers
 

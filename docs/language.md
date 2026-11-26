@@ -88,6 +88,49 @@ export function listTodos(db) {
 - `==` and `!=` on numbers, strings and booleans
 - `String(x)` and `console.log(...)` of numbers, strings and booleans
 - `parse(json, [])` into a struct or a list, typed by where the result is used
+- `for (const x of list)`
+- template literals: `` `${n} items` `` with numbers, strings and booleans
+- object literals that match a named `@typedef`: `{ id, title: "x", done: 0 }`
+- `list.push(value)`, while the function is the list's only owner (below)
+
+### Building a list with `push`
+
+In JavaScript, `push` changes the one list that every variable pointing to it sees. machin's
+`append` may or may not keep them connected. So `push` is allowed only while nobody else can be
+pointing to the list: **build it completely, then share it**.
+
+<!-- check: ok -->
+```js
+/**
+ * The squares below n squared.
+ * @param {int} n
+ * @returns {int[]}
+ */
+export function squares(n) {
+  //why: pushed to only before anyone else can see it.
+  /** @type {int[]} */
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    out.push(i * i);
+  }
+  return out;
+}
+```
+
+The list must be created in the same function with `const name = [...]`. Reading and writing its
+elements and reading `.length` don't share it. Passing it to a function, assigning it, capturing it
+in an arrow or looping over it with `for…of` does, and no `push` may come after that, including on a
+loop's next pass. `return name` is always fine.
+
+### Arrows and captured variables
+
+An arrow may use its own parameters, and the function's parameters and variables declared directly
+in its body. It may not capture a variable declared inside a block or a loop: JavaScript makes a new
+one each time, and machin doesn't.
+
+> Put a `/** @type {...} */` comment on its own line. TypeScript ignores one that follows other
+> code on the same line.
+
 
 ### Strings are counted in bytes
 
@@ -114,8 +157,8 @@ export function chop(s) {
 
 Plain division (`/`), decimals, nested array literals, `null`, non-ASCII string literals,
 `typeof`, `var`, destructuring, default and rest parameters, assigning to an object field,
-shadowing a name, classes, `async`, template literals, `??`, `switch`, method calls such as
-`.push` or `.map`, object literals, `continue`, block-bodied arrows, top-level `const`, and
+shadowing a name, classes, `async`, `??`, `switch`, method calls other than `push` (such as `.map`),
+object spread and computed keys, tagged templates, `continue`, block-bodied arrows, top-level `const`, and
 ternaries in any other position.
 
 A function that returns a value must return one on every path. The transpiler accepts only a final
@@ -133,10 +176,13 @@ is a bug: please report it.
 | integer results beyond 2^53 | rounded | exact, and they wrap past 2^63 |
 | reading past the end of an array | `undefined` | with `--safe`, the program stops; without it, no error |
 | `substr` cutting a non-ASCII character in half | a replacement character | the raw bytes |
-| other builtins from `"machin"` | hand-written stand-ins in `shim/`, covering only what the examples use | the real builtin |
+| other builtins from `"machin"` | a hand-written stand-in in `shim/`, if there is one | the real builtin |
+| `parse_int` of a number beyond 2^53 | rounded | exact, limited to 64 bits |
 
 Random programs are compared on both runtimes (see [how it is tested](how-it-works.md)), but they
-only use the features the generator knows. Other builtins, decimals from builtins such as
+only use the features the generator knows. The stand-ins for string and list builtins are compared
+with the real ones on awkward inputs (`test/shim_test.ts`); the SQLite and web ones are covered only
+by the todo app's tests. Other builtins, decimals from builtins such as
 `parse_float`, and ordering of non-ASCII strings are not covered.
 
 ## Never, by design

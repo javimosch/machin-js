@@ -53,8 +53,10 @@ export function pushProblems(fn: any): Problem[] {
     }
     //why: after it is shared, no later push may happen — neither further down nor on a loop's
     //     next pass. `return xs` is exempt: nothing runs after it.
+    //     A loop that contains the declaration doesn't count: each pass makes a new list.
+    const born = (l: any) => l.start <= made[0].start && made[0].end <= l.end;
     for (const s of all.filter((r) => r.use === "share")) {
-      const late = pushes.find((p) => p.node.start > s.node.start || p.loops.some((l) => s.loops.includes(l)));
+      const late = pushes.find((p) => p.node.start > s.node.start || p.loops.some((l) => !born(l) && s.loops.includes(l)));
       if (late) {
         problems.push({ node: late.node, msg: `${name} is already shared (passed on, assigned or captured) so it can't be pushed to any more` });
         break;

@@ -4,7 +4,8 @@
 
 machin-js turns a strict, JSDoc-typed subset of JavaScript into
 [machin](https://github.com/javimosch/machin) code, which compiles to a native binary. It is
-**alpha**, with one worked example: a todo app with web and desktop front ends.
+**alpha**, with two worked examples: a todo app with web and desktop front ends, and a
+command-line expense summarizer.
 
 | Start here | |
 |---|---|

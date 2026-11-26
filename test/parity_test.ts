@@ -91,6 +91,8 @@ const CASES: Case[] = [
   { name: "variable named like a machin keyword", body: "const range = 3; console.log(range);", expect: "JS-NAME001" },
   { name: "variable that would hide an emitted builtin", body: "const str = 3; console.log(`${str}`);", expect: "JS-NAME001" },
   { name: "parameter and local named r in a valued function", body: "console.log(f(4)); console.log(g(2));", extra: fn("f(r)", "return r + 1;", "@param {int} r") + fn("g(a)", 'const r = "s"; return r + String(a);', "@param {int} a"), expect: "same" },
+  { name: "list made fresh on each loop pass, kept and shared", body: "/** @type {int[]} */\n  let kept = []; for (let i = 0; i < 4; i++) {\n    /** @type {int[]} */\n    const row = []; for (let j = 0; j <= i; j++) { row.push(i * 10 + j); } if (i == 1) { kept = row; } console.log(first(row) + row.length); } console.log(`${kept.length} ${kept[1]}`);", extra: fn("first(xs)", "return xs[0];", "@param {int[]} xs"), expect: "same" },
+  { name: "list from outside the loop shared then pushed on the next pass", body: "const row = [0]; let other = row; for (let i = 0; i < 4; i++) { row.push(i); other = row; } console.log(other.length);", expect: "JS-PUSH001" },
   { name: "ternary", body: 'const a = 1; const m = a == 1 ? "y" : "n"; console.log(m);', expect: "same" },
 ];
 

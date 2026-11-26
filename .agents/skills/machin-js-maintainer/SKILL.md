@@ -46,6 +46,7 @@ Supersede or edit stale state rather than letting two versions disagree.
 ```sh
 deno test -A test/                       # diagnostics, parity, typings, docs examples
 examples/todo/test/gate.sh               # gold, Deno vs native, HTTP smoke, desktop input
+examples/tally/test/gate.sh              # CLI app: Deno vs native, and expected output
 cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.ts
 ```
 
@@ -53,6 +54,9 @@ cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.t
   natively as under Deno, or be rejected with a `JS-` code.
 - **Allow-list, never block-list.** A construct is translated only when it is proven equivalent.
 - **Docs examples marked `<!-- check: ok|CODE -->` are executed.** Mark new examples.
+- **A new Deno stand-in needs a `test/shim_test.ts` case.** Four hand-written ones were wrong.
+- **Probe machin's behavior before mapping a feature** (`push`/`append` aliasing and closure capture
+  both differed).
 - **Probe a claim before publishing it.** "No silent divergence" was once published and was false.
 - **Gold files** (`examples/todo/gold/`) change only on purpose: read the new `.src`, then copy it.
   They are reviewed snapshots; Deno-versus-native is the independent check.

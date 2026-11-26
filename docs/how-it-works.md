@@ -27,6 +27,8 @@ added. `"machin/desktop"` has none.
 | `test/types_test.ts` | the typings are valid, the todo app type-checks, and type mistakes stop a build |
 | parity cases (`test/parity_test.ts`) | each tricky program behaves natively as under Deno, or is rejected with the expected code |
 | random programs (`test/fuzz_test.ts`, `tools/fuzz.ts`) | generated well-typed programs behave the same under Deno and natively; 30 fixed seeds run in the tests, and `deno run -A tools/fuzz.ts 600 1234` searches further |
+| `test/shim_test.ts` | the Deno stand-ins for string and list builtins give the same results as the real ones |
+| `examples/tally/test/gate.sh` | the CLI app's output, errors and exit codes are identical under Deno and natively |
 | gold comparison | transpiler output has not changed unexpectedly |
 | demo, Deno and native | both produce the same output |
 | HTTP smoke test, Deno and native | the same requests give the expected results on both |

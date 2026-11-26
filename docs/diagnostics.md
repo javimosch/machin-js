@@ -321,6 +321,73 @@ function f(a) {
 
 With two or more arguments, JavaScript treats a string first argument as a format: `%%` prints as `%`, and `%s` takes the next argument. machin does not. Start with a fixed label, or join into one string.
 
+## JS-PUSH001: `push` on a list that may be shared
+
+<!-- check: JS-PUSH001 -->
+```js
+/**
+ * Example.
+ * @param {int[]} xs
+ */
+function f(xs) {
+  //why: example.
+  xs.push(1);
+}
+```
+
+The caller wouldn't see the new item natively. Create the list in this function, push to it before sharing it, and return it. See [building a list](language.md#building-a-list-with-push).
+
+## JS-CLOSURE001: arrow captures a block or loop variable
+
+<!-- check: JS-CLOSURE001 -->
+```js
+/**
+ * Example.
+ */
+function f() {
+  //why: example.
+  let g = () => 0;
+  for (let i = 0; i < 3; i++) {
+    g = () => i;
+  }
+  console.log(g());
+}
+```
+
+JavaScript gives each loop pass its own `i`; machin has one, so the two would print different numbers. Write a function that takes the value and returns the arrow.
+
+## JS-OBJ001: object literal without a named type
+
+<!-- check: JS-OBJ001 -->
+```js
+/**
+ * Example.
+ */
+function f() {
+  //why: example.
+  const p = { a: 1 };
+  console.log(p.a);
+}
+```
+
+machin structs have names. Declare a `@typedef` and say where it applies, with `@returns {T}` or `/** @type {T} */` on its own line.
+
+## JS-NAME001: name taken by machin
+
+<!-- check: JS-NAME001 -->
+```js
+/**
+ * Example.
+ */
+function f() {
+  //why: example.
+  const range = 3;
+  console.log(range);
+}
+```
+
+Some names are machin keywords, a few (`len`, `str`, `append`, `parse`, `println`) are used by the generated code, and your functions can't take a builtin's name.
+
 ## JS-INTERNAL001: transpiler bug
 
 The transpiler failed on your code. Please [report it](https://github.com/javimosch/machin-js/issues) with the snippet.
