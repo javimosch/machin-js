@@ -7,6 +7,8 @@ permissions:
   contents: read
 env:
   MACHIN_VERSION: v0.143.0
+  # machweb.src from the pinned checkout; the tests and every gate read it
+  MACHIN_FRAMEWORK: ${{ github.workspace }}/.machin/framework
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -39,4 +41,4 @@ jobs:
       - name: Linkbox gate (API, Deno vs native transcript)
         run: examples/linkbox/test/gate.sh
       - name: Todo gate (gold, Deno vs native, HTTP smoke; desktop is skipped without raylib)
-        run: MACHIN_FRAMEWORK="$GITHUB_WORKSPACE/.machin/framework" examples/todo/test/gate.sh
+        run: examples/todo/test/gate.sh

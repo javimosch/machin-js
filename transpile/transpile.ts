@@ -602,7 +602,12 @@ export async function buildGraph(entry: string): Promise<{ order: { path: string
   }
   //why: bridge and framework sources share that namespace too, including their internal names.
   for (const file of native) {
-    const taken = new Set([...(await Deno.readTextFile(file)).matchAll(/^(?:export )?(?:func|type) (\w+)/gm)].map((m) => m[1]));
+    const source = await Deno.readTextFile(file).catch(() => null);
+    if (source === null) {
+      add(resolve(entry), 1, "JS-IMPORT002", `cannot read ${file}; set MACHIN_FRAMEWORK to the framework directory of a machin source checkout`);
+      continue;
+    }
+    const taken = new Set([...source.matchAll(/^(?:export )?(?:func|type) (\w+)/gm)].map((m) => m[1]));
     for (const [path, m] of mods) for (const [name, line] of m.defines) {
       if (taken.has(name)) add(path, line, "JS-NAME001", `${name} is already defined by ${basename(file)}, which this program includes; choose another name`);
     }
