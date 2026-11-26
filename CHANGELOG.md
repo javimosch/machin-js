@@ -1,8 +1,11 @@
 # Changelog
 
-Newest first. Nothing has been released yet.
+Newest first.
 
-## Unreleased
+## 0.8.0 (2026-11-26)
+
+First release: an **alpha** prerelease. The binary is built and tested for Linux x86-64 (glibc) only.
+It needs machin 0.144.0 or newer and a C compiler; `machin-js debug` also needs Deno.
 
 - **The `machin-js` command:** `new`, `check`, `build`, `run`, `debug`; one self-contained binary.
   No machin source checkout needed.

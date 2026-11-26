@@ -5,6 +5,8 @@ on:
     tags: ["v*"]
 permissions:
   contents: write
+  # to read whether the test workflow passed for the tagged commit
+  actions: read
 env:
   MACHIN_VERSION: v0.144.0
 jobs:
@@ -12,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # full history: needed to check that the tagged commit is on main
+          fetch-depth: 0
       - uses: denoland/setup-deno@v2
         with:
           deno-version: "2.2.8"
@@ -21,6 +26,10 @@ jobs:
           test "$(gh run list --workflow=test.yml --commit "$GITHUB_SHA" --json conclusion -q '.[0].conclusion')" = success
         env:
           GH_TOKEN: ${{ github.token }}
+      - name: The tag must match the version the command reports
+        run: |
+          want=$(sed -n 's/^export const VERSION = "\(.*\)";$/\1/p' cli/machin-js.ts)
+          test "v$want" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME but the command says $want"; exit 1; }
       - name: Install SQLite headers and the pinned machin (checksum verified)
         run: |
           sudo apt-get update -q && sudo apt-get install -y -q libsqlite3-dev
@@ -36,6 +45,6 @@ jobs:
           tools/smoke-release.sh dist/machin-js-x86_64-unknown-linux-gnu
           cd dist && sha256sum machin-js-* > SHA256SUMS.txt
       - name: Publish
-        run: gh release create "$GITHUB_REF_NAME" dist/machin-js-x86_64-unknown-linux-gnu dist/SHA256SUMS.txt --title "machin-js $GITHUB_REF_NAME" --notes-file CHANGELOG.md --prerelease
+        run: gh release create "$GITHUB_REF_NAME" dist/machin-js-x86_64-unknown-linux-gnu dist/SHA256SUMS.txt dist/THIRD_PARTY_LICENSES.txt --title "machin-js $GITHUB_REF_NAME" --notes-file CHANGELOG.md --prerelease
         env:
           GH_TOKEN: ${{ github.token }}
