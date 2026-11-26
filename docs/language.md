@@ -56,7 +56,7 @@ That line also tells the transpiler to include `model.js` in the build.
 **`parse` is only for JSON your program controls:** the direct result of `sqlite_query(...)`, or
 text built from constants plus `String()` of numbers and booleans. machin's `parse` never fails:
 bad, cut-off or mistyped input silently becomes empty values, while `JSON.parse` throws or keeps the
-wrong types. So outside input is rejected with
+wrong types. So outside input ([machin#716](https://github.com/javimosch/machin/issues/716)) is rejected with
 [`JS-JSON001`](diagnostics.md#js-json001-parse-of-outside-input). **Reading JSON request bodies is not
 supported;** take form fields or query parameters, as
 [linkbox](https://github.com/javimosch/machin-js/tree/main/examples/linkbox) does. The JSON's shape
@@ -201,7 +201,7 @@ the apps' tests. Other builtins, decimals from builtins such as
 ### Behaves the same, but may surprise you
 
 - `json()` writes control characters other than newline, carriage return and tab **unescaped**, which
-  is not valid JSON. That is a machin bug; the stand-in copies it so you see it while debugging.
+  is not valid JSON. That is a machin bug ([machin#715](https://github.com/javimosch/machin/issues/715)); the stand-in copies it so you see it while debugging.
   Reject control characters in input, as linkbox does.
 - Strings end at the first zero byte: `url_decode("a%00b")` is `"a"`.
 

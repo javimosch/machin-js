@@ -28,7 +28,8 @@ needs them.
 
 ## Risks
 
-- **machin dependencies:** none open. #710–#713 were cleared in machin 0.143.0. Bundling bridges
+- **machin dependencies:** [#716](https://github.com/javimosch/machin/issues/716) (no way to detect invalid JSON) blocks closing Phase 2;
+  [#715](https://github.com/javimosch/machin/issues/715) (`json()` can emit invalid JSON) is worked around. #710–#713 were cleared in 0.143.0. Bundling bridges
   (Phase 4) still needs a way to ship `machweb.src` without a machin checkout.
 - **machin changes often:** CI pins a version; testing the latest one too is still to do.
 - **Numbers never match completely:** document the limits, and reject or check what we can.
@@ -56,5 +57,5 @@ needs them.
   bookmarks API. Its main workaround: it **can't read JSON request bodies**, because machin's `parse`
   never reports bad input, so it takes form fields.
 - **Why the phase stays open:** that limit, and tally's (no `padEnd`, no maps), mean "without
-  workarounds" isn't met. The JSON one needs a way to validate JSON in machin. Phase 3 doesn't
+  workarounds" isn't met. The JSON one needs a way to validate JSON in machin ([#716](https://github.com/javimosch/machin/issues/716)). Phase 3 doesn't
   depend on it, so it goes ahead.

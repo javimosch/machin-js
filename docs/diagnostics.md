@@ -408,7 +408,7 @@ function f(body) {
 ```
 
 machin's `parse` never fails: bad input silently becomes empty values, and JavaScript's `JSON.parse`
-behaves differently. Use `parse` only on `sqlite_query(...)` results or JSON your code builds. Read
+behaves differently ([machin#716](https://github.com/javimosch/machin/issues/716)). Use `parse` only on `sqlite_query(...)` results or JSON your code builds. Read
 outside input as [form fields or query parameters](language.md#decoding-rows).
 
 ## JS-INTERNAL001: transpiler bug

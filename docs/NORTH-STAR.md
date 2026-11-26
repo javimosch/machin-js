@@ -48,7 +48,14 @@ verified with real X input on a private display.
 
 ## Upstream dependencies (machin)
 
-None open. The first four walls were cleared in machin 0.143.0, now the minimum version:
+**Open:**
+
+| Issue | Wall |
+|---|---|
+| [machin#715](https://github.com/javimosch/machin/issues/715) | `json()` leaves most control characters unescaped, so its output can be invalid JSON |
+| [machin#716](https://github.com/javimosch/machin/issues/716) | nothing can tell that JSON is invalid, so machin-js can't accept JSON input (blocks closing Phase 2) |
+
+**Cleared** in machin 0.143.0, now the minimum version:
 
 | Issue | Was | machin-js now |
 |---|---|---|
