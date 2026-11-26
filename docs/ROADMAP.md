@@ -23,21 +23,28 @@ needs them.
 | **2. Useful** (0.4–0.6) | typed arrays, object literals, `for…of`, template literals, `push`/`map`/`filter`, error handling; a CLI tool and an API service | all three apps pass their checks without workarounds | done (`.map`/`.filter` left out: no app needed them) |
 | **3. Debuggable** (0.7) | errors at `file.js:line`; shims for every supported builtin; debugging guide | the agent-off test: a planted bug is found and fixed by a human alone | done, with a **simulated** human (owner's choice; see notes) |
 | **4. Shippable** (0.8–0.9) | a `machin-js` command (`new`, `build`, `run`, `check`, `debug`) via `deno compile`; bundled bridges; tested machin versions; releases and changelog | a clean machine goes from install to a running app using only the docs | in progress: only the first release is left |
-| **5. Stable** (1.0) | freeze the subset; compatibility policy; a period of real use with no new features | all five criteria hold, with no open silent-difference bugs | in progress: **feature freeze since 2026-11-26** (below); policy approved |
+| **5. Stable** (1.0) | freeze the subset; compatibility policy; a period of real use with no new features | all five criteria hold, with no open silent-difference bugs | paused: [feature freeze lifted](#growing-support-now) on 2026-11-27; policy approved |
 
-## Feature freeze
+## Growing support (now)
 
-Started **2026-11-26** (at v0.9.0).
+**The owner lifted the feature freeze on 2026-11-27: no new release until machin-js supports more.**
+The direction: machin's core as a few modules designed for JavaScript, in place of npm. Each one has
+typings, a compiled side, a Deno stand-in, tests comparing the two, and an example app that uses it.
 
-- **Allowed:** bug fixes, fixes for silent differences, tests, docs, and updates for new machin
-  releases.
-- **Not allowed:** newly accepted JavaScript, or new module functions.
-- **Ends when all of these hold:**
-  - at least 30 days have passed since it started (**2026-12-26** at the earliest);
-  - no known silent difference has been open during the last 14 days;
-  - the owner has built one real app of their own with machin-js.
-- **If a missing feature blocks that app,** the owner and the maintainer decide together whether to
-  add it. If it is added, the 30 days start again.
+| Module | Status |
+|---|---|
+| `machin/crypto`: SHA-256, HMAC, random tokens, comparing secrets | on `main`; linkbox's signed webhook uses it |
+| `machin/http`: outgoing requests | **waiting on machin.** Its HTTP client has behavior we can't hide behind a module, including no timeout |
+| `machin/sso`: login | after HTTP |
+| `machin/ws`: WebSocket | needs a design for connections and concurrency first |
+
+Which of these the next release needs is the owner's call.
+
+## Feature freeze (lifted)
+
+It ran from 2026-11-26 to 2026-11-27. Phase 5 is paused, and a new freeze comes before 1.0, with
+terms agreed then. The earlier terms asked for 30 days, no known silent difference open during the
+last 14, and one real app of the owner's own.
 
 **Outside 1.0:** the desktop shell stays experimental. A terminal shell, client-side UI,
 `async`/`await` and mobile come later, unless one of the apps needs them.
@@ -116,7 +123,7 @@ Started **2026-11-26** (at v0.9.0).
   tests fail if any changes.
 - **What the audit found:** 18 constructs that weren't handled soundly on its first run, one of them
   a silent difference (`__proto__` as a key) that is in v0.8.0.
-- **Left before 1.0:** the end of the feature freeze, and criterion 3: a human has fixed a bug
+- **Left before 1.0:** more support, then a new freeze, and criterion 3: a human has fixed a bug
   without an agent (a bug fixed while building the real app counts). The
   [compatibility policy](compatibility.md) was approved on 2026-11-26.
 - **v0.8.1** ([release](https://github.com/javimosch/machin-js/releases/tag/v0.8.1)) ships the audit's
@@ -130,7 +137,7 @@ Started **2026-11-26** (at v0.9.0).
 - **2026-11-26, later the same day:** `check` accepted any builtin or `machin/web` function, but
   only some have a Deno stand-in. The rest are now `JS-IMPORT003`. Checking the stand-ins without a
   direct comparison found four more differences (`read_file`, `eprintln`, `env`), fixed on `main`
-  (not yet released). The 14-day count in the freeze terms runs from this fix.
+  (not yet released).
 - **jot** was added during the freeze: an example in the existing subset, not a language feature.
   It doesn't count as the owner's own app. Limits it met: no field named `type`, no keys such as
   `help-json`, one-line `@typedef` only, no top-level constants.

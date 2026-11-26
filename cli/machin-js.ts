@@ -125,8 +125,8 @@ async function debug(entry: string, args: string[], inspect: boolean): Promise<n
   if (graph.native.some((f) => f.endsWith("desktop.src"))) throw new Stop("machin/desktop has no Deno version to debug under");
   const dir = await Deno.makeTempDir({ prefix: "machin-js-debug-" });
   try {
-    for (const name of ["machin.js", "web.js", "json.js", "text.js"]) await Deno.writeTextFile(join(dir, name), await shipped(`shim/${name}`));
-    await Deno.writeTextFile(join(dir, "map.json"), JSON.stringify({ imports: { machin: "./machin.js", "machin/web": "./web.js", "machin/json": "./json.js", "machin/text": "./text.js" } }));
+    for (const name of ["machin.js", "web.js", "json.js", "text.js", "crypto.js"]) await Deno.writeTextFile(join(dir, name), await shipped(`shim/${name}`));
+    await Deno.writeTextFile(join(dir, "map.json"), JSON.stringify({ imports: { machin: "./machin.js", "machin/web": "./web.js", "machin/json": "./json.js", "machin/text": "./text.js", "machin/crypto": "./crypto.js" } }));
     //why: your real files are imported, so breakpoints and stack traces point at them.
     await Deno.writeTextFile(join(dir, "start.mjs"), `import { main } from ${JSON.stringify(toFileUrl(resolve(entry)).href)};\nmain();\n`);
     const flags = ["run", "-A", "--no-config", `--import-map=${join(dir, "map.json")}`, ...(inspect ? ["--inspect-brk"] : [])];
@@ -162,14 +162,14 @@ async function create(dir: string) {
   const entries = await Array.fromAsync(Deno.readDir(dir)).catch(() => []);
   if (entries.length) throw new Stop(`${dir} is not empty`, 2);
   await Deno.mkdir(join(dir, ".machin-js", "types"), { recursive: true });
-  for (const f of ["machin.d.ts", "machweb.d.ts", "json.d.ts", "text.d.ts", "desktop.d.ts", "globals.d.ts"]) {
+  for (const f of ["machin.d.ts", "machweb.d.ts", "json.d.ts", "text.d.ts", "crypto.d.ts", "desktop.d.ts", "globals.d.ts"]) {
     await Deno.writeTextFile(join(dir, ".machin-js", "types", f), await shipped(`types/${f}`));
   }
   const config = {
     compilerOptions: {
       checkJs: true, strict: true, noEmit: true, target: "ES2022", module: "ESNext", moduleResolution: "bundler",
       lib: ["ES2022"], types: [], baseUrl: ".machin-js/types",
-      paths: { machin: ["machin.d.ts"], "machin/web": ["machweb.d.ts"], "machin/json": ["json.d.ts"], "machin/text": ["text.d.ts"], "machin/desktop": ["desktop.d.ts"] },
+      paths: { machin: ["machin.d.ts"], "machin/web": ["machweb.d.ts"], "machin/json": ["json.d.ts"], "machin/text": ["text.d.ts"], "machin/crypto": ["crypto.d.ts"], "machin/desktop": ["desktop.d.ts"] },
     },
     include: ["**/*.js", ".machin-js/types/globals.d.ts"],
   };

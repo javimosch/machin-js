@@ -1,6 +1,6 @@
 # Modules
 
-Your own files are ordinary ES modules. Three more modules connect to machin.
+Your own files are ordinary ES modules. These modules connect to machin.
 
 ## `"machin"`: builtins
 
@@ -12,8 +12,8 @@ runs as JavaScript. There are 24:
 <!-- /builtins -->
 
 Importing any other builtin is [`JS-IMPORT003`](diagnostics.md#js-import003-no-deno-stand-in).
-That includes crypto, outgoing HTTP, WebSocket and process functions: machin has them, machin-js
-doesn't support them yet.
+That includes outgoing HTTP, WebSocket and process functions: machin has them, machin-js
+doesn't support them yet. For hashing and random tokens use [`machin/crypto`](#machincrypto-hashing-and-tokens).
 
 <!-- check: JS-IMPORT003 -->
 ```js
@@ -91,6 +91,46 @@ thousands of random documents.
 
 It counts characters the same way in both runtimes, so accented text lines up. It doesn't know
 display widths: East Asian wide characters and emoji take more room in a terminal than one column.
+
+## `"machin/crypto"`: hashing and tokens
+
+**On `main`, not in the 0.9.1 download.**
+
+<!-- check: ok -->
+```js
+import { hmac_sha256_hex, digest_equal } from "machin/crypto";
+
+/**
+ * Was this body signed with our secret?
+ * @param {string} body
+ * @param {string} signature the hex HMAC that came with it.
+ * @param {string} secret
+ * @returns {boolean}
+ */
+export function signed(body, signature, secret) {
+  //why: not ==, whose timing would help someone guess the signature.
+  return digest_equal(signature, hmac_sha256_hex(secret, body));
+}
+```
+
+| Function | Gives |
+|---|---|
+| `sha256_hex(text)` | SHA-256 as 64 lowercase hex characters |
+| `hmac_sha256_hex(key, message)` | HMAC-SHA-256 as 64 lowercase hex characters |
+| `random_hex(bytes)` | that many secure random bytes, as twice as many hex characters; `""` for 0 or less |
+| `digest_equal(a, b)` | whether two secrets or signatures are equal |
+
+Text is hashed as its UTF-8 bytes, and **everything is text**: you can't hash a file's raw bytes or
+use a binary key yet. Text that isn't well-formed stops the Deno stand-in with an error, because
+natively its raw bytes would be hashed.
+
+**`sha256_hex` is not for storing passwords**: it is far too fast to guess against. There is no
+password hashing, encryption or signing with key pairs yet. An empty secret is a valid HMAC key, so
+check that your secret isn't `""`.
+
+`digest_equal` natively signs both sides with a key made for that call and compares the results; the
+stand-in uses Node's `timingSafeEqual`. The aim is that timing doesn't show where they differ; we
+haven't measured it.
 
 ## `"machin/desktop"`: window and drawing
 

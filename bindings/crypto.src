@@ -1,0 +1,14 @@
+// bindings/crypto.src — "machin/crypto": hashing and random tokens, text in and text out.
+// machin's binary type stays in here, so JavaScript can't print, compare or serialize it.
+func sha256_hex(text) (r) { r = sha256(text) }
+
+func hmac_sha256_hex(key, message) (r) { r = hmac_sha256(key, message) }
+
+func random_hex(bytes) (r) { r = to_hex(rand_bytes(bytes)) }
+
+// Both sides are signed with a key made for this one comparison, so the time the final == takes
+// says nothing about where a and b differ.
+func digest_equal(a, b) (r) {
+    key := random_hex(32)
+    r = hmac_sha256(key, a) == hmac_sha256(key, b)
+}

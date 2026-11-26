@@ -82,9 +82,39 @@
 == json invalid utf-8
 400 application/json
 {"error":"invalid JSON"}
+== hook signed
+201 application/json
+{"id":8,"url":"https://example.org/h","title":"from a hook é","tag":"hook"}
+== hook signed, raw unicode body
+201 application/json
+{"id":9,"url":"https://example.org/u","title":"raw café ☃ 😀","tag":"hook"}
+== hook wrong secret
+401 application/json
+{"error":"missing or wrong signature"}
+== hook signature of another body
+401 application/json
+{"error":"missing or wrong signature"}
+== hook no signature
+401 application/json
+{"error":"missing or wrong signature"}
+== hook signature without prefix
+401 application/json
+{"error":"missing or wrong signature"}
+== hook token is not a signature
+401 application/json
+{"error":"missing or wrong signature"}
+== hook signed but bad link
+400 application/json
+{"error":"url must start with http:// or https://"}
+== hook invalid utf-8
+400 application/json
+{"error":"invalid JSON"}
+== hook as a form
+404 application/json
+{"error":"no such route"}
 == list all
 200 application/json
-[{"id":1,"url":"https://machin.dev/a?x=1&y=2","title":"Quotes \" and <tags> & co","tag":"lang"},{"id":2,"url":"http://example.org/é","title":"café ☃ 100%","tag":"food"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"},{"id":4,"url":"https://example.org/%0A%1F","title":"%00 is just text","tag":"pct"},{"id":5,"url":"https://example.org/j","title":"from JSON é 😀 \"q\"","tag":"json"},{"id":6,"url":"https://example.org/k","title":"no tag","tag":""},{"id":7,"url":"https://example.org/first","title":"dup","tag":"json"}]
+[{"id":1,"url":"https://machin.dev/a?x=1&y=2","title":"Quotes \" and <tags> & co","tag":"lang"},{"id":2,"url":"http://example.org/é","title":"café ☃ 100%","tag":"food"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"},{"id":4,"url":"https://example.org/%0A%1F","title":"%00 is just text","tag":"pct"},{"id":5,"url":"https://example.org/j","title":"from JSON é 😀 \"q\"","tag":"json"},{"id":6,"url":"https://example.org/k","title":"no tag","tag":""},{"id":7,"url":"https://example.org/first","title":"dup","tag":"json"},{"id":8,"url":"https://example.org/h","title":"from a hook é","tag":"hook"},{"id":9,"url":"https://example.org/u","title":"raw café ☃ 😀","tag":"hook"}]
 == list by tag
 200 application/json
 [{"id":1,"url":"https://machin.dev/a?x=1&y=2","title":"Quotes \" and <tags> & co","tag":"lang"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"}]
@@ -93,7 +123,7 @@
 []
 == tags
 200 application/json
-[{"tag":"json","count":2},{"tag":"lang","count":2},{"tag":"","count":1},{"tag":"food","count":1},{"tag":"pct","count":1}]
+[{"tag":"hook","count":2},{"tag":"json","count":2},{"tag":"lang","count":2},{"tag":"","count":1},{"tag":"food","count":1},{"tag":"pct","count":1}]
 == delete
 200 application/json
 {"id":1,"url":"https://machin.dev/a?x=1&y=2","title":"Quotes \" and <tags> & co","tag":"lang"}
@@ -114,4 +144,4 @@
 {"error":"no such route"}
 == after delete
 200 application/json
-[{"id":2,"url":"http://example.org/é","title":"café ☃ 100%","tag":"food"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"},{"id":4,"url":"https://example.org/%0A%1F","title":"%00 is just text","tag":"pct"},{"id":5,"url":"https://example.org/j","title":"from JSON é 😀 \"q\"","tag":"json"},{"id":6,"url":"https://example.org/k","title":"no tag","tag":""},{"id":7,"url":"https://example.org/first","title":"dup","tag":"json"}]
+[{"id":2,"url":"http://example.org/é","title":"café ☃ 100%","tag":"food"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"},{"id":4,"url":"https://example.org/%0A%1F","title":"%00 is just text","tag":"pct"},{"id":5,"url":"https://example.org/j","title":"from JSON é 😀 \"q\"","tag":"json"},{"id":6,"url":"https://example.org/k","title":"no tag","tag":""},{"id":7,"url":"https://example.org/first","title":"dup","tag":"json"},{"id":8,"url":"https://example.org/h","title":"from a hook é","tag":"hook"},{"id":9,"url":"https://example.org/u","title":"raw café ☃ 😀","tag":"hook"}]

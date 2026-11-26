@@ -129,7 +129,7 @@ the missing function: use only supported ones.
 
 ## JS-IMPORT002: unknown module
 
-Only `"machin"`, `"machin/web"`, `"machin/json"`, `"machin/text"`, `"machin/desktop"` and relative paths exist.
+Only `"machin"`, `"machin/web"`, `"machin/json"`, `"machin/text"`, `"machin/crypto"`, `"machin/desktop"` and relative paths exist.
 
 ## JS-DUP001: function defined in two modules
 

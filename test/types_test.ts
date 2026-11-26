@@ -6,7 +6,7 @@ import { buildGraph } from "../transpile/transpile.ts";
 const root = new URL("../", import.meta.url).pathname;
 
 Deno.test("every file in types/ is valid TypeScript", () => {
-  const files = ["machin.d.ts", "machweb.d.ts", "json.d.ts", "text.d.ts", "desktop.d.ts"].map((f) => `${root}types/${f}`);
+  const files = ["machin.d.ts", "machweb.d.ts", "json.d.ts", "text.d.ts", "crypto.d.ts", "desktop.d.ts"].map((f) => `${root}types/${f}`);
   assertEquals(typeErrors(program(files)), []);
 });
 

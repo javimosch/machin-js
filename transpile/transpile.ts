@@ -848,13 +848,14 @@ function bridges(): Record<string, { dts: string; src: string }> {
     "machin/web": { dts: "machweb.d.ts", src: `${fw}/machweb.src` },
     "machin/json": { dts: "json.d.ts", src: new URL("../bindings/json.src", import.meta.url).pathname },
     "machin/text": { dts: "text.d.ts", src: new URL("../bindings/text.src", import.meta.url).pathname },
+    "machin/crypto": { dts: "crypto.d.ts", src: new URL("../bindings/crypto.src", import.meta.url).pathname },
     "machin/desktop": { dts: "desktop.d.ts", src: new URL("../bindings/desktop.src", import.meta.url).pathname },
   };
 }
 
 /** Modules whose imports must also exist under Deno, with the stand-in file for each. */
 //why: machin/desktop is left out: it is native only, and the modules page says so.
-const STANDINS: Record<string, string> = { "machin": "machin.js", "machin/web": "web.js", "machin/json": "json.js", "machin/text": "text.js" };
+const STANDINS: Record<string, string> = { "machin": "machin.js", "machin/web": "web.js", "machin/json": "json.js", "machin/text": "text.js", "machin/crypto": "crypto.js" };
 
 /** The names a stand-in really exports, read from its source so the list can't drift from it. */
 async function standinNames(file: string): Promise<Set<string>> {

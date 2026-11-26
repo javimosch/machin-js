@@ -1,9 +1,12 @@
 import { json } from "machin";
 import { response } from "machin/web";
+import { addLink } from "./store.js";
+import { problemWith } from "./input.js";
 
 /** @typedef {import("machin/web").Response} Response */
 /** @typedef {import("./model.js").ApiError} ApiError */
 /** @typedef {import("./model.js").Link} Link */
+/** @typedef {import("./model.js").NewLink} NewLink */
 
 /**
  * An error response with a JSON body.
@@ -30,4 +33,22 @@ export function one(found, status) {
     return fail("404 Not Found", "no such link");
   }
   return response(status, "application/json", json(found[0]));
+}
+
+/**
+ * Check a new link and store it: 201 with the link, or 400 saying what is wrong.
+ * @param {int} db
+ * @param {NewLink} input
+ * @returns {Response}
+ */
+export function save(db, input) {
+  //why: validate before touching the database, so nothing invalid is ever stored.
+  if (input.problem != "") {
+    return fail("400 Bad Request", input.problem);
+  }
+  const problem = problemWith(input.url, input.title, input.tag);
+  if (problem != "") {
+    return fail("400 Bad Request", problem);
+  }
+  return one(addLink(db, input.url, input.title, input.tag), "201 Created");
 }

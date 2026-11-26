@@ -91,7 +91,7 @@ can't produce code a human can't read.
 - **Transpiler** (`transpile/`) — Deno + [acorn](https://github.com/acornjs/acorn); resolves ES modules, orders them by dependency, emits machin `.src`.
 - **Typings** (`types/machin.d.ts`) — generated from `machin guide`. They list every machin builtin; only those with a Deno stand-in can be imported ([which ones](docs/modules.md)).
 - **Run it as plain JS** (`shim/`) — Deno twins of the builtins, so the same modules run under a normal debugger and can be diffed against the native build.
-- **Bridges** — `machin/web` (machweb HTTP server), `machin/json` (typed reading of outside JSON), `machin/text` (padding) and `machin/desktop` (a raylib UI behind a scalar-only API, since JS can't express FFI).
+- **Bridges** — `machin/web` (machweb HTTP server), `machin/json` (typed reading of outside JSON), `machin/text` (padding), `machin/crypto` (hashing and tokens; on `main`, not in 0.9.1) and `machin/desktop` (a raylib UI behind a scalar-only API, since JS can't express FFI).
 - **[`examples/jot`](examples/jot)** — an agent-first CLI following the [agent-first CLI specs](https://cli-specs.intrane.fr/) for output and guide, checked by a conformance test.
 - **[`examples/linkbox`](examples/linkbox)** — a bookmarks API: token auth, validation, SQLite, JSON responses.
 - **[`examples/tally`](examples/tally)** — a command-line expense summarizer: arguments, files, errors on stderr and exit codes.
@@ -136,8 +136,8 @@ This is an **alpha**. It has four worked examples, and the language is a deliber
 - **Known differences:** some behavior can still differ from plain JavaScript; they are [listed](docs/language.md#known-differences).
 - **Debugging:** out-of-range list access and division by zero stop with your `file.js:line:column` and the expression; runaway recursion reports `panic: stack overflow` without a `.js` line. See [Debugging](docs/debugging.md).
 
-**Feature freeze** since 2026-11-26: only fixes, tests, docs and new machin releases until the
-[freeze ends](docs/ROADMAP.md#feature-freeze).
+**Growing support:** the feature freeze was lifted on 2026-11-27, and there is no new release until
+machin-js supports more ([roadmap](docs/ROADMAP.md#growing-support-now)).
 
 Where this is going, in measurable steps: [docs/NORTH-STAR.md](docs/NORTH-STAR.md).
 

@@ -4,6 +4,11 @@ Newest first.
 
 ## Unreleased
 
+### New
+
+- **`machin/crypto`:** `sha256_hex`, `hmac_sha256_hex`, `random_hex` and `digest_equal`.
+- **linkbox** takes signed webhooks, and compares its token with `digest_equal`.
+
 ### Soundness fixes
 
 **It behaves differently from its JavaScript:** under Deno it fails to start, because the stand-in

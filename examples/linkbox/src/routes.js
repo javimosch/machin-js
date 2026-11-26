@@ -1,8 +1,10 @@
 import { env, index, substr, len, parse_int, has_prefix, json, sqlite_close } from "machin";
 import { header, query, ok_json } from "machin/web";
-import { openStore, addLink, listLinks, removeLink, countByTag } from "./store.js";
-import { fromForm, fromJson, problemWith } from "./input.js";
-import { fail, one } from "./reply.js";
+import { openStore, listLinks, removeLink, countByTag } from "./store.js";
+import { digest_equal } from "machin/crypto";
+import { fromForm, fromJson } from "./input.js";
+import { fail, one, save } from "./reply.js";
+import { receiveHook } from "./hook.js";
 
 /** @typedef {import("machin/web").Request} Request */
 /** @typedef {import("machin/web").Response} Response */
@@ -14,19 +16,12 @@ import { fail, one } from "./reply.js";
  * @returns {Response}
  */
 function create(req, db) {
-  //why: validate before touching the database, so nothing invalid is ever stored.
+  //why: both formats end up as the same NewLink, checked in one place by save().
   let input = fromForm(req.body);
   if (has_prefix(header(req, "content-type"), "application/json")) {
     input = fromJson(req.body);
   }
-  if (input.problem != "") {
-    return fail("400 Bad Request", input.problem);
-  }
-  const problem = problemWith(input.url, input.title, input.tag);
-  if (problem != "") {
-    return fail("400 Bad Request", problem);
-  }
-  return one(addLink(db, input.url, input.title, input.tag), "201 Created");
+  return save(db, input);
 }
 
 /**
@@ -37,8 +32,8 @@ function create(req, db) {
  * @returns {Response}
  */
 function handleWrite(req, path, db) {
-  //why: the token is checked once, here, so no writing route can forget it.
-  if (header(req, "authorization") != "Bearer " + env("LINKBOX_TOKEN")) {
+  //why: the token is checked once, here, so no route below can forget it.
+  if (!digest_equal(header(req, "authorization"), "Bearer " + env("LINKBOX_TOKEN"))) {
     return fail("401 Unauthorized", "missing or wrong token");
   }
   if (req.method == "POST" && path == "/api/links") {
@@ -58,7 +53,10 @@ function handleWrite(req, path, db) {
  * @returns {Response}
  */
 function routeRequest(req, path, db) {
-  //why: reading is public; everything else goes through handleWrite(), which wants the token.
+  //why: reading is public and the hook proves itself by signature; other writes need the token.
+  if (req.method == "POST" && path == "/api/hooks/link") {
+    return receiveHook(req, db);
+  }
   if (req.method != "GET") {
     return handleWrite(req, path, db);
   }

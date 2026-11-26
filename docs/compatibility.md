@@ -12,7 +12,7 @@
 | what the subset accepts (it only grows) | the wording of error messages |
 | diagnostic codes (`JS-…`) and what each one is about | `machin/desktop`, which stays experimental |
 | the `machin-js` commands, their options and exit codes | timing, memory use and binary size |
-| the functions of `machin/json`, `machin/text` and the documented part of `machin/web` | the rest of the builtins in `"machin"`, which follow machin |
+| the functions of `machin/json`, `machin/text`, `machin/crypto` and the documented part of `machin/web` | the rest of the builtins in `"machin"`, which follow machin |
 
 ## The promise
 
