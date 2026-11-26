@@ -72,6 +72,7 @@ The JSDoc is both the documentation and the types the build checks.
 | `JS-RET001` / `JS-SCOPE001` | every path of a valued function returns; no shadowed names |
 | `JS-NUM001/002` / `JS-STR001` | no decimals, plain `/` or non-ASCII literals yet (they would behave differently) |
 | `JS-ADD001` `CMP001` `VAL001` `STR002` `ARR001` `ANY001` `LOG001` | type-based rules: reject what would behave differently natively |
+| `JS-ORDER001` | element updates whose index would be evaluated twice, or out of order |
 | `JS-TYPE001` | your JSDoc types are checked (by the TypeScript checker, on plain `.js`) |
 | `JS-UNSUP001` | anything outside the supported allow-list is rejected |
 

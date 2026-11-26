@@ -411,6 +411,44 @@ machin's `parse` never fails: bad input silently becomes empty values, and JavaS
 behaves differently ([machin#716](https://github.com/javimosch/machin/issues/716)). Use `parse` only on `sqlite_query(...)` results or JSON your code builds. Read
 outside input as [form fields or query parameters](language.md#decoding-rows).
 
+## JS-ORDER001: element update with an index that isn't simple
+
+<!-- check: JS-ORDER001 -->
+```js
+/**
+ * Example.
+ * @param {int[]} a
+ * @param {(n: int) => int} pick
+ */
+function f(a, pick) {
+  //why: example.
+  a[pick(0)] += 5;
+}
+```
+
+Native code writes `a[i] += x` as `a[i] = a[i] + x`, so it would call `pick` twice. And in
+`a[i] = value`, it runs `value` before `i`, the reverse of JavaScript. So:
+
+- for `+=`, `-=`, `*=`, `%=`, `++` and `--` on an element, the index (and the list) must be simple:
+  variables, constants and arithmetic, with no calls and no list reads;
+- for a plain `=`, a non-simple index is fine only if the value calls nothing.
+
+Fixed:
+
+<!-- check: ok -->
+```js
+/**
+ * Example.
+ * @param {int[]} a
+ * @param {(n: int) => int} pick
+ */
+function f(a, pick) {
+  //why: the index is computed once.
+  const i = pick(0);
+  a[i] += 5;
+}
+```
+
 ## JS-INTERNAL001: transpiler bug
 
 The transpiler failed on your code. Please [report it](https://github.com/javimosch/machin-js/issues) with the snippet.

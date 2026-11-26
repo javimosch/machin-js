@@ -84,7 +84,7 @@ export function listTodos(db) {
 
 - `function` declarations, `export`, `import { x } from "..."` (no default, `*` or `as`)
 - `const` and `let` with an initial value
-- `=`, `+=`, `-=`, `*=`, `%=`, `++`, `--`
+- `=`, `+=`, `-=`, `*=`, `%=`, `++`, `--` (on a list element, [the index must be simple](diagnostics.md#js-order001-element-update-with-an-index-that-isnt-simple))
 - `if` / `else`, `while`, `for (init; test; update)` (all three parts), `break`, `return`
 - `+ - * %`, comparisons, `&&`, `||`, `!`, unary `-` (`===` is treated as `==`)
 - `+` on two numbers or two strings (convert with `String(x)`)

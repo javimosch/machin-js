@@ -95,6 +95,15 @@ const CASES: Case[] = [
   { name: "list from outside the loop shared then pushed on the next pass", body: "const row = [0]; let other = row; for (let i = 0; i < 4; i++) { row.push(i); other = row; } console.log(other.length);", expect: "JS-PUSH001" },
   { name: "parse of text from outside", body: 'console.log(decode(url_decode("%7B%7D")).n);', imports: "parse, url_decode", extra: "/** @typedef {{n: int}} T */\n" + fn("decode(text)", "return parse(text, []);", "@param {string} text @returns {T}"), expect: "JS-JSON001" },
   { name: "parse of a string variable inside a concatenation", body: 'console.log(decode("1").n);', imports: "parse", extra: "/** @typedef {{n: int}} T */\n" + fn("decode(v)", 'return parse("{\\"n\\":" + v + "}", []);', "@param {string} v @returns {T}"), expect: "JS-JSON001" },
+  { name: "+= on an index with a side effect", body: "const log = [0]; const a = [10, 20, 30]; a[next(log)] += 5; console.log(a[1] + log[0]);", extra: fn("next(log)", "log[0] += 1; return log[0];", "@param {int[]} log"), expect: "JS-ORDER001" },
+  { name: "++ on an index with a side effect", body: "const log = [0]; const a = [10, 20, 30]; a[next(log)]++; console.log(a[1] + log[0]);", extra: fn("next(log)", "log[0] += 1; return log[0];", "@param {int[]} log"), expect: "JS-ORDER001" },
+  { name: "+= on a list that comes from a call", body: "const a = [1]; same(a)[0] += 1; console.log(a[0]);", extra: fn("same(xs)", "return xs;", "@param {int[]} xs"), expect: "JS-ORDER001" },
+  { name: "+= on an index read from a list", body: "const a = [0, 1]; a[a[0]] += 1; console.log(a[0] + a[1]);", expect: "JS-ORDER001" },
+  { name: "store index read before a value that changes it", body: "const a = [5, 6]; a[a[0] - 5] = bump(a) + 7; console.log(`${a[0]} ${a[1]}`);", extra: fn("bump(xs)", "xs[0] = 100; return 0;", "@param {int[]} xs"), expect: "JS-ORDER001" },
+  { name: "store with a simple index and a call as value", body: "const a = [5, 6]; const i = 1; a[i + 0] = bump(a) + 7; console.log(`${a[0]} ${a[1]}`);", extra: fn("bump(xs)", "xs[0] = 100; return 0;", "@param {int[]} xs"), expect: "same" },
+  { name: "store with a computed index and a plain value", body: "const a = [1, 0]; a[a[0]] = 9; console.log(a[0] + a[1]);", expect: "same" },
+  { name: "element add where the value changes the element", body: "const a = [5]; a[0] += bump(a) + 1; const b = [5]; console.log(`${a[0]} ${b[0] + bump(b)} ${b[0]}`);", extra: fn("bump(xs)", "xs[0] = 100; return 0;", "@param {int[]} xs"), expect: "same" },
+  { name: "name reserved for generated checks", body: "const js_at = 1; console.log(js_at);", expect: "JS-NAME001" },
   { name: "ternary", body: 'const a = 1; const m = a == 1 ? "y" : "n"; console.log(m);', expect: "same" },
 ];
 

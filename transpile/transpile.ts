@@ -122,6 +122,31 @@ function checkParseInput(c: Ctx, x: any) {
     typeDiag(c, "JS-JSON001", "parse only accepts sqlite_query(...) or JSON your code builds; read outside input as form fields or query parameters", x);
 }
 
+/** Reading it twice, or at another moment, can't change anything: no calls, no list reads. */
+function steady(x: any): boolean {
+  if (x.type === "Literal" || x.type === "Identifier") return true;
+  if (x.type === "MemberExpression") return !x.computed && steady(x.object);
+  if (x.type === "UnaryExpression") return steady(x.argument);
+  return x.type === "BinaryExpression" && steady(x.left) && steady(x.right);
+}
+
+/** Does evaluating this call anything? */
+function calls(x: any): boolean {
+  if (!x || typeof x !== "object") return false;
+  if (x.type === "CallExpression") return true;
+  return Object.values(x).some((v) => Array.isArray(v) ? v.some(calls) : calls(v));
+}
+
+/** Element updates: refuse the shapes where the two runtimes evaluate in a different way. */
+function checkElementOrder(c: Ctx, target: any, value: any, twice: boolean) {
+  if (target.type !== "MemberExpression" || !target.computed) return;
+  if (steady(target.object) && steady(target.property)) return;
+  //why: `a[i] += x` and `a[i]++` are written as `a[i] = a[i] + x`, which evaluates i twice; and
+  //     in `a[i] = v` machin runs v before i, where JavaScript runs i first.
+  if (twice || calls(value))
+    diag(c, "JS-ORDER001", "put the index in a variable first: const i = ...; then use a[i]", target);
+}
+
 /** With two or more arguments, console.log reads a string first argument as a format string. */
 function checkLogFormat(c: Ctx, args: any[]) {
   if (args.length < 2) return;
@@ -361,7 +386,8 @@ const EMITTED = new Set(["len", "str", "println", "append", "parse"]);
 
 /** Refuse a declared name that means something to machin. */
 function checkName(c: Ctx, name: string, n: any, taken: Set<string>) {
-  if (KEYWORDS.has(name) || taken.has(name)) diag(c, "JS-NAME001", `${name} already means something in machin; choose another name`, n);
+  //why: js_ is the prefix of the runtime checks the transpiler generates.
+  if (KEYWORDS.has(name) || taken.has(name) || name.startsWith("js_")) diag(c, "JS-NAME001", `${name} already means something in machin; choose another name`, n);
 }
 
 /** Declare a plain name in the current scope. */
@@ -407,12 +433,14 @@ function assignOrExpr(c: Ctx, e: any): string {
     //why: machin copies structs where JS shares them, so changing a field would silently diverge.
     if (e.left.type === "MemberExpression" && !e.left.computed)
       return diag(c, "JS-UNSUP001", "assigning to an object field is not supported", e);
+    checkElementOrder(c, e.left, e.right, e.operator !== "=");
     const t = expr(c, e.left);
     const op = e.operator[0];
     if (op === "+") checkAdd(c, e.left, e.right, e);
     //why: `x *= a + b` must become `x = x * (a + b)`, so the right side binds tighter than op.
     return e.operator === "=" ? `${t} = ${expr(c, e.right)}` : `${t} = ${t} ${op} ${expr(c, e.right, PREC[op] + 1)}`;
   }
+  if (e.type === "UpdateExpression") checkElementOrder(c, e.argument, null, true);
   if (e.type === "UpdateExpression") return `${expr(c, e.argument)} = ${expr(c, e.argument)} ${e.operator[0]} 1`;
   return expr(c, e);
 }
