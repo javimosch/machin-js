@@ -165,7 +165,7 @@ export function chop(s) {
 
 ## Not supported yet
 
-Plain division (`/`), decimals, nested array literals, `null`, non-ASCII string literals,
+Plain division (`/`), decimals, nested array literals ([machin#718](https://github.com/javimosch/machin/issues/718)), `null`, non-ASCII string literals,
 `typeof`, `var`, destructuring, default and rest parameters, assigning to an object field,
 shadowing a name, classes, `async`, `??`, `switch`, method calls other than `push` (such as `.map`),
 object spread and computed keys, tagged templates, `continue`, block-bodied arrows, top-level `const`, and

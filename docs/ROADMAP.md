@@ -28,9 +28,9 @@ needs them.
 
 ## Risks
 
-- **machin dependencies:** [#716](https://github.com/javimosch/machin/issues/716) (no way to detect invalid JSON) blocks closing Phase 2;
-  [#715](https://github.com/javimosch/machin/issues/715) (`json()` can emit invalid JSON) is worked around. #710–#713 were cleared in 0.143.0. Bundling bridges
-
+- **machin dependencies:** [#715](https://github.com/javimosch/machin/issues/715) and [#716](https://github.com/javimosch/machin/issues/716) are fixed in machin but not yet released;
+  #716 is what blocks closing Phase 2. Open: [#718](https://github.com/javimosch/machin/issues/718) (nested list literals) and
+  [#719](https://github.com/javimosch/machin/issues/719) (silent stack overflow).
 - **machin changes often:** CI pins a version; testing the latest one too is still to do.
 - **Numbers never match completely:** document the limits, and reject or check what we can.
 

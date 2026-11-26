@@ -71,7 +71,7 @@ runtimes.
 
 | Symptom | Likely cause |
 |---|---|
-| the native program dies with **no message** (exit code 139), and some earlier output may be missing | recursion that never ends: the stack overflows. Under Deno you get a `RangeError` with a stack trace |
+| the native program dies with **no message** (exit code 139), or seems to hang, and earlier output may be missing | recursion that never ends ([machin#719](https://github.com/javimosch/machin/issues/719)). Under Deno you get a `RangeError` with a stack trace |
 | the program hangs | an endless loop; pause it in the debugger under Deno |
 | the desktop app misbehaves | it has no Deno version; debug the shared logic through the web or console build |
 
