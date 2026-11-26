@@ -105,7 +105,7 @@ An audit of edge cases, with the exact result for each, is in
 - arrows with an expression body: `(s) => parse_int(s)`
 - passing and storing your own functions (`serve(port, handle)`); builtins need an arrow
 - arrays of numbers, strings, booleans or structs; `a[i]`, `a[i] = x`, `a.length`
-- lists of lists: `[[1, 2], [3]]`, `grid[i][j]` *(on the current source; not in release 0.8.1)*
+- lists of lists: `[[1, 2], [3]]`, `grid[i][j]`
 - reading `a.field` on a struct
 - `==` and `!=` on numbers, strings and booleans
 - `String(x)` and `console.log(...)` of numbers, strings and booleans

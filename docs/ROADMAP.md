@@ -105,4 +105,6 @@ needs them.
   real use with no new features.
 - **v0.8.1** ([release](https://github.com/javimosch/machin-js/releases/tag/v0.8.1)) ships the audit's
   fixes, including the `__proto__` difference that 0.8.0 has.
+- **v0.9.0** ([release](https://github.com/javimosch/machin-js/releases/tag/v0.9.0)): nested lists
+  and machin 0.144.3 as the minimum version.
 
