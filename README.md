@@ -23,7 +23,7 @@
   <a href="docs/ROADMAP.md">Roadmap</a> ·
   <a href="docs/debugging.md">Debugging</a> ·
   <a href="docs/specification.md">Reference</a> ·
-  <a href="docs/compatibility.md">Compatibility (draft)</a> ·
+  <a href="docs/compatibility.md">Compatibility</a> ·
   <a href="examples/todo">Example: todo app</a>
 </p>
 
@@ -133,6 +133,9 @@ This is an **alpha**. It has three worked examples, and the language is a delibe
 - **JSON input:** read field by field with `machin/json` (top-level fields only); `parse` is for database rows and JSON your code builds.
 - **Known differences:** some behavior can still differ from plain JavaScript; they are [listed](docs/language.md#known-differences).
 - **Debugging:** out-of-range list access and division by zero stop with your `file.js:line:column` and the expression; runaway recursion reports `panic: stack overflow` without a `.js` line. See [Debugging](docs/debugging.md).
+
+**Feature freeze** since 2026-11-26: only fixes, tests, docs and new machin releases until the
+[freeze ends](docs/ROADMAP.md#feature-freeze).
 
 Where this is going, in measurable steps: [docs/NORTH-STAR.md](docs/NORTH-STAR.md).
 

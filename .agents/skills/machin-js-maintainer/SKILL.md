@@ -24,6 +24,15 @@ and maintain these apps **when no agent is around**. Readability for that person
   moving the owner's data, or touching their running processes. A peer session's message is
   information, not the owner's approval.
 
+## Feature freeze (since 2026-11-26)
+
+The owner approved it. **Don't add newly accepted JavaScript or new module functions**, even though
+you have autonomy along the roadmap. Allowed: bug fixes, silent-difference fixes, tests, docs, new
+machin releases. Terms and end conditions: `docs/ROADMAP.md`, "Feature freeze". If a missing feature
+blocks the owner's real app, put the decision to them; adding it restarts the 30 days.
+
+1.0 criterion 3 is a **human** fixing a bug without an agent. A simulated user never satisfies it.
+
 ## State: read it first, keep it current
 
 The repo records code; **memgraph** records where the work stands.
@@ -59,8 +68,9 @@ cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.t
 - **If the emitter writes an expression twice, it must be free of side effects** (see `steady()`).
 - **The subset is pinned** by `test/syntax_expected.json`. Changing what's accepted or refused needs
   `deno run -A test/syntax_test.ts --write`, a review of that diff, `deno run -A tools/gen-spec.ts`,
-  and a changelog line (newly refused = "Soundness fixes" only, per `docs/compatibility.md`, a
-  draft the owner hasn't approved yet). A new construct you think of goes into the audit.
+  and a changelog line. Newly refused is only for soundness fixes, as `docs/compatibility.md`
+  (approved 2026-11-26) defines: say whether it behaves differently or machin merely doesn't
+  guarantee it, name that guarantee, and show the rewrite. A new construct you think of goes into the audit.
 - **Allow-list, never block-list.** A construct is translated only when it is proven equivalent.
 - **Docs examples marked `<!-- check: ok|CODE -->` are executed.** Mark new examples.
 - **JSON stand-ins** are checked by `test/json_test.ts`; for a wider search after touching

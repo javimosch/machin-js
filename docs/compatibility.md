@@ -1,10 +1,10 @@
 # Compatibility policy
 
-> **Draft.** This is a proposal for 1.0. It is a promise to users, so the project owner has to
-> approve it before it applies. Until 1.0, anything may change; changes are listed in the
+> **Approved** by the project owner on 2026-11-26. It **takes effect at 1.0**. Until then anything may
+> change; changes are listed in the
 > [changelog](https://github.com/javimosch/machin-js/blob/main/CHANGELOG.md).
 
-## What would be stable from 1.0
+## What is stable from 1.0
 
 | Stable | Not stable |
 |---|---|
@@ -24,10 +24,15 @@ Within one major version:
 
 ## The one exception: soundness fixes
 
-If a program builds but behaves differently from its JavaScript, that is a bug in machin-js. Fixing
-it may mean **refusing a program that used to build**. This can happen in any release. The
-changelog lists it under "Soundness fixes", with the code you'll now see and how to rewrite the
-code. It is never used to remove a feature that behaves correctly.
+A release may **refuse a program that built before** if:
+
+- it behaves differently from its JavaScript, **or**
+- machin doesn't guarantee that it behaves the same. This part is used only when the missing
+  guarantee can be named.
+
+Either can happen in any release. The changelog lists it under "Soundness fixes", says **which of
+the two** it is, gives the code you'll now see, and shows how to rewrite the program. It is never
+used to remove a feature that is guaranteed to behave correctly.
 
 ## Versions
 
@@ -38,6 +43,9 @@ code. It is never used to remove a feature that behaves correctly.
 | major (`x.0.0`) | anything, with migration notes |
 
 ## machin
+
+**Limits set by machin, such as the maximum recursion depth, and speed aren't covered.** The
+changelog reports changes we know of.
 
 Each release states the oldest machin it supports. machin is developed separately and its builtins
 can change; a weekly job tests machin-js against the newest machin release. If machin changes

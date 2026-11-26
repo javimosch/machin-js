@@ -3,7 +3,8 @@
 > **A JS-fluent human can build, ship and maintain a real multi-shell app (web + desktop +
 > terminal) in machin-js with the agent switched off.**
 
-See [VISION.md](VISION.md) for the why. This file is the measurable target and the gap roadmap.
+**Feature freeze** since 2026-11-26 ([terms](ROADMAP.md#feature-freeze)); the tiers below wait for it
+to end. See [VISION.md](VISION.md) for the why. This file is the measurable target and the gap roadmap.
 Status reflects what is **verified in this repo today**, nothing aspirational.
 The order of work toward 1.0, with exit tests, is in [ROADMAP.md](ROADMAP.md).
 

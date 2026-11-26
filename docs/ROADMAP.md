@@ -4,8 +4,10 @@
 
 1. **No known silent differences.** A program behaves like the JavaScript, or is rejected with a
    `JS-` error. Limits that can't be removed are documented.
-2. **Frozen subset.** Written down; breaking changes need a new major version.
-3. **Real use.** Three different apps work, and a human has fixed a bug in one with the agent off.
+2. **Frozen subset.** Written down; breaking changes need a new major version, as the
+   [compatibility policy](compatibility.md) defines.
+3. **Real use.** Three different apps work, and a human has fixed at least one bug in a machin-js
+   app without help from an agent, either a planted bug or a real one.
 4. **Debuggable.** Errors point to `file.js:line`.
 5. **Installable.** One command on a clean machine; CI tests everything claimed as supported.
 
@@ -21,7 +23,21 @@ needs them.
 | **2. Useful** (0.4–0.6) | typed arrays, object literals, `for…of`, template literals, `push`/`map`/`filter`, error handling; a CLI tool and an API service | all three apps pass their checks without workarounds | done (`.map`/`.filter` left out: no app needed them) |
 | **3. Debuggable** (0.7) | errors at `file.js:line`; shims for every supported builtin; debugging guide | the agent-off test: a planted bug is found and fixed by a human alone | done, with a **simulated** human (owner's choice; see notes) |
 | **4. Shippable** (0.8–0.9) | a `machin-js` command (`new`, `build`, `run`, `check`, `debug`) via `deno compile`; bundled bridges; tested machin versions; releases and changelog | a clean machine goes from install to a running app using only the docs | in progress: only the first release is left |
-| **5. Stable** (1.0) | freeze the subset; compatibility policy; a period of real use with no new features | all five criteria hold, with no open silent-difference bugs | in progress: subset pinned by tests; policy drafted, awaiting the owner |
+| **5. Stable** (1.0) | freeze the subset; compatibility policy; a period of real use with no new features | all five criteria hold, with no open silent-difference bugs | in progress: **feature freeze since 2026-11-26** (below); policy approved |
+
+## Feature freeze
+
+Started **2026-11-26** (at v0.9.0).
+
+- **Allowed:** bug fixes, fixes for silent differences, tests, docs, and updates for new machin
+  releases.
+- **Not allowed:** newly accepted JavaScript, or new module functions.
+- **Ends when all of these hold:**
+  - at least 30 days have passed since it started (**2026-12-26** at the earliest);
+  - no known silent difference has been open during the last 14 days;
+  - the owner has built one real app of their own with machin-js.
+- **If a missing feature blocks that app,** the owner and the maintainer decide together whether to
+  add it. If it is added, the 30 days start again.
 
 **Outside 1.0:** the desktop shell stays experimental. A terminal shell, client-side UI,
 `async`/`await` and mobile come later, unless one of the apps needs them.
@@ -100,9 +116,9 @@ needs them.
   tests fail if any changes.
 - **What the audit found:** 18 constructs that weren't handled soundly on its first run, one of them
   a silent difference (`__proto__` as a key) that is in v0.8.0.
-- **Left before 1.0:** the owner's approval of the [compatibility policy](compatibility.md) (a
-  draft); a decision on 1.0 criterion 3 (a **human** fixes a bug with the agent off); a period of
-  real use with no new features.
+- **Left before 1.0:** the end of the feature freeze, and criterion 3: a human has fixed a bug
+  without an agent (a bug fixed while building the real app counts). The
+  [compatibility policy](compatibility.md) was approved on 2026-11-26.
 - **v0.8.1** ([release](https://github.com/javimosch/machin-js/releases/tag/v0.8.1)) ships the audit's
   fixes, including the `__proto__` difference that 0.8.0 has.
 - **v0.9.0** ([release](https://github.com/javimosch/machin-js/releases/tag/v0.9.0)): nested lists
