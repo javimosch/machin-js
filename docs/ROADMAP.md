@@ -125,7 +125,8 @@ Started **2026-11-26** (at v0.9.0).
   and machin 0.144.3 as the minimum version.
 - **2026-11-26, during the freeze:** preparing a CLI example turned up six silent differences around
   `json()`, `parse` shapes and `Map` arguments, all present in v0.9.0. Random testing had never
-  compared `json()` output. Fixed (unreleased).
+  compared `json()` output. Fixed in
+  [v0.9.1](https://github.com/javimosch/machin-js/releases/tag/v0.9.1); 0.8.0, 0.8.1 and 0.9.0 have them.
 - **jot** was added during the freeze: an example in the existing subset, not a language feature.
   It doesn't count as the owner's own app. Limits it met: no field named `type`, no keys such as
   `help-json`, one-line `@typedef` only, no top-level constants.

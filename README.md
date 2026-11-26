@@ -10,7 +10,7 @@
 
 <p align="center">
   <img alt="status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
-  <a href="https://github.com/javimosch/machin-js/releases"><img alt="release: v0.9.0" src="https://img.shields.io/badge/release-v0.9.0-1f1470"></a>
+  <a href="https://github.com/javimosch/machin-js/releases"><img alt="release: v0.9.1" src="https://img.shields.io/badge/release-v0.9.1-1f1470"></a>
   <img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-blue">
   <img alt="runtime: Deno" src="https://img.shields.io/badge/toolchain-Deno-black">
   <img alt="targets: machin" src="https://img.shields.io/badge/compiles%20to-machin%20→%20native-1f1470">
