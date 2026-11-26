@@ -93,6 +93,8 @@ const CASES: Case[] = [
   { name: "parameter and local named r in a valued function", body: "console.log(f(4)); console.log(g(2));", extra: fn("f(r)", "return r + 1;", "@param {int} r") + fn("g(a)", 'const r = "s"; return r + String(a);', "@param {int} a"), expect: "same" },
   { name: "list made fresh on each loop pass, kept and shared", body: "/** @type {int[]} */\n  let kept = []; for (let i = 0; i < 4; i++) {\n    /** @type {int[]} */\n    const row = []; for (let j = 0; j <= i; j++) { row.push(i * 10 + j); } if (i == 1) { kept = row; } console.log(first(row) + row.length); } console.log(`${kept.length} ${kept[1]}`);", extra: fn("first(xs)", "return xs[0];", "@param {int[]} xs"), expect: "same" },
   { name: "list from outside the loop shared then pushed on the next pass", body: "const row = [0]; let other = row; for (let i = 0; i < 4; i++) { row.push(i); other = row; } console.log(other.length);", expect: "JS-PUSH001" },
+  { name: "parse of text from outside", body: 'console.log(decode(url_decode("%7B%7D")).n);', imports: "parse, url_decode", extra: "/** @typedef {{n: int}} T */\n" + fn("decode(text)", "return parse(text, []);", "@param {string} text @returns {T}"), expect: "JS-JSON001" },
+  { name: "parse of a string variable inside a concatenation", body: 'console.log(decode("1").n);', imports: "parse", extra: "/** @typedef {{n: int}} T */\n" + fn("decode(v)", 'return parse("{\\"n\\":" + v + "}", []);', "@param {string} v @returns {T}"), expect: "JS-JSON001" },
   { name: "ternary", body: 'const a = 1; const m = a == 1 ? "y" : "n"; console.log(m);', expect: "same" },
 ];
 

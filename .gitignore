@@ -13,3 +13,5 @@ examples/todo/todos.db
 docs/_site/
 docs/_cache/
 examples/tally/tally
+examples/linkbox/linkbox
+examples/linkbox/links.db

@@ -1,0 +1,78 @@
+== empty list
+200 application/json
+[]
+== empty tags
+200 application/json
+[]
+== no token
+401 application/json
+{"error":"missing or wrong token"}
+== wrong token
+401 application/json
+{"error":"missing or wrong token"}
+== bare bearer
+401 application/json
+{"error":"missing or wrong token"}
+== create
+201 application/json
+{"id":1,"url":"https://machin.dev/a?x=1&y=2","title":"Quotes \" and <tags> & co","tag":"lang"}
+== create unicode
+201 application/json
+{"id":2,"url":"http://example.org/é","title":"café ☃ 100%","tag":"food"}
+== create third
+201 application/json
+{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"}
+== bad scheme
+400 application/json
+{"error":"url must start with http:// or https://"}
+== no title
+400 application/json
+{"error":"title is required; limits are url 2000, title 200, tag 50 bytes"}
+== newline in title
+400 application/json
+{"error":"control characters are not allowed"}
+== control byte in tag
+400 application/json
+{"error":"control characters are not allowed"}
+== delete byte in url
+400 application/json
+{"error":"control characters are not allowed"}
+== literal percent codes are fine
+201 application/json
+{"id":4,"url":"https://example.org/%0A%1F","title":"%00 is just text","tag":"pct"}
+== too long tag
+400 application/json
+{"error":"title is required; limits are url 2000, title 200, tag 50 bytes"}
+== list all
+200 application/json
+[{"id":1,"url":"https://machin.dev/a?x=1&y=2","title":"Quotes \" and <tags> & co","tag":"lang"},{"id":2,"url":"http://example.org/é","title":"café ☃ 100%","tag":"food"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"},{"id":4,"url":"https://example.org/%0A%1F","title":"%00 is just text","tag":"pct"}]
+== list by tag
+200 application/json
+[{"id":1,"url":"https://machin.dev/a?x=1&y=2","title":"Quotes \" and <tags> & co","tag":"lang"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"}]
+== tag with injection attempt
+200 application/json
+[]
+== tags
+200 application/json
+[{"tag":"lang","count":2},{"tag":"food","count":1},{"tag":"pct","count":1}]
+== delete
+200 application/json
+{"id":1,"url":"https://machin.dev/a?x=1&y=2","title":"Quotes \" and <tags> & co","tag":"lang"}
+== delete again
+404 application/json
+{"error":"no such link"}
+== delete junk id
+404 application/json
+{"error":"no such link"}
+== delete without token
+401 application/json
+{"error":"missing or wrong token"}
+== unknown get
+404 application/json
+{"error":"no such route"}
+== unknown post
+404 application/json
+{"error":"no such route"}
+== after delete
+200 application/json
+[{"id":2,"url":"http://example.org/é","title":"café ☃ 100%","tag":"food"},{"id":3,"url":"https://example.org/3","title":"three","tag":"lang"},{"id":4,"url":"https://example.org/%0A%1F","title":"%00 is just text","tag":"pct"}]

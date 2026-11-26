@@ -8,4 +8,6 @@
 | `no raylib at …` from `build-desktop.sh` | set `RAYLIB_DIR` to a raylib 5.0 directory with `lib/libraylib.a` |
 | `Could not find a matching package for 'npm:acorn…'` | run from inside the repo, so that its `deno.json` is used |
 | gate says the port is in use | something is already serving there; set `PORT` to a free port |
+| `the Deno stand-in supports only plain ? placeholders` | repeat the parameter: `WHERE ? = '' OR tag = ?` with `[tag, tag]` |
+| a 500 only under Deno | read the server's output: the SQLite and `parse` stand-ins throw where native code fails silently |
 | native errors point at machin or C lines | source maps don't exist yet |

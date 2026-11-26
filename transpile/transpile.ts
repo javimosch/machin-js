@@ -104,6 +104,24 @@ function checkScalar(c: Ctx, x: any, code: string, what: string) {
   require(c, SCALARS.has(k), [k], code, `${what} an ${k} does not behave the same natively`, x);
 }
 
+/** Is this JSON text written by the program itself: constants plus String(number | boolean)? */
+function authored(c: Ctx, x: any): boolean {
+  if (x.type === "Literal") return typeof x.value === "string";
+  if (x.type === "BinaryExpression") return x.operator === "+" && authored(c, x.left) && authored(c, x.right);
+  const plain = (a: any) => a && ["int", "bool"].includes(c.types.kind(a));
+  if (x.type === "TemplateLiteral") return x.expressions.every(plain);
+  return x.type === "CallExpression" && x.callee.name === "String" && plain(x.arguments[0]);
+}
+
+/** `parse` is only the same in both runtimes on JSON whose shape the program controls. */
+function checkParseInput(c: Ctx, x: any) {
+  const rows = x.type === "CallExpression" && x.callee.name === "sqlite_query" && c.builtins.has("sqlite_query");
+  //why: machin's parse never fails (bad or mistyped input silently becomes empty values), while
+  //     JSON.parse throws or keeps the wrong types — so outside input is refused.
+  if (!rows && !authored(c, x))
+    typeDiag(c, "JS-JSON001", "parse only accepts sqlite_query(...) or JSON your code builds; read outside input as form fields or query parameters", x);
+}
+
 /** With two or more arguments, console.log reads a string first argument as a format string. */
 function checkLogFormat(c: Ctx, args: any[]) {
   if (args.length < 2) return;
@@ -285,6 +303,7 @@ function call(c: Ctx, e: any, p = 0): string {
   if (c.scope.has(name)) checkCapture(c, name, e);
   const converts = name === "String" && !c.scope.has(name);
   if (converts || dotted === "console.log") e.arguments.forEach((x: any) => checkScalar(c, x, "JS-VAL001", "printing or converting"));
+  if (name === "parse" && c.builtins.has(name)) checkParseInput(c, e.arguments[0] ?? e);
   //why: `parse(x, [])` needs a typed witness: the type the surrounding code expects back.
   if (name === "parse" && c.builtins.has(name) && e.arguments[1]?.type === "ArrayExpression") {
     const type = c.types.spell(e);
@@ -478,7 +497,7 @@ function guarded(c: Ctx, fn: any): string[] {
   }
 }
 
-export type Mod = { out: string; diags: Diag[]; imports: Imp[]; exports: Set<string>; fns: Set<string>; deps: string[] };
+export type Mod = { out: string; diags: Diag[]; imports: Imp[]; exports: Set<string>; fns: Set<string>; deps: string[]; defines: Map<string, number> };
 
 /** Transpile one JS source file (an ES module). */
 export function transpile(file: string, src: string, types?: Types): Mod {
@@ -515,7 +534,14 @@ export function transpile(file: string, src: string, types?: Types): Mod {
   //     it also tells us the dependency, so type-only modules (model.js) still get emitted.
   const deps = cmts.filter((x) => x.block).flatMap((x) => [...x.text.matchAll(/import\(["'](\.[^"']+)["']\)/g)].map((m) => m[1]));
   const diags = c.diags.length ? c.diags : c.typed;
-  return { out: lines.join("\n").trimEnd() + "\n", diags, imports, exports, fns, deps };
+  //why: every function and struct this module adds to the one namespace, with its line.
+  const line = (at: number) => src.slice(0, at).split("\n").length;
+  const defines = new Map<string, number>(decls.filter((n) => n.type === "FunctionDeclaration").map((n) => [n.id.name, n.loc.start.line]));
+  for (const x of cmts.filter((x) => x.block)) {
+    const t = /@typedef\s+\{\{.*?\}\}\s*(\w+)/s.exec(x.text);
+    if (t) defines.set(t[1], line(x.start));
+  }
+  return { out: lines.join("\n").trimEnd() + "\n", diags, imports, exports, fns, deps, defines };
 }
 
 /** Names exported by a hand-kept typings file in types/. */
@@ -573,6 +599,13 @@ export async function buildGraph(entry: string): Promise<{ order: { path: string
   for (const [p, m] of mods) for (const f of m.fns) {
     if (seen.has(f)) add(p, 1, "JS-DUP001", `function ${f} is also defined in ${basename(seen.get(f)!)} (machin has one namespace)`);
     seen.set(f, p);
+  }
+  //why: bridge and framework sources share that namespace too, including their internal names.
+  for (const file of native) {
+    const taken = new Set([...(await Deno.readTextFile(file)).matchAll(/^(?:export )?(?:func|type) (\w+)/gm)].map((m) => m[1]));
+    for (const [path, m] of mods) for (const [name, line] of m.defines) {
+      if (taken.has(name)) add(path, line, "JS-NAME001", `${name} is already defined by ${basename(file)}, which this program includes; choose another name`);
+    }
   }
   //why: only once everything else is clean, so one mistake isn't reported twice in two ways.
   if (!diags.length) diags.push(...typeErrors(checked));

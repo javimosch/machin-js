@@ -27,6 +27,10 @@ const CASES: Record<string, { imports: string; lines: string[] }> = {
   replace: { imports: "replace", lines: PAIRS.map(([a, b]) => `console.log("<" + replace(${q(a)}, ${q(b)}, "-") + ">");`) },
   substr: { imports: "substr", lines: [[0, 3], [2, 99], [3, 3], [4, 2], [99, 100], [-2, 3], [0, -1]].map(([a, b]) => `console.log("<" + substr("abcdef", ${a < 0 ? `0 - ${-a}` : a}, ${b < 0 ? `0 - ${-b}` : b}) + ">");`) },
   url_decode: { imports: "url_decode", lines: TEXTS.map((s) => `console.log("<" + url_decode(${JSON.stringify(/^[\x20-\x7e]*$/.test(s) ? s : "x")}) + ">");`) },
+  //why: JSON output is what an API's clients see, so escaping must agree too.
+  json: { imports: "json, url_decode", lines: [...["", "plain", 'q"uote', "back\\slash", "<a>&'", "line\nbreak\ttab", "h\u00e9llo \u2603", "\u0001\u001f\r\f\b", "\u2028\u2029", "/"].map((s) => `console.log(json(url_decode("${encodeURIComponent(s)}")));`), "console.log(json([1, 2]));", "console.log(json([true]));", 'console.log(json(["a"]));', "console.log(json(7));"] },
+  contains: { imports: "contains", lines: PAIRS.map(([a, b]) => `console.log(contains(${q(a)}, ${q(b)}));`) },
+  url_encode: { imports: "url_encode, url_decode", lines: ["", "aZ09-._~", " !'()*", "a+b&c=d/e?f#g", "100%", "h\u00e9llo \u2603", "\u0000x", "\t\n\u001f\u007f", '"<>\\^`{|}[]@:;,$'].map((s) => `console.log(url_encode(url_decode("${encodeURIComponent(s)}")));`) },
   sort_by: { imports: "sort_by", lines: ['show(sort_by(["b", "a", "c", "a"], (x, y) => x < y));', 'show(sort_by(["bb", "a", "cc", "d"], (x, y) => x > y));'] },
 };
 

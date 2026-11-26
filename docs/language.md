@@ -51,7 +51,17 @@ That line also tells the transpiler to include `model.js` in the build.
 ## Decoding rows
 
 `parse(json, [])` takes its result type from where it is used, usually the function's `@returns`
-(a list such as `Todo[]`, or a single `Todo`):
+(a list such as `Todo[]`, or a single `Todo`).
+
+**`parse` is only for JSON your program controls:** the direct result of `sqlite_query(...)`, or
+text built from constants plus `String()` of numbers and booleans. machin's `parse` never fails:
+bad, cut-off or mistyped input silently becomes empty values, while `JSON.parse` throws or keeps the
+wrong types. So outside input is rejected with
+[`JS-JSON001`](diagnostics.md#js-json001-parse-of-outside-input). **Reading JSON request bodies is not
+supported;** take form fields or query parameters, as
+[linkbox](https://github.com/javimosch/machin-js/tree/main/examples/linkbox) does. The JSON's shape
+must match the type, and database columns should be `NOT NULL`:
+
 
 <!-- check: ok -->
 ```js
@@ -178,12 +188,22 @@ is a bug: please report it.
 | `substr` cutting a non-ASCII character in half | a replacement character | the raw bytes |
 | other builtins from `"machin"` | a hand-written stand-in in `shim/`, if there is one | the real builtin |
 | `parse_int` of a number beyond 2^53 | rounded | exact, limited to 64 bits |
+| a `NULL` column reaching `parse` | the stand-in stops with an error, on purpose | silently becomes `""` or `0` |
+| numbered SQL placeholders (`?1`) | the stand-in stops with an error | work |
+| a failing SQL statement | the stand-in throws | returns an error code or `""` |
 
 Random programs are compared on both runtimes (see [how it is tested](how-it-works.md)), but they
-only use the features the generator knows. The stand-ins for string and list builtins are compared
-with the real ones on awkward inputs (`test/shim_test.ts`); the SQLite and web ones are covered only
-by the todo app's tests. Other builtins, decimals from builtins such as
+only use the features the generator knows. The stand-ins for string, list and JSON-output builtins are compared
+with the real ones on awkward inputs (`test/shim_test.ts`); the SQLite and web ones are covered by
+the apps' tests. Other builtins, decimals from builtins such as
 `parse_float`, and ordering of non-ASCII strings are not covered.
+
+### Behaves the same, but may surprise you
+
+- `json()` writes control characters other than newline, carriage return and tab **unescaped**, which
+  is not valid JSON. That is a machin bug; the stand-in copies it so you see it while debugging.
+  Reject control characters in input, as linkbox does.
+- Strings end at the first zero byte: `url_decode("a%00b")` is `"a"`.
 
 ## Never, by design
 

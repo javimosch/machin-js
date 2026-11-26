@@ -36,5 +36,7 @@ jobs:
         run: deno test -A test/
       - name: Tally gate (CLI app, Deno vs native)
         run: examples/tally/test/gate.sh
+      - name: Linkbox gate (API, Deno vs native transcript)
+        run: examples/linkbox/test/gate.sh
       - name: Todo gate (gold, Deno vs native, HTTP smoke; desktop is skipped without raylib)
         run: MACHIN_FRAMEWORK="$GITHUB_WORKSPACE/.machin/framework" examples/todo/test/gate.sh

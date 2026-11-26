@@ -386,7 +386,30 @@ function f() {
 }
 ```
 
-Some names are machin keywords, a few (`len`, `str`, `append`, `parse`, `println`) are used by the generated code, and your functions can't take a builtin's name.
+Some names are machin keywords, a few (`len`, `str`, `append`, `parse`, `println`) are used by the generated code, and your functions can't take a builtin's name. All code ends up in one namespace, so your functions and types also can't reuse a name defined inside a bridge you import: `machin/web`'s source defines `route` and `dispatch`, for example. A full build reports that.
+
+## JS-JSON001: `parse` of outside input
+
+<!-- check: JS-JSON001 -->
+```js
+import { parse } from "machin";
+
+/** @typedef {{n: int}} T */
+
+/**
+ * Decode a request body.
+ * @param {string} body
+ * @returns {T}
+ */
+function f(body) {
+  //why: example.
+  return parse(body, []);
+}
+```
+
+machin's `parse` never fails: bad input silently becomes empty values, and JavaScript's `JSON.parse`
+behaves differently. Use `parse` only on `sqlite_query(...)` results or JSON your code builds. Read
+outside input as [form fields or query parameters](language.md#decoding-rows).
 
 ## JS-INTERNAL001: transpiler bug
 

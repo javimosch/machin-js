@@ -47,6 +47,7 @@ Supersede or edit stale state rather than letting two versions disagree.
 deno test -A test/                       # diagnostics, parity, typings, docs examples
 examples/todo/test/gate.sh               # gold, Deno vs native, HTTP smoke, desktop input
 examples/tally/test/gate.sh              # CLI app: Deno vs native, and expected output
+examples/linkbox/test/gate.sh            # API: Deno vs native request transcript
 cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.ts
 ```
 
@@ -60,6 +61,10 @@ cd docs && deno task build && cd .. && deno run --allow-read docs/_check_links.t
 - **Probe a claim before publishing it.** "No silent divergence" was once published and was false.
 - **Gold files** (`examples/todo/gold/`) change only on purpose: read the new `.src`, then copy it.
   They are reviewed snapshots; Deno-versus-native is the independent check.
+- **Keep the docs site in sync (owner's standing request):** every user-visible change ships its docs
+  in the same push — `docs/*.md`, the landing page (`docs/_includes/home.ts`, which repeats the
+  status, limits and a code sample by hand), the sidebar (`docs/_includes/layout.ts`) for new pages,
+  `README.md`, and the roadmap status. After the push, check the live pages show the change.
 - Pushing to `main` deploys the docs site and runs CI (pinned machin: `.github/workflows/test.yml`).
   Check both runs afterwards.
 
@@ -77,6 +82,9 @@ It fails on a type word it doesn't know: map it deliberately; never default to `
 - **Never test against a server you didn't start.** The smoke test writes data; it once hit the
   owner's running app on :8080. The gate uses `PORT` 18080, refuses a busy port, and the smoke test
   needs `MACHINJS_SMOKE=1`. Use throwaway databases for screenshots too.
+- **Never write a check as `diff … && echo ok` under `set -e`:** the failure is ignored and the script
+  carries on. Write `diff … || { echo FAILED; exit 1; }`, and prove a new gate fails by planting a
+  mismatch. This hid a real linkbox failure behind `ALL GREEN`.
 - `git commit` must be chained with `&&` after the tests — failing tests were committed once.
 - `.gitignore`'s `*.png` silently skipped `assets/logo.png`; check `git ls-files` for new assets.
 - Xvfb screen size must equal the window size, or raylib centers the window and clicks miss.

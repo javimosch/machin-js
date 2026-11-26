@@ -18,10 +18,10 @@ Most builtin parameters have placeholder names (`a0`, `a1`), because machin does
 ## `"machin/web"`: HTTP server
 
 machin's `machweb` framework: `serve(port, handler)`, `ok_html`, `ok_json`, `ok_text`,
-`not_found`, `bad_request`, `redirect` and more. The handler takes a request (`method`, `path`
+`not_found`, `bad_request`, `redirect`, `response`, `header`, `query` and more. The handler takes a request (`method`, `path`
 including the query string, `body`) and returns a response. The typings in `types/machweb.d.ts`
 are generated from `machin guide --framework machweb`, by the same command as above. The Deno
-stand-in covers only what the todo app uses.
+stand-in covers only what the example apps use.
 
 The framework's source is read at build time from `MACHIN_FRAMEWORK`
 (default `~/ai/machin/framework`), so you need a machin source checkout.

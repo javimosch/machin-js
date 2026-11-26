@@ -34,3 +34,25 @@ Deno.test("imports are validated: unknown builtin, unknown module, missing expor
   const r = await buildGraph(`${d}/b.js`);
   assertEquals(r.diags.map((x) => x.code).sort(), ["JS-DUP001", "JS-IMPORT001", "JS-IMPORT001", "JS-IMPORT002"]);
 });
+Deno.test("a function or type that clashes with a bridge's own source is reported at its line", async () => {
+  const { buildGraph } = await import("../transpile/transpile.ts");
+  const d = await Deno.makeTempDir();
+  await Deno.writeTextFile(`${d}/m.js`, `import { serve, ok_text } from "machin/web";
+/** @typedef {{n: int}} Response */
+/**
+ * h
+ * @param {string} s
+ */
+function route(s) {
+  //why: t.
+  return ok_text(s);
+}
+/** m */
+export function main() {
+  //why: t.
+  serve(1, (r) => route(r.path));
+}
+`);
+  const { diags } = await buildGraph(`${d}/m.js`);
+  assertEquals(diags.map((x) => [x.code, x.msg.split(" ")[0]]).sort(), [["JS-NAME001", "Response"], ["JS-NAME001", "route"]]);
+});
