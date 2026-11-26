@@ -1,0 +1,17 @@
+extern "porf" {
+    header "porfbridge.h"
+    link "porfmarked" link "m" link "pthread"
+    fn porf_lib_call(string, string) string
+}
+// one JSON argument list per input line, one answer per output line
+func main() {
+    lines := split(read_file(args()[1]), "\n")
+    i := 0
+    for i < len(lines) {
+        if lines[i] != "" {
+            // printed at once: a kept answer needs + "" because machin does not copy a string returned by C
+            arena { println(porf_lib_call("html", lines[i])) }
+        }
+        i = i + 1
+    }
+}

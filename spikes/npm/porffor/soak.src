@@ -1,0 +1,44 @@
+extern "porf" {
+    header "porfbridge.h"
+    link "porfmarked" link "m" link "pthread"
+    fn porf_lib_call(string, string) string
+}
+func rss() (kb) {
+    for _, line := range split(read_file("/proc/self/status"), "\n") {
+        if has_prefix(line, "VmRSS:") { kb = trim(replace(replace(line, "VmRSS:", ""), "kB", "")) }
+    }
+}
+// one call outside any arena, so the answer is machin's to keep
+// machin does not copy a string returned by C: + "" copies it before the bridge reuses its buffer
+func ask(input) (out) { out = porf_lib_call("html", input) + "" }
+func main() {
+    lines := split(trim(read_file(args()[1])), "\n")
+    rounds := parse_int(args()[2])
+    first := []string{}
+    i := 0
+    for i < len(lines) {
+        first = append(first, ask(lines[i]))
+        i = i + 1
+    }
+    println("after round 1: rss " + rss() + " kB")
+    bad := 0
+    calls := 0
+    t := now_ms()
+    r := 0
+    for r < rounds {
+        j := 0
+        for j < len(lines) {
+            arena {
+                mine := first[j] + lines[j]
+                got := porf_lib_call("html", lines[j])
+                if got != first[j] { bad = bad + 1 }
+                if mine != first[j] + lines[j] { bad = bad + 1 }
+                calls = calls + 1
+            }
+            j = j + 1
+        }
+        r = r + 1
+        if r % (rounds / 8) == 0 { println("round " + str(r) + ": calls " + str(calls) + " mismatches " + str(bad) + " rss " + rss() + " kB") }
+    }
+    println("ms " + str(now_ms() - t))
+}

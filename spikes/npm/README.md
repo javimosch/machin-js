@@ -107,3 +107,40 @@ Building it was blocked by the session's permission check. From `static_h` docs 
   casts that throw** where unknown values flow into typed ones. Fully unannotated functions are
   not type-checked.
 - Has a C FFI (`$SHBuiltin.extern_c`; `examples/ffi`).
+
+## Porffor library inside a machin program (2026-11-26)
+
+**It works for `marked` as an experiment.** `porffor/` holds the harness (`PORF=… sh run.sh <repos>`).
+Porffor itself is not patched.
+
+How: the library assigns one JSON-in, JSON-out function to `globalThis` (a function that is only
+`export`ed is dropped). `porfbridge.c` includes the generated C, renames its `main`, and calls that
+function. It is compiled apart from machin's C, with Porffor's own flags minus LTO.
+
+| Check (marked 15.0.6, Porffor alpha 25) | Result |
+|---|---|
+| Output against Deno: tracked `.md` files of two repos, chunks of them, 3,000 random fragments | 3,959/3,959 identical; 3,968/3,968 on the committed harness |
+| 354,400 calls on chunks, then 17,520 on whole files (largest 193 kB), each compared with round 1 | 0 mismatches; resident memory 19→20 MB and 27→33 MB, near flat after the early rounds |
+| Two Porffor libraries (marked and a tiny local one), 400,000 alternating calls | 0 mismatches. Needs a different entry name each and `objcopy --keep-global-symbol` (done by hand; not in `run.sh`) |
+| 40-item list, 3,000 calls, three native runs | 1.5–1.6 ms per call; Deno 0.5 ms |
+| Binary (marked) | 1.5 MB; needs only libc and libm |
+
+Limits:
+
+- **Deep recursion kills the whole program.** `"> "` ×100,000 gives a segfault (exit 139) where Deno
+  throws a catchable `RangeError`. A plain recursive function does the same in standalone Porffor,
+  even inside `try`. At ×10,000 quotes, and 3,000 nested list markers, Deno throws and the native
+  build returns HTML: also a difference. Don't feed it untrusted input in a process that must stay up.
+- **One thread.** Porffor's heap and collector are globals. The bridge answers an error to any thread
+  but the first caller's. One owning goroutine works.
+- **machin does not copy a string returned by C.** The bridge reuses its buffer, so a kept answer
+  changes on the next call, or dangles after the buffer grows. Copy it at once with `+ ""`. The first
+  soak run mismatched on every call until this was fixed. `jsbridge.h` (QuickJS, above) has the same
+  hazard; its tests printed each answer immediately.
+- **The entry's C name follows the bundle shape.** With a CommonJS package (`ms`) it was mangled, so
+  `porfbridge.c`'s fixed `p__main_porfCall` did not match. The C for `ms` also includes `ada_c.h` (a
+  C++ URL library), which this harness does not provide. `ms` was **not** linked.
+- The bridge depends on Porffor internals (string layout, allocator, symbol names, stack-top variable
+  for the collector). None is a public interface, so a Porffor update can break it.
+- Only synchronous calls. Out-of-memory behavior and other platforms are untested.
+- Outside machin-js's guarantee. Nothing here changes the transpiler.
