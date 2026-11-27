@@ -32,10 +32,25 @@ The token and signature are compared with `digest_equal` from `machin/crypto`. A
 carries no time or id, so **someone who captures one can send it again**. This is an example, not a
 hardened service.
 
+### Telling another service
+
+Set both `LINKBOX_NOTIFY_URL` and `LINKBOX_NOTIFY_SECRET`, and each new link is sent there as JSON,
+signed in `X-Signature` the same way, using `machin/http` and `machin/crypto`.
+
+    MFL_HTTP_TIMEOUT_MS=3000 MFL_HTTP_MAX_REDIRECTS=0 \
+      LINKBOX_NOTIFY_URL=https://example.com/new-link LINKBOX_NOTIFY_SECRET=other-secret \
+      LINKBOX_TOKEN=secret ./linkbox
+
+- **The call blocks the request that created the link** until the other side replies. Set
+  `MFL_HTTP_TIMEOUT_MS`: without it, a silent receiver can hold a request for 300 seconds, and it
+  limits each wait, not the whole call. Under Deno the whole server waits, not only that request.
+- **Don't point it at linkbox itself.** Under Deno the server can't answer while it waits.
+- It is sent once: a failure is logged, and nothing is retried.
+
 ## Read it
 
 `src/server.js` → `src/routes.js` (routing and the token check) → `src/hook.js` (the signed webhook) → `src/input.js` (form fields and
-validation) → `src/store.js` (SQL) → `src/reply.js` (responses).
+validation) → `src/store.js` (SQL) → `src/reply.js` (responses) → `src/notify.js` (the outgoing call).
 
 ## Verify it
 

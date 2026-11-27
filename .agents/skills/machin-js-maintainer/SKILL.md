@@ -29,7 +29,9 @@ and maintain these apps **when no agent is around**. Readability for that person
 The owner lifted the feature freeze: **no new release until machin-js supports more.** Plan:
 `docs/ROADMAP.md`, "Growing support". Every new module function needs typings, the compiled side, a
 Deno stand-in, a test comparing them, docs (marked as not yet released) and an example that uses it.
-Probe machin's behavior first: its HTTP client turned out to be unfit to wrap.
+Probe machin's behavior first: its HTTP client was unfit to wrap until machin 0.146.
+`shim/http_worker.js` is a port of that client: after upgrading machin, compare its C runtime and
+run `test/http_test.ts`.
 
 1.0 criterion 3 is a **human** fixing a bug without an agent. A simulated user never satisfies it.
 

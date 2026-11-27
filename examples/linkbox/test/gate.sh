@@ -33,6 +33,42 @@ echo "linkbox: native == Deno"
   kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null || true )
 [ "$(cat "$T/code")" = 404 ] || { echo "FAILED: without a hook secret the hook must answer 404, got $(cat "$T/code")"; exit 1; }
 echo "linkbox: no hook without a secret"
+# outgoing notifications: what the receiver gets, and what linkbox logs, must match in both
+NPORT=$((PORT + 1))
+if curl -s -o /dev/null --max-time 1 "http://127.0.0.1:$NPORT/"; then echo "port $NPORT is in use"; exit 2; fi
+# notified <name> <receiver: up|down> <server command...>
+notified() { name=$1; receiver=$2; shift 2; mkdir -p "$T/n-$name"; rpid=
+  ( cd "$T/n-$name"
+    if [ "$receiver" = up ]; then
+      deno run -A "$ROOT/test/receiver.js" "$NPORT" received.txt & rpid=$!
+      for _ in $(seq 50); do curl -s -o /dev/null --max-time 1 "http://127.0.0.1:$NPORT/ready" && break; sleep 0.2; done
+    fi
+    LINKBOX_TOKEN=test-token LINKBOX_DB="$T/n-$name/links.db" MFL_HTTP_TIMEOUT_MS=1000 LINKBOX_NOTIFY_SECRET=test-notify \
+      LINKBOX_NOTIFY_URL="http://127.0.0.1:$NPORT/in" "$@" >server.log 2>&1 &
+    pid=$!
+    for _ in $(seq 50); do curl -s -o /dev/null --max-time 1 "http://127.0.0.1:$PORT/api/tags" && break; sleep 0.2; done
+    # the receiver answers 200, then 500, then closes without replying, then never replies
+    for n in 1 2 3 4; do curl -s --max-time 8 -w ' %{http_code}\n' -H "Authorization: Bearer test-token" \
+      --data-urlencode "url=https://example.org/$n" --data-urlencode "title=café $n" "http://127.0.0.1:$PORT/api/links"; done >replies.txt
+    kill "$pid" $rpid 2>/dev/null; wait "$pid" $rpid 2>/dev/null || true )
+  touch "$T/n-$name/received.txt"
+  { cat "$T/n-$name/replies.txt" "$T/n-$name/received.txt"; grep '^linkbox: notify' "$T/n-$name/server.log" || true; } >"$T/n-$name.txt"; }
+for receiver in up down; do
+  notified "native-$receiver" $receiver "$ROOT/linkbox"
+  notified "deno-$receiver" $receiver deno run -A "$ROOT/test/run.js"
+  diff "$T/n-deno-$receiver.txt" "$T/n-native-$receiver.txt" || { echo "FAILED: linkbox: notify ($receiver) native == Deno"; exit 1; }
+done
+[ "$(grep -c ' 201$' "$T/n-native-up.txt")" = 4 ] && [ "$(grep -c ' 201$' "$T/n-native-down.txt")" = 4 ] ||
+  { echo "FAILED: a link must be created whatever the receiver does"; cat "$T"/n-native-*.txt; exit 1; }
+# the first notification's signature, checked by openssl so that neither runtime checks itself
+sig=$(sed -n 's/^signature //p' "$T/n-native-up/received.txt" | head -1)
+sent=$(sed -n 's/^body //p' "$T/n-native-up/received.txt" | head -1)
+[ "$sig" = "sha256=$(printf '%s' "$sent" | openssl dgst -sha256 -hmac test-notify | sed 's/.* //')" ] && [ -n "$sent" ] ||
+  { echo "FAILED: linkbox: notification signature"; exit 1; }
+for line in 'notify answered 500' 'notify failed: empty' 'notify failed: timeout'; do
+  grep -q "$line" "$T/n-native-up.txt" || { echo "FAILED: linkbox: expected '$line'"; cat "$T/n-native-up.txt"; exit 1; }; done
+[ "$(grep -c 'notify failed: connect' "$T/n-native-down.txt")" = 4 ] || { echo "FAILED: linkbox: receiver down"; exit 1; }
+echo "linkbox: notifications native == Deno"
 if [ "${UPDATE:-}" = 1 ]; then cp "$T/native.txt" test/expected.txt; fi
 diff test/expected.txt "$T/native.txt" || { echo "FAILED: linkbox: transcript as expected"; exit 1; }
 echo "linkbox: transcript as expected"

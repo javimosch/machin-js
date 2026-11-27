@@ -23,7 +23,7 @@ Deno.test("a name the module doesn't have stays JS-IMPORT001", async () => {
   assertEquals(await codes("machin", "no_such_thing"), ["JS-IMPORT001"]);
 });
 
-for (const [source, file] of [["machin", "machin"], ["machin/web", "web"], ["machin/json", "json"], ["machin/text", "text"], ["machin/crypto", "crypto"]]) {
+for (const [source, file] of [["machin", "machin"], ["machin/web", "web"], ["machin/json", "json"], ["machin/text", "text"], ["machin/crypto", "crypto"], ["machin/http", "http"]]) {
   Deno.test(`every stand-in export of ${source} is accepted`, async () => {
     const names = Object.keys(await import(`${root}shim/${file}.js`));
     assert(names.length > 0);

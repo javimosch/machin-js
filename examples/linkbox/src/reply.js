@@ -2,6 +2,7 @@ import { json } from "machin";
 import { response } from "machin/web";
 import { addLink } from "./store.js";
 import { problemWith } from "./input.js";
+import { announce } from "./notify.js";
 
 /** @typedef {import("machin/web").Response} Response */
 /** @typedef {import("./model.js").ApiError} ApiError */
@@ -50,5 +51,9 @@ export function save(db, input) {
   if (problem != "") {
     return fail("400 Bad Request", problem);
   }
-  return one(addLink(db, input.url, input.title, input.tag), "201 Created");
+  const added = addLink(db, input.url, input.title, input.tag);
+  if (added.length == 1) {
+    announce(added[0]);
+  }
+  return one(added, "201 Created");
 }

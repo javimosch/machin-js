@@ -35,9 +35,9 @@ typings, a compiled side, a Deno stand-in, tests comparing the two, and an examp
 |---|---|
 | `machin/crypto`: SHA-256, HMAC, random tokens, comparing secrets | on `main`; linkbox's signed webhook uses it |
 | language: top-level constants, `.join()`, `.includes()`, multi-line `@typedef` | on `main`; jot uses them |
-| `machin/http`: outgoing requests | **waiting on machin.** Its HTTP client has behavior we can't hide behind a module, including no timeout |
-| `machin/sso`: login | after HTTP |
-| `machin/ws`: WebSocket | **waiting on machin**: tests showed its WebSocket server isn't ready to wrap |
+| `machin/http`: outgoing requests | on `main`, since machin 0.146 fixed its HTTP client; linkbox sends signed notifications with it |
+| `machin/sso`: login | next candidate |
+| `machin/ws`: WebSocket | candidate. machin 0.146 fixed the server problems found; it still needs a design that works with a Deno stand-in |
 
 Which of these the next release needs is the owner's call.
 

@@ -9,6 +9,9 @@ and WebSocket server, and its changelog lists behavior changes.
 
 ### New
 
+- **`machin/http`:** outgoing requests with `http_fetch`, `http_post_json` and `http_call`. Calls
+  block. Read [its limits](docs/modules.md) before using it. linkbox uses it to send signed
+  notifications.
 - **`machin/crypto`:** `sha256_hex`, `hmac_sha256_hex`, `random_hex` and `digest_equal`.
 - **linkbox** takes signed webhooks, and compares its token with `digest_equal`.
 - **Top-level constants** holding fixed text, a whole number or a boolean, also across modules.

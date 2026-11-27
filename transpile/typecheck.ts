@@ -20,6 +20,7 @@ export function program(files: string[], source?: { path: string; text: string }
       "machin/json": [`${types}json.d.ts`],
       "machin/text": [`${types}text.d.ts`],
       "machin/crypto": [`${types}crypto.d.ts`],
+      "machin/http": [`${types}http.d.ts`],
       "machin/desktop": [`${types}desktop.d.ts`],
     },
   };

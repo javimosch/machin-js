@@ -1,0 +1,12 @@
+// bindings/http.src — "machin/http": outgoing requests. machin returns three values, which
+// JavaScript can't receive, so each call returns one struct.
+type HttpResponse struct { status int  body string  error string }
+
+func http_call(method, url, headers, body) (r) {
+    status, text, why := http_request(method, url, headers, body)
+    r = HttpResponse{status, text, why}
+}
+
+func http_fetch(url) (r) { r = http_call("GET", url, []string{}, "") }
+
+func http_post_json(url, payload) (r) { r = http_call("POST", url, []string{"Content-Type: application/json"}, payload) }

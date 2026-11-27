@@ -12,8 +12,9 @@ runs as JavaScript. There are 24:
 <!-- /builtins -->
 
 Importing any other builtin is [`JS-IMPORT003`](diagnostics.md#js-import003-no-deno-stand-in).
-That includes outgoing HTTP, WebSocket and process functions: machin has them, machin-js
-doesn't support them yet. For hashing and random tokens use [`machin/crypto`](#machincrypto-hashing-and-tokens).
+That includes WebSocket and process functions: machin has them, machin-js doesn't support them yet.
+For outgoing HTTP use [`machin/http`](#machinhttp-outgoing-requests), and for hashing and random
+tokens [`machin/crypto`](#machincrypto-hashing-and-tokens).
 
 <!-- check: JS-IMPORT003 -->
 ```js
@@ -131,6 +132,78 @@ check that your secret isn't `""`.
 `digest_equal` natively signs both sides with a key made for that call and compares the results; the
 stand-in uses Node's `timingSafeEqual`. The aim is that timing doesn't show where they differ; we
 haven't measured it.
+
+## `"machin/http"`: outgoing requests
+
+**On `main`, not in the 0.9.1 download.** It needs machin 0.146.1 or newer.
+
+<!-- check: ok -->
+```js
+import { http_fetch } from "machin/http";
+
+/**
+ * The text at `url`, or "" if it can't be had.
+ * @param {string} url
+ * @returns {string}
+ */
+export function download(url) {
+  const reply = http_fetch(url);
+  //why: two different failures: no complete reply, or a reply that says no.
+  if (reply.error != "" || reply.status != 200) {
+    return "";
+  }
+  return reply.body;
+}
+```
+
+| Function | Does |
+|---|---|
+| `http_fetch(url)` | GET |
+| `http_post_json(url, payload)` | POST JSON text as `application/json` |
+| `http_call(method, url, headers, body)` | any method; `headers` are lines like `"Authorization: Bearer abc"`; a `body` of `""` sends none |
+
+Each returns `{ status, body, error }`. To name that type in your JSDoc:
+`/** @typedef {import("machin/http").HttpResponse} HttpResponse */`.
+
+**Always check `error` and `status`.** `error` is `""` when a complete reply arrived, even a 404 or
+500. Otherwise `status` is 0, `body` is `""`, and `error` is one of:
+
+| `error` | Meaning |
+|---|---|
+| `url`, `scheme`, `method`, `header` | refused before sending: a bad URL, a scheme other than http or https, a bad method, or a line break in a header |
+| `dns`, `connect`, `tls` | no connection: unknown name, nothing answering, or a certificate that isn't trusted |
+| `timeout` | a wait took too long |
+| `empty`, `truncated`, `response`, `read` | closed without a reply, closed too early, not HTTP, or the connection broke |
+| `nul` | the reply has a zero byte, which a native string can't hold |
+
+A redirect can fail the same ways, since its target is checked too.
+
+### What to know before using it
+
+- **Calls block.** There is no `async`. Natively, other requests to your server carry on; **under
+  Deno the whole program waits**, so there a server that calls itself never gets an answer.
+- **The default timeout is 300 seconds**, and it limits each wait (connecting, each send, each
+  read), not the whole call. A server that keeps sending slowly can take much longer, and looking up
+  the name isn't covered. Set `MFL_HTTP_TIMEOUT_MS` (0 turns it off).
+- **There is no size limit** on a reply, so only call servers you trust not to flood you.
+- **Redirects are followed**, 5 by default (`MFL_HTTP_MAX_REDIRECTS`; 0 returns the 3xx). When the
+  scheme, host or port changes, only common headers such as `Accept` and `Content-Type` go along:
+  **`Authorization`, cookies and your own headers are dropped.** A 307 or 308 **sends the body again,
+  even to another host**, except from https to http.
+- **Never fetch a URL that a visitor gave you** without restricting it: your server can reach
+  machines that they can't. Nothing here blocks private addresses.
+- **You can't read the reply's headers**, send or receive binary data, or stream. Replies aren't
+  decompressed and proxy settings are ignored.
+- A URL without a scheme means https. `User-Agent: machin/0.8` is always sent, so adding your own
+  sends two.
+- Text only: if a reply isn't valid UTF-8, the Deno stand-in stops with an error, because natively
+  the raw bytes would be kept. So does text you send that has a zero byte or isn't well-formed.
+
+The stand-in doesn't use `fetch`: it repeats machin 0.146.1's rules over a plain socket, and tests
+compare both against the same replies, including damaged ones, and compare the requests they send.
+Two things can still differ: **which certificates are trusted** (machin uses OpenSSL's, Deno has
+its own list; for a private authority set `SSL_CERT_FILE` natively and `DENO_CERT` under Deno), and
+how fast each notices a timeout. Windows and macOS aren't tested.
 
 ## `"machin/desktop"`: window and drawing
 
