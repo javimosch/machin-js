@@ -59,6 +59,12 @@ memgraph save --project machin-js --type project --tags state,handoff -y --text 
 
 Supersede or edit stale state rather than letting two versions disagree.
 
+## Backlog: beads
+
+Incoming improvements are tracked with beads (`br ready`, `br list`, `br show <id>`). `.beads/` is
+**local only** (in `.git/info/exclude`): its export records local paths. Don't commit it without the
+owner's OK. memgraph still records where the work stands; ROADMAP.md is the public plan.
+
 ## Verify before you claim
 
 ```sh

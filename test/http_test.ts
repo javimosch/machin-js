@@ -284,3 +284,10 @@ Deno.test("machin/http: the stand-in stops where JavaScript can't match the nati
     assert(message.includes("natively"), message);
   }
 });
+
+//why: the reply type must be one the transpiler can name, or a list of replies can't be mapped.
+Deno.test("machin/http: replies work in lists, with map and filter", async () => {
+  const d = await Deno.makeTempDir();
+  await Deno.writeTextFile(`${d}/m.js`, 'import { http_fetch } from "machin/http";\n\n/** @typedef {import("machin/http").HttpResponse} HttpResponse */\n\n/** m */\nexport function main() {\n  //why: t.\n  /** @type {HttpResponse[]} */\n  const all = [];\n  all.push(http_fetch("bad://x"));\n  const more = ["ftp://y"].map((u) => http_fetch(u));\n  console.log(all.map((r) => r.error).join(",") + more.filter((r) => r.error != "").map((r) => r.error).join(","));\n}\n');
+  assertEquals((await buildGraph(`${d}/m.js`)).diags, []);
+});

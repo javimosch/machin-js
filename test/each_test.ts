@@ -120,3 +120,21 @@ Deno.test("map and filter: callbacks from your other modules and from a bridge",
   assertEquals(new TextDecoder().decode(native.stdout), new TextDecoder().decode(deno.stdout));
   assertEquals(new TextDecoder().decode(native.stdout).trim().length, 64);
 });
+
+//why: natively an empty result is an unset list; it must still print and encode like `[]`.
+Deno.test("map and filter: empty results inside objects and lists, with join, includes and json", async () => {
+  const d = await Deno.makeTempDir();
+  await Deno.writeTextFile(`${d}/m.js`, 'import { json } from "machin";\n\n/** @typedef {{tags: string[], rows: int[][]}} B */\n\n/**\n * @param {string[]} words\n * @returns {B}\n */\nfunction box(words) {\n  //why: t.\n  return { tags: words.filter((w) => w == "zz"), rows: words.filter((w) => w == "zz").map((w) => [1]) };\n}\n\n/** m */\nexport function main() {\n  //why: t.\n  const none = [box(["a"])].filter((b) => b.tags.length > 0);\n  console.log(`${json(box(["a"]))} ${json(none)} ${json([box([])].map((b) => b.tags))} ${box([]).tags.includes("a")} [${box([]).tags.join("-")}]`);\n}\n');
+  const built = await buildGraph(`${d}/m.js`);
+  assertEquals(built.diags, []);
+  await Deno.writeTextFile(`${d}/m.src`, built.order.map((o) => o.out).join("\n"));
+  const enc = await new Deno.Command("machin", { args: ["encode", "m.src"], cwd: d }).output();
+  assert(enc.success, new TextDecoder().decode(enc.stderr));
+  await Deno.writeFile(`${d}/m.mfl`, enc.stdout);
+  const native = await new Deno.Command("machin", { args: ["run", "m.mfl", "--safe"], cwd: d }).output();
+  await Deno.writeTextFile(`${d}/run.mjs`, 'import { main } from "./m.js";\nmain();\n');
+  const deno = await new Deno.Command("deno", { args: ["run", "-A", "--no-config", `--import-map=${root}deno.json`, "run.mjs"], cwd: d }).output();
+  const out = new TextDecoder().decode(native.stdout);
+  assertEquals(new TextDecoder().decode(deno.stdout), out);
+  assertEquals(out, '{"tags":[],"rows":[]} [] [[]] false []\n');
+});
