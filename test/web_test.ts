@@ -66,6 +66,7 @@ async function start(cmd: string, args: string[], cwd: string, port: number) {
     } catch { await new Promise((r) => setTimeout(r, 100)); }
   }
   child.kill();
+  await child.status;
   throw new Error(`no server: ${await err}`);
 }
 
@@ -103,7 +104,10 @@ Deno.test("response head values: native and the Deno stand-in agree", async () =
       assertEquals(b.planted, null, `the stand-in let a line through: ${what}`);
     }
   } finally {
-    for (const s of [native, deno]) s.child.kill();
+    for (const s of [native, deno]) {
+      s.child.kill();
+      await s.child.status;
+    }
   }
   assertEquals(failures, []);
   const refused = (log: string) => log.split("\n").filter((l) => l.startsWith("machweb: response refused: "));
