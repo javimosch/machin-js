@@ -19,6 +19,7 @@ and WebSocket server, and its changelog lists behavior changes.
   text or booleans.
 - A `@typedef` may span several lines.
 - **jot** uses the three above.
+- **`.map(f)` and `.filter(f)`** on lists, with a function of exactly one parameter. jot uses them.
 
 ### Soundness fixes
 

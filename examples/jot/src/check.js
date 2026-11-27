@@ -13,10 +13,9 @@ import { die, usage } from "./errors.js";
 export function expect(line, count, allowed) {
   //why: a mistyped flag must fail loudly; silently ignoring it would mislead an agent.
   const global = ["--json", "--text", "--yes", "-y", "--no-interactive", "--help-json"];
-  for (const flag of line.flags) {
-    if (!global.includes(flag) && !allowed.includes(flag)) {
-      usage(`unknown flag for ${line.command}: ${flag}`);
-    }
+  const unknown = line.flags.filter((flag) => !global.includes(flag) && !allowed.includes(flag));
+  if (unknown.length > 0) {
+    usage(`unknown flag for ${line.command}: ${unknown[0]}`);
   }
   if (line.operands.length < count) {
     die(82, "missing_argument", `${line.command} needs ${count} argument(s)`, ["jot help-json"]);

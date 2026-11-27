@@ -128,8 +128,8 @@ examples/todo/test/gate.sh                 # also: examples/tally and examples/l
 
 This is an **alpha**. It has four worked examples, and the language is a deliberately small subset:
 
-- **Supported:** `Map` lookups, functions (also as values), `const`/`let`, `if`/`while`/`for`/`for…of`, integer and string operations, template literals, `Math.trunc` division, arrays, including nested ones (with `push` while unshared), object literals as `@typedef` structs, ES modules. On `main` (not in 0.9.1): top-level constants of fixed values, `.join()`, `.includes()`.
-- **Not yet:** decimals, classes, `async`, `??`, `switch`, `.map`/`.filter`, looping over a `Map`, `continue`, block-bodied arrows.
+- **Supported:** `Map` lookups, functions (also as values), `const`/`let`, `if`/`while`/`for`/`for…of`, integer and string operations, template literals, `Math.trunc` division, arrays, including nested ones (with `push` while unshared), object literals as `@typedef` structs, ES modules. On `main` (not in 0.9.1): top-level constants of fixed values, `.join()`, `.includes()`, `.map()`, `.filter()`.
+- **Not yet:** decimals, classes, `async`, `??`, `switch`, `.forEach`/`.find`/`.reduce`, looping over a `Map`, `continue`, block-bodied arrows.
 - **Never (by design):** prototypes, `this`, `eval`, dynamic keys, `==` coercion, npm.
 - **Numbers and strings:** numbers are integers (no decimals yet), and strings are counted in bytes (`len`, `substr`).
 - **JSON input:** read field by field with `machin/json` (top-level fields only); `parse` is for database rows and JSON your code builds.

@@ -11,21 +11,27 @@ function section(title, lines) {
   return `\n## ${title}\n\n- ${lines.join("\n- ")}\n`;
 }
 
+/** @typedef {import("./guidetypes.js").Example} Example */
+
+/**
+ * One example: its goal, then the exact commands.
+ * @param {Example} e
+ * @returns {string}
+ */
+function oneExample(e) {
+  //why: four spaces make each command a code line in markdown.
+  const commands = e.do.map((c) => `    ${c}\n`);
+  return `\n${e.goal}:\n\n${commands.join("")}`;
+}
+
 /**
  * The examples as markdown.
  * @param {Guide} g
  * @returns {string}
  */
 function exampleSection(g) {
-  //why: each goal is followed by the exact commands.
-  let out = "\n## Examples\n";
-  for (const e of g.examples) {
-    out += `\n${e.goal}:\n\n`;
-    for (const c of e.do) {
-      out += `    ${c}\n`;
-    }
-  }
-  return out;
+  //why: they stay in the order the guide lists them.
+  return "\n## Examples\n" + g.examples.map(oneExample).join("");
 }
 
 /**

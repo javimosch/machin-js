@@ -286,12 +286,12 @@ function checkCapture(c: Ctx, name: string, n: any) {
 }
 
 /** `(a, b) => expr`. */
-function arrow(c: Ctx, e: any): string {
+function arrow(c: Ctx, e: any, returns?: string): string {
   return scoped(c, () => {
     const ps = e.params.map((x: any) => declare(c, x));
     const outer = c.arrow;
     c.arrow = new Set([...(outer ?? []), ...ps]);
-    const body = expr(c, e.body);
+    const body = returns && e.body.type === "ObjectExpression" ? object(c, e.body, returns) : expr(c, e.body);
     c.arrow = outer;
     return `func(${ps.join(", ")}) { return ${body} }`;
   });
@@ -551,13 +551,38 @@ function readMethod(c: Ctx, e: any): string | null {
   return `js_includes(${args})`;
 }
 
+/** `xs.map(f)` and `xs.filter(f)`, or null if this call is neither. */
+function eachMethod(c: Ctx, e: any): string | null {
+  const f = e.callee;
+  if (f.type !== "MemberExpression" || f.computed || !["map", "filter"].includes(f.property.name)) return null;
+  const name = f.property.name;
+  if (c.types.kind(f.object) !== "array") return null;
+  if (e.arguments.length !== 1) return diag(c, "JS-UNSUP001", `only ${name}(oneFunction) is supported`, e);
+  if (!c.types.spell(f.object)) return typeDiag(c, "JS-ANY001", `${name} needs a list with a known type; add a JSDoc type on its own line`, f.object);
+  //why: JavaScript also passes the position and the list, and ignores what a function doesn't take.
+  //     machin needs the counts to match.
+  const callback = e.arguments[0], shape = c.types.callback(callback);
+  if (!shape || shape.params !== 1 || (callback.params && callback.params.length !== 1))
+    return typeDiag(c, "JS-UNSUP001", `${name} needs a function with exactly one parameter; to use the position, write a for loop`, callback);
+  //why: JavaScript keeps whatever is truthy; machin's `if` takes only a boolean.
+  if (name === "filter" && shape.returns !== "bool")
+    return typeDiag(c, "JS-COND001", "filter's function must return true or false; write a comparison", callback);
+  const result = c.types.spell(e);
+  if (!result)
+    return typeDiag(c, "JS-ARR001", `the type of ${name}'s result is unclear or mixed; annotate it with /** @type {int[]} */`, e);
+  c.guards.add(`js_${name}`);
+  //why: an object literal returned by the arrow takes its struct name from the result's type.
+  const named = callback.type === "ArrowFunctionExpression" && callback.body.type === "ObjectExpression" && !callback.async;
+  return `js_${name}(${expr(c, f.object)}, ${named ? arrow(c, callback, result.slice(2)) : expr(c, callback)})`;
+}
+
 /** Emit a call, mapping JS builtins to machin ones. */
 function call(c: Ctx, e: any, p = 0): string {
   const f = e.callee;
   const method = mapMethod(c, e);
   if (method === "has" && e.arguments.length === 1) return `has(${expr(c, f.object)}, ${expr(c, e.arguments[0])})`;
   if (method) return typeDiag(c, "JS-MAP001", MAP_RULE, e);
-  const listed = readMethod(c, e);
+  const listed = readMethod(c, e) ?? eachMethod(c, e);
   if (listed !== null) return listed;
   const dotted = f.type === "MemberExpression" && !f.computed ? `${f.object.name}.${f.property.name}` : "";
   if (dotted === "Math.trunc") return truncDiv(c, e, p);

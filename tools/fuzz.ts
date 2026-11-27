@@ -99,7 +99,14 @@ export function generate(seed: number): string {
   const clamp = (name: string) => `${name} %= 1009;`;
   const statement = (depth: number, v: string[]): string => {
     const target = r.pick(ints);
-    switch (r.int(depth > 0 ? 25 : 7)) {
+    switch (r.int(depth > 0 ? 26 : 7)) {
+      //why: map and filter, chained, also over text and objects; often nothing is kept.
+      case 25: {
+        const out = `each${fresh++}`, m = `m${fresh++}`, t = `t${fresh++}`, o = `o${fresh++}`;
+        //why: an arrow may capture only what the function body declares, so no loop variables.
+        const inner = [m, "a", "b"];
+        return `const ${out} = xs.map((${m}) => (${num(1, inner)}) % 1009).filter((${m}) => ${cond(1, inner)}); console.log(json(${out})); const ${t} = ${out}.map((${m}) => String(${m}) + ${text(1, inner)}); console.log(json(${t}.filter((${m}) => ${m} != "${word()}"))); const ${o} = ${out}.map((${m}) => makeRow(${m}, ${cond(1, inner)})); console.log("kept", json(${o}.filter((${m}) => ${m}.ok)), ${t}.join("|"), ${o}.map((${m}) => ${m}.n).includes(${r.int(9)}));`;
+      }
       //why: JSON output — the one thing the earlier generator never compared.
       case 24: return `console.log(json(${text(2, v)})); console.log(json(${num(2, v)})); console.log(json(${cond(1, v)})); console.log(json(xs)); console.log(json([s, ${text(1, v)}])); console.log(json(makeRow(${num(1, v)} % 1009, ${cond(1, v)})));`;
       //why: a grid read and written by row and column, rows shared and replaced.

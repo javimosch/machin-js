@@ -108,6 +108,13 @@ export class Types {
     return null;
   }
 
+  /** How a function value is declared: its parameter count and what it returns; null if unclear. */
+  callback(at: At): { params: number; returns: Kind } | null {
+    const n = this.#node(at);
+    const found = n ? this.#typeOf(n).getCallSignatures() : [];
+    return found.length === 1 ? { params: found[0].parameters.length, returns: this.#kindOf(found[0].getReturnType()) } : null;
+  }
+
   /** The machin type an expression should have: what its context expects, else its own type. */
   spell(at: At): string | null {
     const n = this.#node(at);

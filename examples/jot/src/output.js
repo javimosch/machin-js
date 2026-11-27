@@ -53,11 +53,7 @@ export function printOne(line, row) {
  */
 export function printMany(line, rows) {
   //why: in text mode an empty list prints nothing, which is what a pipeline expects.
-  /** @type {Task[]} */
-  const tasks = [];
-  for (const row of rows) {
-    tasks.push(toTask(row));
-  }
+  const tasks = rows.map(toTask);
   if (line.flags.includes("--text")) {
     for (const t of tasks) {
       console.log(textLine(t));

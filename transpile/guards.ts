@@ -32,6 +32,20 @@ export const GUARDS: Record<string, string> = {
     }
 }
 `,
+  js_map: `func js_map(xs, f) (out) {
+    for _, x := range xs {
+        out = append(out, f(x))
+    }
+}
+`,
+  js_filter: `func js_filter(xs, keep) (out) {
+    for _, x := range xs {
+        if keep(x) {
+            out = append(out, x)
+        }
+    }
+}
+`,
   js_divisor: `func js_divisor(d, at) (r) {
     if d == 0 {
         eprintln(at + ": division by zero")

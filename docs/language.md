@@ -123,6 +123,7 @@ An audit of edge cases, with the exact result for each, is in
 - object literals that match a named `@typedef`: `{ id, title: "x", done: 0 }`
 - `list.push(value)`, while the function is the list's only owner (below)
 - [top-level constants, `.join()` and `.includes()`](#constants-join-and-includes)
+- [`.map(f)` and `.filter(f)`](#map-and-filter)
 
 ### Constants, `join` and `includes`
 
@@ -184,6 +185,31 @@ The list must be created in the same function with `const name = [...]`. Reading
 elements and reading `.length` don't share it. Passing it to a function, assigning it, capturing it
 in an arrow or looping over it with `for…of` does, and no `push` may come after that, including on a
 loop's next pass. `return name` is always fine.
+
+### `map` and `filter`
+
+**On `main`, not in the 0.9.1 download.**
+
+<!-- check: ok -->
+```js
+/**
+ * The doubles of the even numbers.
+ * @param {int[]} numbers
+ * @returns {int[]}
+ */
+export function doubledEvens(numbers) {
+  //why: both give a new list and leave numbers as it was.
+  return numbers.filter((n) => n % 2 == 0).map((n) => n * 2);
+}
+```
+
+- The function is an arrow with an expression body, or the name of your own function. It takes
+  **exactly one parameter**: there is no position or list argument. To use the position, write a loop.
+- `filter`'s function must return `true` or `false`, not just something truthy.
+- The list must have a known type, and so must the result. Annotate it when the build asks.
+- As in JavaScript, the list is new, but lists *inside* its items are shared with the original.
+- You can't `push` onto the result, which wasn't created with `const name = [...]`.
+- The [rule on captured variables](#arrows-and-captured-variables) applies to these arrows too.
 
 ### Key-value lookups with `Map`
 
@@ -262,7 +288,7 @@ export function chop(s) {
 
 Plain division (`/`), decimals, `null`, non-ASCII string literals,
 `typeof`, `var`, destructuring, default and rest parameters, assigning to an object field,
-shadowing a name, looping over a `Map`, classes, `async`, `??`, `switch`, method calls other than `push`, `join` and `includes` (such as `.map`),
+shadowing a name, looping over a `Map`, classes, `async`, `??`, `switch`, method calls other than `push`, `join`, `includes`, `map` and `filter` (such as `.forEach` or `.find`),
 object spread and computed keys, tagged templates, `continue`, block-bodied arrows, top-level `let` and `var`, and
 ternaries in any other position.
 

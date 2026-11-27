@@ -20,7 +20,7 @@ needs them.
 |---|---|---|---|
 | **0. Honest** (0.2) | correct the claims; allow-list; reject known divergences; parity tests; CI | every parity case matches or gets a `JS-` error, and none crashes | done |
 | **1. Typed** (0.3) | type-check JSDoc (TypeScript's checker on plain `.js`); define division, numbers, strings | wrong types fail with a JS line number; generated random programs show no differences | done |
-| **2. Useful** (0.4–0.6) | typed arrays, object literals, `for…of`, template literals, `push`/`map`/`filter`, error handling; a CLI tool and an API service | all three apps pass their checks without workarounds | done (`.map`/`.filter` left out: no app needed them) |
+| **2. Useful** (0.4–0.6) | typed arrays, object literals, `for…of`, template literals, `push`/`map`/`filter`, error handling; a CLI tool and an API service | all three apps pass their checks without workarounds | done (`.map`/`.filter` came later, after the freeze was lifted) |
 | **3. Debuggable** (0.7) | errors at `file.js:line`; shims for every supported builtin; debugging guide | the agent-off test: a planted bug is found and fixed by a human alone | done, with a **simulated** human (owner's choice; see notes) |
 | **4. Shippable** (0.8–0.9) | a `machin-js` command (`new`, `build`, `run`, `check`, `debug`) via `deno compile`; bundled bridges; tested machin versions; releases and changelog | a clean machine goes from install to a running app using only the docs | in progress: only the first release is left |
 | **5. Stable** (1.0) | freeze the subset; compatibility policy; a period of real use with no new features | all five criteria hold, with no open silent-difference bugs | paused: [feature freeze lifted](#growing-support-now) on 2026-11-27; policy approved |
@@ -36,6 +36,7 @@ typings, a compiled side, a Deno stand-in, tests comparing the two, and an examp
 | `machin/crypto`: SHA-256, HMAC, random tokens, comparing secrets | on `main`; linkbox's signed webhook uses it |
 | language: top-level constants, `.join()`, `.includes()`, multi-line `@typedef` | on `main`; jot uses them |
 | `machin/http`: outgoing requests | on `main`, since machin 0.146 fixed its HTTP client; linkbox sends signed notifications with it |
+| language: `.map()` and `.filter()` | on `main`; jot uses them |
 | `machin/sso`: login | next candidate |
 | `machin/ws`: WebSocket | candidate. machin 0.146 fixed the server problems found; it still needs a design that works with a Deno stand-in |
 
