@@ -1,6 +1,7 @@
-// The network half of shim/http.js: a port of machin's HTTP client (0.146.1), over a plain socket.
+// The network half of shim/http.js: a port of machin's HTTP client (0.146.1, unchanged in 0.146.3), over a plain socket.
 // test/http_test.ts compares the two, including the bytes they send.
 import { workerData } from "node:worker_threads";
+import { lookup } from "node:dns/promises";
 
 const utf8 = new TextEncoder();
 //why: header text is only searched for ASCII, and one byte per character keeps positions right.
@@ -94,6 +95,8 @@ function header(head, name) {
 /** Send the request and read until the connection ends: { error } or { raw, ended }. */
 async function exchange(u, bytes, ms) {
   let conn;
+  //why: native resolves the name before its timeout starts, so a slow resolver still ends in "dns".
+  try { await lookup(u.host); } catch { return { error: "dns" }; }
   const opening = Deno.connect({ hostname: u.host, port: u.port });
   try { conn = await within(opening, ms); }
   catch (e) { return { error: /lookup address|not known|No address/i.test(e.message) ? "dns" : "connect" }; }

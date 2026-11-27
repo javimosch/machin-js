@@ -33,10 +33,10 @@ typings, a compiled side, a Deno stand-in, tests comparing the two, and an examp
 
 | Module | Status |
 |---|---|
-| `machin/crypto`: SHA-256, HMAC, random tokens, comparing secrets | on `main`; linkbox's signed webhook uses it |
-| language: top-level constants, `.join()`, `.includes()`, multi-line `@typedef` | on `main`; jot uses them |
-| `machin/http`: outgoing requests | on `main`, since machin 0.146 fixed its HTTP client; linkbox sends signed notifications with it |
-| language: `.map()` and `.filter()` | on `main`; jot uses them |
+| `machin/crypto`: SHA-256, HMAC, random tokens, comparing secrets | in 0.10.0; linkbox's signed webhook uses it |
+| language: top-level constants, `.join()`, `.includes()`, multi-line `@typedef` | in 0.10.0; jot uses them |
+| `machin/http`: outgoing requests | in 0.10.0, since machin 0.146 fixed its HTTP client; linkbox sends signed notifications with it |
+| language: `.map()` and `.filter()` | in 0.10.0; jot uses them |
 | `machin/sso`: login | next candidate |
 | `machin/ws`: WebSocket | candidate. machin 0.146 fixed the server problems found; it still needs a design that works with a Deno stand-in |
 
@@ -53,7 +53,7 @@ last 14, and one real app of the owner's own.
 
 ## Risks
 
-- **machin dependencies:** none open. machin-js on `main` requires 0.146.1 (0.9.1 needs 0.144.3); [#718](https://github.com/javimosch/machin/issues/718) and
+- **machin dependencies:** none open. machin-js 0.10.0 requires 0.146.3; [#718](https://github.com/javimosch/machin/issues/718) and
   [#719](https://github.com/javimosch/machin/issues/719) are adopted.
 - **machin changes often:** CI pins a version, and a weekly job tests the newest release.
 - **Numbers never match completely:** document the limits, and reject or check what we can.
@@ -138,8 +138,8 @@ last 14, and one real app of the owner's own.
   [v0.9.1](https://github.com/javimosch/machin-js/releases/tag/v0.9.1); 0.8.0, 0.8.1 and 0.9.0 have them.
 - **2026-11-26, later the same day:** `check` accepted any builtin or `machin/web` function, but
   only some have a Deno stand-in. The rest are now `JS-IMPORT003`. Checking the stand-ins without a
-  direct comparison found four more differences (`read_file`, `eprintln`, `env`), fixed on `main`
-  (not yet released).
+  direct comparison found four more differences (`read_file`, `eprintln`, `env`), fixed in
+  0.10.0.
 - **jot** was added during the freeze: an example in the existing subset, not a language feature.
   It doesn't count as the owner's own app. Limits it met: no field named `type`, no keys such as
   `help-json`, one-line `@typedef` only, no top-level constants.

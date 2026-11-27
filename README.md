@@ -10,7 +10,7 @@
 
 <p align="center">
   <img alt="status: alpha" src="https://img.shields.io/badge/status-alpha-orange">
-  <a href="https://github.com/javimosch/machin-js/releases"><img alt="release: v0.9.1" src="https://img.shields.io/badge/release-v0.9.1-1f1470"></a>
+  <a href="https://github.com/javimosch/machin-js/releases"><img alt="release: v0.10.0" src="https://img.shields.io/badge/release-v0.10.0-1f1470"></a>
   <img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-blue">
   <img alt="runtime: Deno" src="https://img.shields.io/badge/toolchain-Deno-black">
   <img alt="targets: machin" src="https://img.shields.io/badge/compiles%20to-machin%20→%20native-1f1470">
@@ -91,7 +91,7 @@ can't produce code a human can't read.
 - **Transpiler** (`transpile/`) — Deno + [acorn](https://github.com/acornjs/acorn); resolves ES modules, orders them by dependency, emits machin `.src`.
 - **Typings** (`types/machin.d.ts`) — generated from `machin guide`. They list every machin builtin; only those with a Deno stand-in can be imported ([which ones](docs/modules.md)).
 - **Run it as plain JS** (`shim/`) — Deno twins of the builtins, so the same modules run under a normal debugger and can be diffed against the native build.
-- **Bridges** — `machin/web` (machweb HTTP server), `machin/json` (typed reading of outside JSON), `machin/text` (padding), `machin/crypto` (hashing and tokens) and `machin/http` (outgoing requests), both on `main` and not in 0.9.1, and `machin/desktop` (a raylib UI behind a scalar-only API, since JS can't express FFI).
+- **Bridges** — `machin/web` (machweb HTTP server), `machin/json` (typed reading of outside JSON), `machin/text` (padding), `machin/crypto` (hashing and tokens) and `machin/http` (outgoing requests), and `machin/desktop` (a raylib UI behind a scalar-only API, since JS can't express FFI).
 - **[`examples/jot`](examples/jot)** — an agent-first CLI following the [agent-first CLI specs](https://cli-specs.intrane.fr/) for output and guide, checked by a conformance test.
 - **[`examples/linkbox`](examples/linkbox)** — a bookmarks API: token auth, validation, SQLite, JSON responses.
 - **[`examples/tally`](examples/tally)** — a command-line expense summarizer: arguments, files, errors on stderr and exit codes.
@@ -99,7 +99,7 @@ can't produce code a human can't read.
 
 ## Quick start
 
-Linux x86-64, with [`machin`](https://github.com/javimosch/machin) 0.146.1 or newer and a C compiler.
+Linux x86-64, with [`machin`](https://github.com/javimosch/machin) 0.146.3 or newer and a C compiler.
 Download the [latest release](https://github.com/javimosch/machin-js/releases) (an alpha prerelease), or
 follow [Getting started](https://javimosch.github.io/machin-js/getting-started/), which also installs
 machin and checks both downloads.
@@ -128,7 +128,7 @@ examples/todo/test/gate.sh                 # also: examples/tally and examples/l
 
 This is an **alpha**. It has four worked examples, and the language is a deliberately small subset:
 
-- **Supported:** `Map` lookups, functions (also as values), `const`/`let`, `if`/`while`/`for`/`for…of`, integer and string operations, template literals, `Math.trunc` division, arrays, including nested ones (with `push` while unshared), object literals as `@typedef` structs, ES modules. On `main` (not in 0.9.1): top-level constants of fixed values, `.join()`, `.includes()`, `.map()`, `.filter()`.
+- **Supported:** `Map` lookups, functions (also as values), `const`/`let`, `if`/`while`/`for`/`for…of`, integer and string operations, template literals, `Math.trunc` division, arrays, including nested ones (with `push` while unshared), object literals as `@typedef` structs, ES modules, top-level constants of fixed values, `.join()`, `.includes()`, `.map()`, `.filter()`.
 - **Not yet:** decimals, classes, `async`, `??`, `switch`, `.forEach`/`.find`/`.reduce`, looping over a `Map`, `continue`, block-bodied arrows.
 - **Never (by design):** prototypes, `this`, `eval`, dynamic keys, `==` coercion, npm.
 - **Numbers and strings:** numbers are integers (no decimals yet), and strings are counted in bytes (`len`, `substr`).

@@ -26,10 +26,12 @@ and maintain these apps **when no agent is around**. Readability for that person
 
 ## Growing support (since 2026-11-27)
 
-The owner lifted the feature freeze: **no new release until machin-js supports more.** Plan:
+The owner lifted the feature freeze and held releases until support grew; 0.10.0 shipped that. Plan:
 `docs/ROADMAP.md`, "Growing support". Every new module function needs typings, the compiled side, a
 Deno stand-in, a test comparing them, docs (marked as not yet released) and an example that uses it.
 Probe machin's behavior first: its HTTP client was unfit to wrap until machin 0.146.
+`shim/web.js` repeats machweb's response head checks: after upgrading machin, compare
+`framework/machweb.src` and run `test/web_test.ts`.
 `shim/http_worker.js` is a port of that client: after upgrading machin, compare its C runtime and
 run `test/http_test.ts`.
 

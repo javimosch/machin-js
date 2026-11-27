@@ -2,10 +2,21 @@
 
 Newest first.
 
-## Unreleased
+## 0.10.0 (2026-11-27)
 
-**Needs machin 0.146.1 or newer** (was 0.144.3). machin 0.146 fixes security flaws in its HTTP client
-and WebSocket server, and its changelog lists behavior changes.
+An **alpha** prerelease for Linux x86-64 (glibc). **Needs machin 0.146.3 or newer** (was 0.144.3):
+upgrade machin first. machin 0.146 fixes security flaws and its changelog lists behavior changes.
+
+### Security: upgrade if you build a web server
+
+**0.9.1 and earlier don't check text that goes into a response header.** A program that passes text
+from a request to `redirect(url)`, or to the status or content type of `response`, lets the client
+add to the reply's headers. **Upgrade, then rebuild your programs.** Upgrading machin alone isn't
+enough, because machin-js carries its own copy of machin's web server.
+
+A value with a line break is now refused: the client gets `500 internal server error`, and stderr
+names the field, not the value. The Deno stand-in does the same. It also now sends non-ASCII header
+text as native does, where it used to fail or send different bytes.
 
 ### New
 
@@ -28,7 +39,7 @@ has no such export. Some of these imports didn't build natively either (`http_ge
 
 | Program | Now | Rewrite |
 |---|---|---|
-| imports a function from `"machin"` or `"machin/web"` that has no Deno stand-in | `JS-IMPORT003` | use only [supported functions](docs/modules.md). **A program that needs the function, and was only ever built natively, has no rewrite:** stay on 0.9.1 for it |
+| imports a function from `"machin"` or `"machin/web"` that has no Deno stand-in | `JS-IMPORT003` | use only [supported functions](docs/modules.md). **A program that needs the function, and was only ever built natively, has no rewrite:** stay on 0.9.1 for it. If it is a web server, that keeps the security flaw above |
 
 **These behave differently from their JavaScript:**
 

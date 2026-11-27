@@ -26,14 +26,28 @@ const decode = (s) => { try { return decodeURIComponent(s.replace(/\+/g, " ")).s
 const text = (bytes) => {
   try { return new TextDecoder("utf-8", { fatal: true }).decode(bytes).split("\0")[0]; } catch { return "\udfff"; }
 };
+//why: machweb sends a header's UTF-8 bytes as they are. Headers takes one character per byte.
+const wire = (s) => String.fromCharCode(...new TextEncoder().encode(s.split("\0")[0]));
+/** The first head value that would add a line to the response head, named as machweb names it. */
+const refusal = (res) => {
+  const values = [["status", res.status], ["content type", res.ctype], ["location", res.location]];
+  return values.find(([, value]) => /[\r\n]/.test(value.split("\0")[0]))?.[0] ?? "";
+};
+//why: like machweb, send nothing of a refused response, and never log the value itself.
+const refused = (field) => {
+  console.error(`machweb: response refused: ${field}`);
+  return new Response("internal server error", { status: 500, headers: { "content-type": "text/plain" } });
+};
 // serve(port, handler): the same handler(req) -> res contract as machweb.
 export function serve(port, handler) {
   Deno.serve({ port, onListen() {} }, async (r) => {
     const u = new URL(r.url);
     const req = { method: r.method, path: u.pathname + u.search, body: text(await r.arrayBuffer()), headers: Object.fromEntries(r.headers) };
     const res = handler(req);
-    const h = new Headers({ "content-type": res.ctype });
-    if (res.location) h.set("location", res.location);
+    const field = refusal(res);
+    if (field) return refused(field);
+    const h = new Headers({ "content-type": wire(res.ctype) });
+    if (res.location) h.set("location", wire(res.location));
     return new Response(res.body, { status: parseInt(res.status, 10), headers: h });
   });
 }

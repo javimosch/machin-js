@@ -8,7 +8,7 @@ permissions:
   # to read whether the test workflow passed for the tagged commit
   actions: read
 env:
-  MACHIN_VERSION: v0.146.1
+  MACHIN_VERSION: v0.146.3
 jobs:
   release:
     runs-on: ubuntu-latest

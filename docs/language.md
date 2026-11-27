@@ -40,7 +40,7 @@ The transpiler also uses these types to decide what is safe to translate. Where 
 /** @typedef {{id: int, title: string, done: int}} Todo */
 ```
 
-A `@typedef` may be on one line or spread over several. In 0.9.1 it must be on one line.
+A `@typedef` may be on one line or spread over several.
 
 To use the type from another file:
 
@@ -127,8 +127,6 @@ An audit of edge cases, with the exact result for each, is in
 
 ### Constants, `join` and `includes`
 
-**On `main`, not in the 0.9.1 download.**
-
 <!-- check: ok -->
 ```js
 export const LIMIT = 3;
@@ -187,8 +185,6 @@ in an arrow or looping over it with `for…of` does, and no `push` may come afte
 loop's next pass. `return name` is always fine.
 
 ### `map` and `filter`
-
-**On `main`, not in the 0.9.1 download.**
 
 <!-- check: ok -->
 ```js

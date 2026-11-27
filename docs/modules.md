@@ -43,6 +43,9 @@ use; any other, such as the cookie, server-sent events or router functions, is `
 A copy of the framework's source ships with machin-js, so you don't need a machin checkout.
 Set `MACHIN_FRAMEWORK` to a framework directory to use another one.
 
+A status, content type or redirect target containing a line break is refused, because it could add
+headers to the reply. The client gets `500 internal server error`, and stderr names the field.
+
 ## `"machin/json"`: outside JSON
 
 Read a request body or other outside JSON **one top-level field at a time**. Invalid JSON, a missing
@@ -95,8 +98,6 @@ display widths: East Asian wide characters and emoji take more room in a termina
 
 ## `"machin/crypto"`: hashing and tokens
 
-**On `main`, not in the 0.9.1 download.**
-
 <!-- check: ok -->
 ```js
 import { hmac_sha256_hex, digest_equal } from "machin/crypto";
@@ -134,8 +135,6 @@ stand-in uses Node's `timingSafeEqual`. The aim is that timing doesn't show wher
 haven't measured it.
 
 ## `"machin/http"`: outgoing requests
-
-**On `main`, not in the 0.9.1 download.** It needs machin 0.146.1 or newer.
 
 <!-- check: ok -->
 ```js
