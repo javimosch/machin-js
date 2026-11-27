@@ -5,6 +5,7 @@
 #   tools/check-getting-started.sh source     the build-from-source route (needs deno)
 set -e
 ROOT=$(cd "$(dirname "$0")/.." && pwd); T=$(mktemp -d); ROUTE=${1:-download}
+trap 'if [ -n "$KEEP_TMP" ]; then echo "kept $T"; else rm -rf "$T"; fi' EXIT   # KEEP_TMP=1 keeps it for debugging
 DENO_BIN=$(command -v deno || true); REAL_DENO_DIR=${DENO_DIR:-$HOME/.cache/deno}
 export HOME="$T/home"; mkdir -p "$HOME" "$T/work"
 export PATH="$HOME/.local/bin:/usr/bin:/bin"

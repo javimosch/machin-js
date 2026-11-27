@@ -8,6 +8,7 @@ export PORT=${PORT:-18080}
 if curl -s -o /dev/null --max-time 1 "http://127.0.0.1:$PORT/"; then
   echo "port $PORT is in use — set PORT to a free one; the gate would write to it"; exit 2; fi
 ROOT=$(pwd); T=$(mktemp -d); FW=${MACHIN_FRAMEWORK:-$HOME/ai/machin/framework}
+trap 'if [ -n "$KEEP_TMP" ]; then echo "kept $T"; else rm -rf "$T"; fi' EXIT   # KEEP_TMP=1 keeps it for debugging
 # list() prints the .src files of an entry's build, in dependency order, under dir $1
 list() { for f in $(cat "$1/order.txt"); do echo "$1/$f.src"; done; }
 deno run -A ../../transpile/transpile.ts "$T/demo" src/main.js

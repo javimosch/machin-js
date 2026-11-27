@@ -5,6 +5,7 @@
 set -e
 cd "$(dirname "$0")/.."
 ROOT=$(pwd); T=$(mktemp -d); export PORT=${PORT:-18091}
+trap 'if [ -n "$KEEP_TMP" ]; then echo "kept $T"; else rm -rf "$T"; fi' EXIT   # KEEP_TMP=1 keeps it for debugging
 if curl -s -o /dev/null --max-time 1 "http://127.0.0.1:$PORT/"; then
   echo "port $PORT is in use — set PORT to a free one; the test writes to the server"; exit 2; fi
 ./build.sh >/dev/null

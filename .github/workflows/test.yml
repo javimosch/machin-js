@@ -35,7 +35,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Transpiler, docs and parity tests
-        run: deno test -A test/
+        run: deno task test
       - name: Tally gate (CLI app, Deno vs native)
         run: examples/tally/test/gate.sh
       - name: Jot gate (agent-first CLI, Deno vs native, spec conformance)

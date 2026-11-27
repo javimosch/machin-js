@@ -6,6 +6,7 @@ set -e
 cd "$(dirname "$0")/.."
 ./build.sh >/dev/null
 T=$(mktemp -d)
+trap 'if [ -n "$KEEP_TMP" ]; then echo "kept $T"; else rm -rf "$T"; fi' EXIT   # KEEP_TMP=1 keeps it for debugging
 # run "<label>" cmd...: append stdout, stderr and exit code to $OUT
 run() { printf '== %s\n' "$1" >>"$OUT"; shift
   if "$@" >"$T/so" 2>"$T/se"; then rc=0; else rc=$?; fi

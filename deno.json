@@ -1,4 +1,8 @@
 {
   "nodeModulesDir": "auto",
+  "tasks": {
+    "test": "tools/clean-tmp.sh deno test -A test/",
+    "fuzz": "tools/clean-tmp.sh deno run -A tools/fuzz.ts"
+  },
   "imports": { "machin": "./shim/machin.js", "machin/web": "./shim/web.js", "machin/json": "./shim/json.js", "machin/text": "./shim/text.js", "machin/crypto": "./shim/crypto.js", "machin/http": "./shim/http.js" }
 }

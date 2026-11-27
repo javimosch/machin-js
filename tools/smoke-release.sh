@@ -3,6 +3,7 @@
 #   tools/smoke-release.sh dist/machin-js     (needs machin, cc, curl; deno for the debug check)
 set -e
 BIN=$(cd "$(dirname "$1")" && pwd)/$(basename "$1"); T=$(mktemp -d); MACHIN_DIR=$(dirname "$(command -v machin)")
+trap 'if [ -n "$KEEP_TMP" ]; then echo "kept $T"; else rm -rf "$T"; fi' EXIT   # KEEP_TMP=1 keeps it for debugging
 DENO_DIR_BIN=$(dirname "$(command -v deno)")
 clean() { env -i PATH="$MACHIN_DIR:/usr/bin:/bin" HOME="$T/home" "$BIN" "$@"; }
 mkdir -p "$T/home"; cd "$T"

@@ -113,7 +113,7 @@ machin-js debug main.js --inspect-brk      # as plain JavaScript with a debugger
 Working on machin-js itself:
 
 ```sh
-deno test -A test/                         # transpiler, parity, typings, docs and command tests
+deno task test                             # transpiler, parity, typings, docs and command tests
 examples/todo/test/gate.sh                 # also: examples/tally and examples/linkbox
 ```
 

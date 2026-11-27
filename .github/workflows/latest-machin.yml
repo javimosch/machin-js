@@ -41,7 +41,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
       - name: Tests and app gates with its machweb
         run: |
-          deno test -A test/
+          deno task test
           for app in tally jot linkbox todo; do examples/$app/test/gate.sh; done
         env:
           MACHIN_FRAMEWORK: ${{ github.workspace }}/.machin/framework

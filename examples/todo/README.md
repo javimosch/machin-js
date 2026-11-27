@@ -39,4 +39,4 @@ Diagnostics fail the run (exit 1) with `file:line: CODE message`.
 ## What you can write
 
 See [the language page](../../docs/language.md) and [the diagnostics](../../docs/diagnostics.md).
-Transpiler tests run from the repo root: `deno test -A test/`.
+Transpiler tests run from the repo root: `deno task test`.

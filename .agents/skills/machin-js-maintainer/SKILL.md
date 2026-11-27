@@ -70,7 +70,7 @@ owner's OK. memgraph still records where the work stands; ROADMAP.md is the publ
 ## Verify before you claim
 
 ```sh
-deno test -A test/                       # diagnostics, parity, typings, docs examples
+deno task test                           # diagnostics, parity, typings, docs examples
 examples/todo/test/gate.sh               # gold, Deno vs native, HTTP smoke, desktop input
 examples/tally/test/gate.sh              # CLI app: Deno vs native, and expected output
 examples/linkbox/test/gate.sh            # API: Deno vs native request transcript
@@ -162,3 +162,11 @@ and `bindings/machweb.version`). Then bump
 - The checker can't tell `int` from `float`; 0.3 is int-only. Plain `/` stays rejected.
 - Bridges (`bindings/`, `types/`) hide FFI: JavaScript sees only scalars and strings.
 - Mobile is out for now; the desktop shell is experimental.
+
+## Temporary files
+
+Leftovers once reached gigabytes. Run tests with `deno task test` and fuzzing with `deno task fuzz`,
+never bare `deno test`: the task gives them one temporary directory and deletes it. A single test
+file: `tools/clean-tmp.sh deno test -A test/x_test.ts`. A new script that calls `mktemp -d` needs the
+same `trap` as the others (`test/tmp_test.ts` checks). `KEEP_TMP=1` keeps files for debugging.
+Keep your own scratch work in the session's scratchpad, and delete downloads when you're done.

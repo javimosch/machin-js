@@ -24,7 +24,7 @@ imported, so a new builtin needs one added. `"machin/desktop"` has none.
 
 | Check | What it shows |
 |---|---|
-| `deno test -A test/` | diagnostics fire, and the docs' marked examples behave as stated |
+| `deno task test` | diagnostics fire, and the docs' marked examples behave as stated |
 | `test/types_test.ts` | the typings are valid, the todo app type-checks, and type mistakes stop a build |
 | crash cases (in `test/parity_test.ts`) | each kind of crash names the right JavaScript line, with and without `--safe` |
 | `test/cli_test.ts` | the `machin-js` command: new, check, run, debug, exit codes, and the editor setup |
@@ -34,7 +34,7 @@ imported, so a new builtin needs one added. `"machin/desktop"` has none.
 | `test/syntax_test.ts` | 190 JavaScript constructs each behave the same or are refused with a pinned code; also generates the [reference](specification.md) |
 | random programs include `json()` output | key order and shapes are compared, not only values |
 | parity cases (`test/parity_test.ts`) | each tricky program behaves natively as under Deno, or is rejected with the expected code |
-| random programs (`test/fuzz_test.ts`, `tools/fuzz.ts`) | generated well-typed programs behave the same under Deno and natively; 30 fixed seeds run in the tests, and `deno run -A tools/fuzz.ts 600 1234` searches further |
+| random programs (`test/fuzz_test.ts`, `tools/fuzz.ts`) | generated well-typed programs behave the same under Deno and natively; 30 fixed seeds run in the tests, and `deno task fuzz 600 1234` searches further |
 | `test/shim_test.ts` | the Deno stand-ins for string and list builtins give the same results as the real ones |
 | `examples/tally/test/gate.sh` | the CLI app's output, errors and exit codes are identical under Deno and natively |
 | `examples/jot/test/gate.sh` | the CLI behaves the same under Deno and natively, and conforms to the output and guide specs (their own JSON schemas, every guide example run) |

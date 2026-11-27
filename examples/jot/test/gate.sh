@@ -5,6 +5,7 @@
 set -e
 cd "$(dirname "$0")/.."
 ROOT=$(pwd); T=$(mktemp -d)
+trap 'if [ -n "$KEEP_TMP" ]; then echo "kept $T"; else rm -rf "$T"; fi' EXIT   # KEEP_TMP=1 keeps it for debugging
 ./build.sh >/dev/null
 run() { printf '== jot %s\n' "$*" >>"$OUT"
   if JOT_DB="$DB" $PROGRAM "$@" >"$T/so" 2>"$T/se" </dev/null; then rc=0; else rc=$?; fi
