@@ -52,7 +52,7 @@ last 14, and one real app of the owner's own.
 
 ## Risks
 
-- **machin dependencies:** none open. machin-js requires 0.144.3; [#718](https://github.com/javimosch/machin/issues/718) and
+- **machin dependencies:** none open. machin-js on `main` requires 0.146.1 (0.9.1 needs 0.144.3); [#718](https://github.com/javimosch/machin/issues/718) and
   [#719](https://github.com/javimosch/machin/issues/719) are adopted.
 - **machin changes often:** CI pins a version, and a weekly job tests the newest release.
 - **Numbers never match completely:** document the limits, and reject or check what we can.

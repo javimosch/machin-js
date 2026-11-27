@@ -4,6 +4,9 @@ Newest first.
 
 ## Unreleased
 
+**Needs machin 0.146.1 or newer** (was 0.144.3). machin 0.146 fixes security flaws in its HTTP client
+and WebSocket server, and its changelog lists behavior changes.
+
 ### New
 
 - **`machin/crypto`:** `sha256_hex`, `hmac_sha256_hex`, `random_hex` and `digest_equal`.

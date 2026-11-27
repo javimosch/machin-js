@@ -11,7 +11,7 @@ async function guide(...flags: string[]) {
 
 const SCALAR: Record<string, string> = {
   int: "number", float: "number", number: "number", string: "string", bool: "boolean",
-  bytes: "Bytes", any: "any", map: "object", chan: "object", slice: "unknown[]", "T{}": "unknown",
+  bytes: "Bytes", any: "any", map: "object", chan: "object", "chan T": "object", slice: "unknown[]", "T{}": "unknown",
   //why: the guide gives some struct fields as a bare `func`, with no signature to translate.
   func: "(...args: never[]) => unknown",
 };

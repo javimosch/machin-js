@@ -99,7 +99,7 @@ can't produce code a human can't read.
 
 ## Quick start
 
-Linux x86-64, with [`machin`](https://github.com/javimosch/machin) 0.144.3 or newer and a C compiler.
+Linux x86-64, with [`machin`](https://github.com/javimosch/machin) 0.146.1 or newer and a C compiler.
 Download the [latest release](https://github.com/javimosch/machin-js/releases) (an alpha prerelease), or
 follow [Getting started](https://javimosch.github.io/machin-js/getting-started/), which also installs
 machin and checks both downloads.

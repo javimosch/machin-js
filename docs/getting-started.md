@@ -7,7 +7,7 @@ Linux x86-64. (Other platforms aren't built or tested yet.)
 | Tool | Why |
 |---|---|
 | a C compiler (`cc`), and SQLite headers if you use SQLite | machin builds through C |
-| [`machin`](https://github.com/javimosch/machin) 0.144.3 or newer | compiles the output to native |
+| [`machin`](https://github.com/javimosch/machin) 0.146.1 or newer | compiles the output to native |
 | `machin-js` | the command, one self-contained binary of about 100 MB |
 | [`deno`](https://deno.com) 2.2 or newer, **optional** | only for `machin-js debug` |
 
@@ -21,11 +21,11 @@ Make sure `~/.local/bin` is on your `PATH`. Then install machin, checking the do
 <!-- run: install-machin -->
 ```sh
 mkdir -p ~/.local/bin ~/.cache/machin-js-install && cd ~/.cache/machin-js-install
-B=https://github.com/javimosch/machin/releases/download/v0.144.3
-curl -fsSLO $B/machin-v0.144.3-linux-amd64
+B=https://github.com/javimosch/machin/releases/download/v0.146.1
+curl -fsSLO $B/machin-v0.146.1-linux-amd64
 curl -fsSL -o machin.SHA256SUMS $B/SHA256SUMS.txt
 sha256sum --check --ignore-missing machin.SHA256SUMS
-install -m755 machin-v0.144.3-linux-amd64 ~/.local/bin/machin
+install -m755 machin-v0.146.1-linux-amd64 ~/.local/bin/machin
 cd ~
 ```
 
